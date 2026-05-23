@@ -154,6 +154,37 @@
 
       <div class="result-box" id="oneRmResult" aria-live="polite">กรอกข้อมูลเพื่อเริ่มคำนวณ</div>
     </section>
+
+    <section class="card tracker-card">
+      <div class="card-header">
+        <span class="tool-icon">WT</span>
+        <div>
+          <h2>Weight Tracker</h2>
+          <p>บันทึกน้ำหนักรายสัปดาห์และดูประวัติย้อนหลังในเครื่องนี้</p>
+        </div>
+      </div>
+
+      <form class="calculator-form" id="weightTrackerForm">
+        <div class="two-column">
+          <label>
+            สัปดาห์
+            <input type="date" id="trackerDate" required>
+          </label>
+          <label>
+            น้ำหนัก (กิโลกรัม)
+            <input type="number" id="trackerWeight" min="1" step="0.1" inputmode="decimal" autocomplete="off" placeholder="เช่น 70.5" required>
+          </label>
+        </div>
+        <button type="submit">บันทึกน้ำหนัก</button>
+      </form>
+
+      <div class="tracker-actions">
+        <p id="trackerSummary" aria-live="polite">ยังไม่มีประวัติน้ำหนัก</p>
+        <button class="danger-button" id="clearTrackerButton" type="button">ลบข้อมูลทั้งหมด</button>
+      </div>
+
+      <ul class="history-list" id="weightHistoryList" aria-live="polite"></ul>
+    </section>
   </main>
 
   <footer class="site-footer">

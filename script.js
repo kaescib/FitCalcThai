@@ -7,9 +7,11 @@ const themeText = getElement("themeText");
 
 const ERROR_MESSAGE = "กรุณากรอกข้อมูลให้ครบและมากกว่า 0";
 const THAI_LOCALE = "th-TH";
+const WEIGHT_HISTORY_KEY = "fitcalc-weight-history";
 
 initializeTheme();
 bindCalculatorForms();
+initializeWeightTracker();
 
 function initializeTheme() {
   const savedTheme = localStorage.getItem("fitcalc-theme");
@@ -35,6 +37,13 @@ function bindCalculatorForms() {
   getElement("tdeeForm").addEventListener("submit", handleTdeeSubmit);
   getElement("proteinForm").addEventListener("submit", handleProteinSubmit);
   getElement("oneRmForm").addEventListener("submit", handleOneRepMaxSubmit);
+}
+
+function initializeWeightTracker() {
+  getElement("trackerDate").value = getTodayDateValue();
+  getElement("weightTrackerForm").addEventListener("submit", handleWeightTrackerSubmit);
+  getElement("clearTrackerButton").addEventListener("click", clearWeightHistory);
+  renderWeightHistory();
 }
 
 function handleBmiSubmit(event) {
@@ -119,6 +128,22 @@ function handleOneRepMaxSubmit(event) {
   `);
 }
 
+function handleWeightTrackerSubmit(event) {
+  event.preventDefault();
+
+  const date = getElement("trackerDate").value;
+  const weightKg = getPositiveNumber("trackerWeight");
+
+  if (!date || !areValidNumbers(weightKg)) {
+    getElement("trackerSummary").textContent = ERROR_MESSAGE;
+    return;
+  }
+
+  saveWeeklyWeight(date, weightKg);
+  getElement("trackerWeight").value = "";
+  renderWeightHistory();
+}
+
 function getPositiveNumber(id) {
   const value = Number(getElement(id).value);
   return Number.isFinite(value) && value > 0 ? value : null;
@@ -170,4 +195,84 @@ function calculateDailyProtein(weightKg, proteinMultiplier) {
 function calculateOneRepMax(liftedWeightKg, reps) {
   // สูตร Epley: 1RM = weight x (1 + reps / 30)
   return reps === 1 ? liftedWeightKg : liftedWeightKg * (1 + reps / 30);
+}
+
+function getTodayDateValue() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getWeightHistory() {
+  const savedHistory = localStorage.getItem(WEIGHT_HISTORY_KEY);
+
+  try {
+    return savedHistory ? JSON.parse(savedHistory) : [];
+  } catch {
+    localStorage.removeItem(WEIGHT_HISTORY_KEY);
+    return [];
+  }
+}
+
+function saveWeightHistory(history) {
+  localStorage.setItem(WEIGHT_HISTORY_KEY, JSON.stringify(history));
+}
+
+function saveWeeklyWeight(date, weightKg) {
+  const history = getWeightHistory();
+  const entry = { date, weightKg };
+  const existingIndex = history.findIndex((item) => item.date === date);
+
+  // ถ้าบันทึกวันเดิมซ้ำ ให้แทนค่าล่าสุดแทนการเพิ่มแถวซ้ำ
+  if (existingIndex >= 0) {
+    history[existingIndex] = entry;
+  } else {
+    history.push(entry);
+  }
+
+  const sortedHistory = sortWeightHistory(history);
+  saveWeightHistory(sortedHistory);
+}
+
+function clearWeightHistory() {
+  localStorage.removeItem(WEIGHT_HISTORY_KEY);
+  renderWeightHistory();
+}
+
+function sortWeightHistory(history) {
+  return history.sort((first, second) => new Date(second.date) - new Date(first.date));
+}
+
+function renderWeightHistory() {
+  const history = getWeightHistory();
+  const historyList = getElement("weightHistoryList");
+  const summary = getElement("trackerSummary");
+
+  if (history.length === 0) {
+    summary.textContent = "ยังไม่มีประวัติน้ำหนัก";
+    historyList.innerHTML = "";
+    return;
+  }
+
+  const latest = history[0];
+  summary.textContent = `บันทึกแล้ว ${history.length} รายการ | ล่าสุด ${formatNumber(latest.weightKg)} กก.`;
+  historyList.innerHTML = history.map(createWeightHistoryItem).join("");
+}
+
+function createWeightHistoryItem(entry) {
+  return `
+    <li class="history-item">
+      <div>
+        <strong>${formatThaiDate(entry.date)}</strong>
+        <span>บันทึกรายสัปดาห์</span>
+      </div>
+      <strong>${formatNumber(entry.weightKg)} กก.</strong>
+    </li>
+  `;
+}
+
+function formatThaiDate(dateValue) {
+  return new Date(`${dateValue}T00:00:00`).toLocaleDateString(THAI_LOCALE, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
