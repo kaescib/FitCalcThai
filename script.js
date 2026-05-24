@@ -68,7 +68,7 @@ function handleBmiSubmit(event) {
     <strong>${formatNumber(bmi)} BMI</strong>
     อยู่ในเกณฑ์ <span>${category}</span>
   `);
-  trackAnalyticsEvent("bmi_calculator_used", {
+  trackAnalyticsEvent("bmi_calculated", {
     bmi_value: Number(bmi.toFixed(1)),
     bmi_category: category,
   });
@@ -95,7 +95,7 @@ function handleTdeeSubmit(event) {
     <strong>${formatNumber(tdee, 0)} kcal/วัน</strong>
     BMR ประมาณ <span>${formatNumber(bmr, 0)} kcal/วัน</span>
   `);
-  trackAnalyticsEvent("tdee_calculator_used", {
+  trackAnalyticsEvent("tdee_calculated", {
     bmr_value: Math.round(bmr),
     tdee_value: Math.round(tdee),
     activity_multiplier: activityMultiplier,
@@ -119,6 +119,10 @@ function handleProteinSubmit(event) {
     <strong>${formatNumber(proteinGrams, 0)} กรัม/วัน</strong>
     คิดจาก <span>${proteinMultiplier} กรัมต่อน้ำหนักตัว 1 กก.</span>
   `);
+  trackAnalyticsEvent("protein_calculated", {
+    protein_grams: Math.round(proteinGrams),
+    protein_multiplier: proteinMultiplier,
+  });
 }
 
 function handleOneRepMaxSubmit(event) {
@@ -155,7 +159,7 @@ function handleWeightTrackerSubmit(event) {
   saveWeeklyWeight(date, weightKg);
   getElement("trackerWeight").value = "";
   renderWeightHistory();
-  trackAnalyticsEvent("weight_tracker_saved", {
+  trackAnalyticsEvent("weight_saved", {
     entry_date: date,
     weight_kg: weightKg,
   });
@@ -179,8 +183,11 @@ function showResult(resultId, html) {
 }
 
 function trackAnalyticsEvent(eventName, parameters = {}) {
-  if (typeof window.trackFitCalcEvent === "function") {
-    window.trackFitCalcEvent(eventName, parameters);
+  if (typeof window.gtag === "function") {
+    window.gtag("event", eventName, {
+      app_name: "FitCalc Thai",
+      ...parameters,
+    });
   }
 }
 
@@ -428,7 +435,7 @@ function exportWeightHistoryCsv() {
   downloadLink.click();
   downloadLink.remove();
   URL.revokeObjectURL(downloadUrl);
-  trackAnalyticsEvent("weight_history_exported", {
+  trackAnalyticsEvent("csv_exported", {
     record_count: history.length,
   });
 }
@@ -459,7 +466,7 @@ function importWeightHistoryCsv(csvText) {
   const mergedHistory = mergeWeightHistory(getWeightHistory(), importedHistory);
   saveWeightHistory(mergedHistory);
   renderWeightHistory();
-  trackAnalyticsEvent("weight_history_imported", {
+  trackAnalyticsEvent("csv_imported", {
     imported_count: importedHistory.length,
     total_count: mergedHistory.length,
   });
