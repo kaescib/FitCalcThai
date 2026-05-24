@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kaescib.github.io/FitCalcThai/sitemap.xml
