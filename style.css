@@ -38,6 +38,54 @@ body {
   transition: background 0.2s ease, color 0.2s ease;
 }
 
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: min(1120px, calc(100% - 32px));
+  min-height: 62px;
+  margin: 0 auto;
+}
+
+.nav-brand {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.nav-links a {
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-decoration: none;
+  padding: 8px 10px;
+}
+
+.nav-links a:hover {
+  background: var(--surface-soft);
+  color: var(--primary);
+}
+
 .site-header,
 .tool-grid,
 .site-footer {
@@ -378,6 +426,12 @@ button[type="submit"]:hover {
   text-align: center;
 }
 
+.site-footer a {
+  color: var(--primary);
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .article-layout {
   width: min(880px, calc(100% - 32px));
   margin: 0 auto;
@@ -452,6 +506,16 @@ button[type="submit"]:hover {
 }
 
 @media (max-width: 760px) {
+  .nav-inner {
+    display: grid;
+    gap: 10px;
+    padding: 12px 0;
+  }
+
+  .nav-links {
+    justify-content: flex-start;
+  }
+
   .site-header {
     display: grid;
     padding-top: 28px;
@@ -501,6 +565,7 @@ button[type="submit"]:hover {
 }
 
 @media (max-width: 420px) {
+  .nav-inner,
   .site-header,
   .tool-grid,
   .site-footer,
