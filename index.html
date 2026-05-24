@@ -13,6 +13,7 @@
   <meta property="og:description" content="คำนวณ BMI, TDEE, โปรตีนต่อวัน และ 1RM ได้ในหน้าเดียว พร้อม UI แบบ Card และ Dark Mode">
   <meta property="og:site_name" content="FitCalc Thai">
   <meta property="og:locale" content="th_TH">
+  <script src="analytics.js" defer></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -178,9 +179,19 @@
         <button type="submit">บันทึกน้ำหนัก</button>
       </form>
 
+      <div class="chart-panel">
+        <canvas id="weightProgressChart" aria-label="กราฟน้ำหนักรายสัปดาห์" role="img"></canvas>
+        <p class="empty-chart-message" id="chartEmptyMessage">ยังไม่มีข้อมูล</p>
+      </div>
+
       <div class="tracker-actions">
         <p id="trackerSummary" aria-live="polite">ยังไม่มีประวัติน้ำหนัก</p>
-        <button class="danger-button" id="clearTrackerButton" type="button">ลบข้อมูลทั้งหมด</button>
+        <div class="tracker-buttons">
+          <button class="secondary-button" id="exportCsvButton" type="button">Export CSV</button>
+          <label class="secondary-button import-button" for="importCsvInput">Import CSV</label>
+          <input class="file-input" id="importCsvInput" type="file" accept=".csv,text/csv">
+          <button class="danger-button" id="clearTrackerButton" type="button">ลบข้อมูลทั้งหมด</button>
+        </div>
       </div>
 
       <ul class="history-list" id="weightHistoryList" aria-live="polite"></ul>
@@ -191,6 +202,7 @@
     <p>ผลลัพธ์เป็นค่าประมาณสำหรับการวางแผนเบื้องต้น ไม่ใช่คำแนะนำทางการแพทย์</p>
   </footer>
 
+  <script src="chart.umd.js" defer></script>
   <script src="script.js" defer></script>
 </body>
 </html>

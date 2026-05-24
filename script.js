@@ -8,6 +8,7 @@ const themeText = getElement("themeText");
 const ERROR_MESSAGE = "กรุณากรอกข้อมูลให้ครบและมากกว่า 0";
 const THAI_LOCALE = "th-TH";
 const WEIGHT_HISTORY_KEY = "fitcalc-weight-history";
+let weightProgressChart = null;
 
 initializeTheme();
 bindCalculatorForms();
@@ -24,6 +25,7 @@ function initializeTheme() {
     const isDarkMode = document.body.classList.toggle("dark");
     localStorage.setItem("fitcalc-theme", isDarkMode ? "dark" : "light");
     updateThemeButton(isDarkMode);
+    renderWeightProgressChart(getWeightHistory());
   });
 }
 
@@ -43,6 +45,8 @@ function initializeWeightTracker() {
   getElement("trackerDate").value = getTodayDateValue();
   getElement("weightTrackerForm").addEventListener("submit", handleWeightTrackerSubmit);
   getElement("clearTrackerButton").addEventListener("click", clearWeightHistory);
+  getElement("exportCsvButton").addEventListener("click", exportWeightHistoryCsv);
+  getElement("importCsvInput").addEventListener("change", handleCsvImport);
   renderWeightHistory();
 }
 
@@ -64,6 +68,10 @@ function handleBmiSubmit(event) {
     <strong>${formatNumber(bmi)} BMI</strong>
     อยู่ในเกณฑ์ <span>${category}</span>
   `);
+  trackAnalyticsEvent("bmi_calculator_used", {
+    bmi_value: Number(bmi.toFixed(1)),
+    bmi_category: category,
+  });
 }
 
 function handleTdeeSubmit(event) {
@@ -87,6 +95,11 @@ function handleTdeeSubmit(event) {
     <strong>${formatNumber(tdee, 0)} kcal/วัน</strong>
     BMR ประมาณ <span>${formatNumber(bmr, 0)} kcal/วัน</span>
   `);
+  trackAnalyticsEvent("tdee_calculator_used", {
+    bmr_value: Math.round(bmr),
+    tdee_value: Math.round(tdee),
+    activity_multiplier: activityMultiplier,
+  });
 }
 
 function handleProteinSubmit(event) {
@@ -142,6 +155,10 @@ function handleWeightTrackerSubmit(event) {
   saveWeeklyWeight(date, weightKg);
   getElement("trackerWeight").value = "";
   renderWeightHistory();
+  trackAnalyticsEvent("weight_tracker_saved", {
+    entry_date: date,
+    weight_kg: weightKg,
+  });
 }
 
 function getPositiveNumber(id) {
@@ -159,6 +176,12 @@ function showError(resultId) {
 
 function showResult(resultId, html) {
   getElement(resultId).innerHTML = html;
+}
+
+function trackAnalyticsEvent(eventName, parameters = {}) {
+  if (typeof window.trackFitCalcEvent === "function") {
+    window.trackFitCalcEvent(eventName, parameters);
+  }
 }
 
 function formatNumber(value, digits = 1) {
@@ -249,12 +272,14 @@ function renderWeightHistory() {
   if (history.length === 0) {
     summary.textContent = "ยังไม่มีประวัติน้ำหนัก";
     historyList.innerHTML = "";
+    renderWeightProgressChart(history);
     return;
   }
 
   const latest = history[0];
   summary.textContent = `บันทึกแล้ว ${history.length} รายการ | ล่าสุด ${formatNumber(latest.weightKg)} กก.`;
   historyList.innerHTML = history.map(createWeightHistoryItem).join("");
+  renderWeightProgressChart(history);
 }
 
 function createWeightHistoryItem(entry) {
@@ -275,4 +300,204 @@ function formatThaiDate(dateValue) {
     month: "short",
     day: "numeric",
   });
+}
+
+function renderWeightProgressChart(history) {
+  const chartPanel = getElement("weightProgressChart").parentElement;
+  const hasData = history.length > 0;
+
+  chartPanel.classList.toggle("has-data", hasData);
+
+  if (!window.Chart) {
+    return;
+  }
+
+  if (!hasData) {
+    if (weightProgressChart) {
+      weightProgressChart.destroy();
+      weightProgressChart = null;
+    }
+    return;
+  }
+
+  const chartData = [...history].reverse();
+  const labels = chartData.map((entry) => formatThaiDate(entry.date));
+  const weights = chartData.map((entry) => entry.weightKg);
+
+  if (weightProgressChart) {
+    weightProgressChart.data.labels = labels;
+    weightProgressChart.data.datasets[0].data = weights;
+    updateChartThemeColors();
+    weightProgressChart.update();
+    return;
+  }
+
+  const chartContext = getElement("weightProgressChart").getContext("2d");
+
+  weightProgressChart = new Chart(chartContext, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "น้ำหนัก (กก.)",
+          data: weights,
+          borderColor: "#62c7e6",
+          backgroundColor: "rgba(98, 199, 230, 0.18)",
+          borderWidth: 3,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          tension: 0.32,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: getChartTextColor(),
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => `น้ำหนัก ${formatNumber(context.parsed.y)} กก.`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: getChartTextColor(),
+          },
+          grid: {
+            color: getChartGridColor(),
+          },
+        },
+        y: {
+          ticks: {
+            color: getChartTextColor(),
+            callback: (value) => `${formatNumber(value)} กก.`,
+          },
+          grid: {
+            color: getChartGridColor(),
+          },
+        },
+      },
+    },
+  });
+}
+
+function updateChartThemeColors() {
+  const textColor = getChartTextColor();
+  const gridColor = getChartGridColor();
+
+  weightProgressChart.options.plugins.legend.labels.color = textColor;
+  weightProgressChart.options.scales.x.ticks.color = textColor;
+  weightProgressChart.options.scales.x.grid.color = gridColor;
+  weightProgressChart.options.scales.y.ticks.color = textColor;
+  weightProgressChart.options.scales.y.grid.color = gridColor;
+}
+
+function getChartTextColor() {
+  return getComputedStyle(document.body).getPropertyValue("--text").trim();
+}
+
+function getChartGridColor() {
+  return getComputedStyle(document.body).getPropertyValue("--border").trim();
+}
+
+function exportWeightHistoryCsv() {
+  const history = getWeightHistory();
+
+  if (history.length === 0) {
+    getElement("trackerSummary").textContent = "ยังไม่มีข้อมูล";
+    return;
+  }
+
+  const csvRows = ["date,weight_kg", ...history.map((entry) => `${entry.date},${entry.weightKg}`)];
+  const csvBlob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8" });
+  const downloadUrl = URL.createObjectURL(csvBlob);
+  const downloadLink = document.createElement("a");
+
+  downloadLink.href = downloadUrl;
+  downloadLink.download = `fitcalc-weight-history-${getTodayDateValue()}.csv`;
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+  URL.revokeObjectURL(downloadUrl);
+  trackAnalyticsEvent("weight_history_exported", {
+    record_count: history.length,
+  });
+}
+
+function handleCsvImport(event) {
+  const file = event.target.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    importWeightHistoryCsv(String(reader.result || ""));
+    event.target.value = "";
+  });
+  reader.readAsText(file);
+}
+
+function importWeightHistoryCsv(csvText) {
+  const importedHistory = parseWeightHistoryCsv(csvText);
+
+  if (importedHistory.length === 0) {
+    getElement("trackerSummary").textContent = "ยังไม่มีข้อมูล";
+    return;
+  }
+
+  const mergedHistory = mergeWeightHistory(getWeightHistory(), importedHistory);
+  saveWeightHistory(mergedHistory);
+  renderWeightHistory();
+  trackAnalyticsEvent("weight_history_imported", {
+    imported_count: importedHistory.length,
+    total_count: mergedHistory.length,
+  });
+}
+
+function parseWeightHistoryCsv(csvText) {
+  const rows = csvText
+    .split(/\r?\n/)
+    .map((row) => row.trim())
+    .filter(Boolean);
+
+  return rows
+    .slice(rows[0]?.toLowerCase().includes("date") ? 1 : 0)
+    .map(parseWeightHistoryCsvRow)
+    .filter(Boolean);
+}
+
+function parseWeightHistoryCsvRow(row) {
+  const [date, weightText] = row.split(",").map((cell) => cell.trim());
+  const weightKg = Number(weightText);
+
+  if (!isValidDateValue(date) || !areValidNumbers(weightKg)) {
+    return null;
+  }
+
+  return { date, weightKg };
+}
+
+function mergeWeightHistory(currentHistory, importedHistory) {
+  const historyByDate = new Map();
+
+  [...currentHistory, ...importedHistory].forEach((entry) => {
+    historyByDate.set(entry.date, entry);
+  });
+
+  return sortWeightHistory([...historyByDate.values()]);
+}
+
+function isValidDateValue(dateValue) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(dateValue) && !Number.isNaN(new Date(`${dateValue}T00:00:00`).getTime());
 }

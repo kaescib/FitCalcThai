@@ -209,12 +209,14 @@ select:focus-visible {
 
 button[type="submit"]:hover,
 .theme-toggle:hover,
+.secondary-button:hover,
 .danger-button:hover {
   transform: translateY(-1px);
 }
 
 button[type="submit"]:active,
 .theme-toggle:active,
+.secondary-button:active,
 .danger-button:active {
   transform: translateY(0);
 }
@@ -249,6 +251,35 @@ button[type="submit"]:hover {
   grid-column: 1 / -1;
 }
 
+.chart-panel {
+  position: relative;
+  min-height: 280px;
+  margin-top: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 14px;
+}
+
+.chart-panel canvas {
+  width: 100%;
+  height: 260px;
+}
+
+.empty-chart-message {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.chart-panel.has-data .empty-chart-message {
+  display: none;
+}
+
 .tracker-actions {
   display: flex;
   align-items: center;
@@ -262,20 +293,54 @@ button[type="submit"]:hover {
   color: var(--muted);
 }
 
+.tracker-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.secondary-button,
 .danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 42px;
-  border: 1px solid color-mix(in srgb, #d94f4f 55%, var(--border));
   border-radius: 8px;
-  background: color-mix(in srgb, #d94f4f 12%, var(--surface));
-  color: #d94f4f;
   cursor: pointer;
   font-weight: 800;
   padding: 9px 14px;
   transition: transform 0.15s ease, background 0.15s ease;
 }
 
+.secondary-button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.secondary-button:hover {
+  background: var(--surface-soft);
+}
+
+.danger-button {
+  border: 1px solid color-mix(in srgb, #d94f4f 55%, var(--border));
+  background: color-mix(in srgb, #d94f4f 12%, var(--surface));
+  color: #d94f4f;
+}
+
 .danger-button:hover {
   background: color-mix(in srgb, #d94f4f 18%, var(--surface));
+}
+
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
 }
 
 .history-list {
@@ -311,6 +376,79 @@ button[type="submit"]:hover {
   padding: 28px 0 40px;
   color: var(--muted);
   text-align: center;
+}
+
+.article-layout {
+  width: min(880px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.article-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+.article-card h2 {
+  margin: 30px 0 10px;
+  font-size: 1.65rem;
+}
+
+.article-card h3 {
+  margin: 22px 0 8px;
+  font-size: 1.18rem;
+}
+
+.article-card p,
+.article-card li {
+  color: var(--muted);
+}
+
+.article-card ul,
+.article-card ol {
+  padding-left: 22px;
+}
+
+.guide-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0;
+}
+
+.guide-link,
+.calculator-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 8px;
+  font-weight: 800;
+  text-decoration: none;
+  padding: 10px 14px;
+}
+
+.guide-link {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.calculator-link {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.guide-link:hover,
+.calculator-link:hover {
+  transform: translateY(-1px);
+}
+
+.faq-item {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
 }
 
 @media (max-width: 760px) {
@@ -351,12 +489,22 @@ button[type="submit"]:hover {
     align-items: stretch;
     flex-direction: column;
   }
+
+  .tracker-buttons {
+    justify-content: stretch;
+  }
+
+  .secondary-button,
+  .danger-button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 420px) {
   .site-header,
   .tool-grid,
-  .site-footer {
+  .site-footer,
+  .article-layout {
     width: min(100% - 20px, 1120px);
   }
 
@@ -364,7 +512,8 @@ button[type="submit"]:hover {
     font-size: 2rem;
   }
 
-  .card {
+  .card,
+  .article-card {
     padding: 16px;
   }
 }
