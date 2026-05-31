@@ -30,19 +30,38 @@
       <a class="nav-brand" href="index.html">FitCalc Thai</a>
       <div class="nav-links">
         <a href="index.html">หน้าแรก</a>
-        <a href="bmi-guide.html">BMI Guide</a>
-        <a href="tdee-guide.html">TDEE Guide</a>
-        <a href="protein-guide.html">Protein Guide</a>
-        <a href="lose-fat-guide.html">Lose Fat</a>
-        <a href="gain-muscle-guide.html">Gain Muscle</a>
-        <a href="progressive-overload-guide.html">Progressive Overload</a>
-        <a href="about.html">About</a>
-        <a href="privacy-policy.html">Privacy Policy</a>
+        <details class="nav-dropdown">
+          <summary>เครื่องมือ</summary>
+          <div class="dropdown-menu">
+            <a href="index.html#bmiForm">BMI Calculator</a>
+            <a href="index.html#tdeeForm">TDEE Calculator</a>
+            <a href="index.html#proteinForm">Protein Calculator</a>
+            <a href="index.html#macroForm">Macro Calculator</a>
+            <a href="index.html#oneRmForm">1RM Calculator</a>
+            <a href="index.html#weightTrackerForm">Weight Tracker</a>
+          </div>
+        </details>
+        <details class="nav-dropdown">
+          <summary>บทความ</summary>
+          <div class="dropdown-menu">
+            <a href="bmi-guide.html">BMI Guide</a>
+            <a href="tdee-guide.html">TDEE Guide</a>
+            <a href="protein-guide.html">Protein Guide</a>
+            <a href="gain-muscle-guide.html">Gain Muscle Guide</a>
+            <a href="lose-fat-guide.html">Lose Fat Guide</a>
+            <a href="progressive-overload-guide.html">Progressive Overload Guide</a>
+          </div>
+        </details>
+        <a href="about.html">เกี่ยวกับ</a>
+        <a href="privacy-policy.html">Privacy</a>
       </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดมืดและสว่าง">
+        <span id="themeIcon">☾</span>
+        <span id="themeText">Dark</span>
+      </button>
     </div>
   </nav>
-
-  <header class="site-header">
+<header class="site-header">
     <div>
       <p class="eyebrow">Training Guide</p>
       <h1>Progressive Overload คืออะไร?</h1>
@@ -51,13 +70,21 @@
   </header>
 
   <main class="article-layout">
-    <nav class="guide-nav" aria-label="ลิงก์ภายในบทความ">
+        <section class="article-toc" aria-label="สารบัญบทความ">
+      <h2>สารบัญ</h2>
+      <ul>
+        <li><a href="#article-content">เนื้อหาหลัก</a></li>
+        <li><a href="#article-faq">FAQ</a></li>
+        <li><a href="#calculator-cta">เปิด Calculator</a></li>
+      </ul>
+    </section>
+<nav class="guide-nav" id="calculator-cta" aria-label="ลิงก์ภายในบทความ">
       <a class="calculator-link" href="index.html#oneRmForm">กลับไปใช้ 1RM Calculator</a>
       <a class="guide-link" href="gain-muscle-guide.html">อ่าน Gain Muscle Guide</a>
       <a class="guide-link" href="protein-guide.html">อ่าน Protein Guide</a>
     </nav>
 
-    <article class="article-card">
+    <article class="article-card" id="article-content">
       <h2>Progressive Overload คืออะไร</h2>
       <p>Progressive Overload คือหลักการเพิ่มภาระการฝึกให้ร่างกายมากขึ้นทีละน้อย เมื่อร่างกายปรับตัวกับระดับเดิมแล้ว ถ้าคุณยกน้ำหนักเท่าเดิม จำนวนครั้งเท่าเดิม และความพยายามเท่าเดิมนานหลายเดือน ร่างกายไม่มีเหตุผลมากพอที่จะสร้างกล้ามหรือเพิ่มความแข็งแรงต่อ หลักนี้จึงเป็นแกนกลางของการฝึกเวทที่มีเป้าหมายชัดเจน</p>
       <p>คำว่า overload ไม่ได้แปลว่าต้องฝืนหนักจนเสี่ยงเจ็บ แต่หมายถึงการเพิ่มความท้าทายอย่างวัดผลได้และยังคุมฟอร์มได้ดี มือใหม่ควรคิดว่าเป็นการสะสมความก้าวหน้าเล็ก ๆ เช่น วันนี้ทำได้มากขึ้น 1 ครั้ง สัปดาห์หน้าขยับน้ำหนักขึ้นเล็กน้อย หรือใช้ท่าเดิมด้วยฟอร์มมั่นคงกว่าเดิม</p>
@@ -79,7 +106,7 @@
       <h2>จดบันทึกการซ้อม</h2>
       <p>Progressive Overload จะทำงานดีขึ้นมากเมื่อคุณจดบันทึก น้ำหนัก จำนวนครั้ง จำนวนเซ็ต และความรู้สึกขณะซ้อม ถ้าไม่จด คุณอาจคิดว่าตัวเองซ้อมหนักขึ้นทั้งที่จริงเท่าเดิม การจดสั้น ๆ หลังแต่ละท่าช่วยให้สัปดาห์ต่อไปวางแผนได้ชัดเจน เช่น bench press 50 กิโลกรัม 3 เซ็ต เซ็ตละ 10 ครั้ง ครั้งหน้าลอง 11 ครั้ง หรือเพิ่มเป็น 52.5 กิโลกรัมถ้าฟอร์มพร้อม</p>
 
-      <h2>FAQ Progressive Overload</h2>
+      <h2 id="article-faq">FAQ Progressive Overload</h2>
       <div class="faq-item">
         <h3>ต้องเพิ่มน้ำหนักทุกสัปดาห์ไหม</h3>
         <p>ไม่จำเป็น โดยเฉพาะเมื่อฝึกมานานขึ้น บางสัปดาห์เพิ่ม reps หรือฟอร์มดีขึ้นก็ถือว่าเป็นความก้าวหน้าได้</p>
@@ -96,15 +123,16 @@
   </main>
 
   <footer class="site-footer">
+    <strong class="footer-brand">FitCalc Thai</strong>
     <div class="footer-links">
       <a href="index.html">หน้าแรก</a>
-      <a href="lose-fat-guide.html">Lose Fat</a>
-      <a href="gain-muscle-guide.html">Gain Muscle</a>
-      <a href="progressive-overload-guide.html">Progressive Overload</a>
-      <a href="about.html">About</a>
+      <a href="index.html#bmiForm">เครื่องมือ</a>
+      <a href="bmi-guide.html">บทความ</a>
+      <a href="about.html">เกี่ยวกับ</a>
       <a href="privacy-policy.html">Privacy Policy</a>
     </div>
     <p>© 2026 FitCalc Thai</p>
   </footer>
+  <script src="script.js" defer></script>
 </body>
 </html>

@@ -11,8 +11,56 @@ const WEIGHT_HISTORY_KEY = "fitcalc-weight-history";
 let weightProgressChart = null;
 
 initializeTheme();
+initializeNavbarDropdowns();
 bindCalculatorForms();
 initializeWeightTracker();
+
+function initializeNavbarDropdowns() {
+  const navbar = document.querySelector(".site-nav");
+  const dropdowns = Array.from(document.querySelectorAll(".nav-dropdown"));
+
+  if (!navbar || dropdowns.length === 0) {
+    return;
+  }
+
+  dropdowns.forEach((dropdown) => {
+    dropdown.addEventListener("toggle", () => {
+      if (!dropdown.open) {
+        return;
+      }
+
+      closeNavbarDropdowns(dropdowns, dropdown);
+    });
+
+    dropdown.addEventListener("click", (event) => {
+      const clickedLink = event.target.closest("a");
+
+      if (clickedLink) {
+        closeNavbarDropdowns(dropdowns);
+      }
+    });
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".site-nav")) {
+      closeNavbarDropdowns(dropdowns);
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeNavbarDropdowns(dropdowns);
+    }
+  });
+}
+
+function closeNavbarDropdowns(dropdowns, activeDropdown = null) {
+  dropdowns.forEach((dropdown) => {
+    if (dropdown !== activeDropdown) {
+      dropdown.open = false;
+    }
+  });
+}
 
 function initializeTheme() {
   const savedTheme = localStorage.getItem("fitcalc-theme");
@@ -21,34 +69,56 @@ function initializeTheme() {
   document.body.classList.toggle("dark", shouldUseDarkMode);
   updateThemeButton(shouldUseDarkMode);
 
+  if (!themeToggle) {
+    return;
+  }
+
   themeToggle.addEventListener("click", () => {
     const isDarkMode = document.body.classList.toggle("dark");
     localStorage.setItem("fitcalc-theme", isDarkMode ? "dark" : "light");
     updateThemeButton(isDarkMode);
-    renderWeightProgressChart(getWeightHistory());
+    if (getElement("weightProgressChart")) {
+      renderWeightProgressChart(getWeightHistory());
+    }
   });
 }
 
 function updateThemeButton(isDarkMode) {
+  if (!themeIcon || !themeText) {
+    return;
+  }
+
   themeIcon.textContent = isDarkMode ? "☀" : "☾";
   themeText.textContent = isDarkMode ? "Light" : "Dark";
 }
 
 function bindCalculatorForms() {
-  getElement("bmiForm").addEventListener("submit", handleBmiSubmit);
-  getElement("tdeeForm").addEventListener("submit", handleTdeeSubmit);
-  getElement("proteinForm").addEventListener("submit", handleProteinSubmit);
-  getElement("macroForm").addEventListener("submit", handleMacroSubmit);
-  getElement("oneRmForm").addEventListener("submit", handleOneRepMaxSubmit);
+  bindSubmitHandler("bmiForm", handleBmiSubmit);
+  bindSubmitHandler("tdeeForm", handleTdeeSubmit);
+  bindSubmitHandler("proteinForm", handleProteinSubmit);
+  bindSubmitHandler("macroForm", handleMacroSubmit);
+  bindSubmitHandler("oneRmForm", handleOneRepMaxSubmit);
 }
 
 function initializeWeightTracker() {
+  if (!getElement("weightTrackerForm")) {
+    return;
+  }
+
   getElement("trackerDate").value = getTodayDateValue();
   getElement("weightTrackerForm").addEventListener("submit", handleWeightTrackerSubmit);
   getElement("clearTrackerButton").addEventListener("click", clearWeightHistory);
   getElement("exportCsvButton").addEventListener("click", exportWeightHistoryCsv);
   getElement("importCsvInput").addEventListener("change", handleCsvImport);
   renderWeightHistory();
+}
+
+function bindSubmitHandler(formId, handler) {
+  const form = getElement(formId);
+
+  if (form) {
+    form.addEventListener("submit", handler);
+  }
 }
 
 function handleBmiSubmit(event) {

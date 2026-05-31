@@ -30,19 +30,38 @@
       <a class="nav-brand" href="index.html">FitCalc Thai</a>
       <div class="nav-links">
         <a href="index.html">หน้าแรก</a>
-        <a href="bmi-guide.html">BMI Guide</a>
-        <a href="tdee-guide.html">TDEE Guide</a>
-        <a href="protein-guide.html">Protein Guide</a>
-        <a href="lose-fat-guide.html">Lose Fat</a>
-        <a href="gain-muscle-guide.html">Gain Muscle</a>
-        <a href="progressive-overload-guide.html">Progressive Overload</a>
-        <a href="about.html">About</a>
-        <a href="privacy-policy.html">Privacy Policy</a>
+        <details class="nav-dropdown">
+          <summary>เครื่องมือ</summary>
+          <div class="dropdown-menu">
+            <a href="index.html#bmiForm">BMI Calculator</a>
+            <a href="index.html#tdeeForm">TDEE Calculator</a>
+            <a href="index.html#proteinForm">Protein Calculator</a>
+            <a href="index.html#macroForm">Macro Calculator</a>
+            <a href="index.html#oneRmForm">1RM Calculator</a>
+            <a href="index.html#weightTrackerForm">Weight Tracker</a>
+          </div>
+        </details>
+        <details class="nav-dropdown">
+          <summary>บทความ</summary>
+          <div class="dropdown-menu">
+            <a href="bmi-guide.html">BMI Guide</a>
+            <a href="tdee-guide.html">TDEE Guide</a>
+            <a href="protein-guide.html">Protein Guide</a>
+            <a href="gain-muscle-guide.html">Gain Muscle Guide</a>
+            <a href="lose-fat-guide.html">Lose Fat Guide</a>
+            <a href="progressive-overload-guide.html">Progressive Overload Guide</a>
+          </div>
+        </details>
+        <a href="about.html">เกี่ยวกับ</a>
+        <a href="privacy-policy.html">Privacy</a>
       </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดมืดและสว่าง">
+        <span id="themeIcon">☾</span>
+        <span id="themeText">Dark</span>
+      </button>
     </div>
   </nav>
-
-  <header class="site-header">
+<header class="site-header">
     <div>
       <p class="eyebrow">Fat Loss Guide</p>
       <h1>ลดไขมันอย่างเป็นระบบสำหรับมือใหม่</h1>
@@ -51,13 +70,21 @@
   </header>
 
   <main class="article-layout">
-    <nav class="guide-nav" aria-label="ลิงก์ภายในบทความ">
+        <section class="article-toc" aria-label="สารบัญบทความ">
+      <h2>สารบัญ</h2>
+      <ul>
+        <li><a href="#article-content">เนื้อหาหลัก</a></li>
+        <li><a href="#article-faq">FAQ</a></li>
+        <li><a href="#calculator-cta">เปิด Calculator</a></li>
+      </ul>
+    </section>
+<nav class="guide-nav" id="calculator-cta" aria-label="ลิงก์ภายในบทความ">
       <a class="calculator-link" href="index.html#macroForm">กลับไปใช้ Macro Calculator</a>
       <a class="guide-link" href="tdee-guide.html">อ่าน TDEE Guide</a>
       <a class="guide-link" href="protein-guide.html">อ่าน Protein Guide</a>
     </nav>
 
-    <article class="article-card">
+    <article class="article-card" id="article-content">
       <h2>ลดไขมันคืออะไร</h2>
       <p>การลดไขมันไม่เหมือนการลดน้ำหนักแบบดูตัวเลขบนตาชั่งอย่างเดียว น้ำหนักในแต่ละวันอาจแกว่งจากน้ำ อาหาร โซเดียม การนอน และการออกกำลังกาย แต่ไขมันลดได้เมื่อร่างกายใช้พลังงานมากกว่าที่ได้รับอย่างต่อเนื่อง หลักการนี้เรียกว่า calorie deficit หรือการกินต่ำกว่าพลังงานที่ใช้ต่อวันเล็กน้อย ถ้าทำอย่างพอดี ร่างกายจะค่อย ๆ ใช้ไขมันสะสมเป็นพลังงาน โดยยังรักษากล้ามเนื้อและแรงซ้อมไว้ได้มากขึ้น</p>
       <p>มือใหม่มักเข้าใจว่าต้องกินน้อยมากจึงจะลดได้ แต่การลดเร็วเกินไปทำให้หิว เหนื่อย หลุดง่าย และอาจเสียกล้ามเนื้อ การลดไขมันที่ดีควรเป็นแผนที่ทำซ้ำได้หลายสัปดาห์ มีอาหารที่กินจริงในชีวิตประจำวัน มีโปรตีนเพียงพอ และมีการติดตามผลอย่างใจเย็น</p>
@@ -78,7 +105,7 @@
       <h2>ติดตามผลอย่างไร</h2>
       <p>ชั่งน้ำหนักตอนเช้าหลังเข้าห้องน้ำ แล้วดูค่าเฉลี่ยรายสัปดาห์ อย่าตัดสินจากวันเดียวเพราะน้ำหนักแกว่งได้ง่าย ใช้ Weight Tracker บนหน้าแรกเพื่อดูแนวโน้ม ถ้าน้ำหนักเฉลี่ยลดลง 0.3 ถึง 1 เปอร์เซ็นต์ของน้ำหนักตัวต่อสัปดาห์ มักเป็นอัตราที่เหมาะสมสำหรับหลายคน แต่ถ้าคุณผอมอยู่แล้วหรือซ้อมหนัก อัตราที่ช้ากว่านี้ก็ยังดีได้</p>
 
-      <h2>FAQ ลดไขมัน</h2>
+      <h2 id="article-faq">FAQ ลดไขมัน</h2>
       <div class="faq-item">
         <h3>ต้องงดแป้งไหม</h3>
         <p>ไม่จำเป็น แป้งหรือคาร์โบไฮเดรตไม่ใช่ศัตรู หากพลังงานรวมเหมาะสม คุณยังลดไขมันได้ และคาร์บยังช่วยให้มีแรงซ้อมด้วย</p>
@@ -95,15 +122,16 @@
   </main>
 
   <footer class="site-footer">
+    <strong class="footer-brand">FitCalc Thai</strong>
     <div class="footer-links">
       <a href="index.html">หน้าแรก</a>
-      <a href="lose-fat-guide.html">Lose Fat</a>
-      <a href="gain-muscle-guide.html">Gain Muscle</a>
-      <a href="progressive-overload-guide.html">Progressive Overload</a>
-      <a href="about.html">About</a>
+      <a href="index.html#bmiForm">เครื่องมือ</a>
+      <a href="bmi-guide.html">บทความ</a>
+      <a href="about.html">เกี่ยวกับ</a>
       <a href="privacy-policy.html">Privacy Policy</a>
     </div>
     <p>© 2026 FitCalc Thai</p>
   </footer>
+  <script src="script.js" defer></script>
 </body>
 </html>

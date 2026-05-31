@@ -30,19 +30,38 @@
       <a class="nav-brand" href="index.html">FitCalc Thai</a>
       <div class="nav-links">
         <a href="index.html">หน้าแรก</a>
-        <a href="bmi-guide.html">BMI Guide</a>
-        <a href="tdee-guide.html">TDEE Guide</a>
-        <a href="protein-guide.html">Protein Guide</a>
-        <a href="lose-fat-guide.html">Lose Fat</a>
-        <a href="gain-muscle-guide.html">Gain Muscle</a>
-        <a href="progressive-overload-guide.html">Progressive Overload</a>
-        <a href="about.html">About</a>
-        <a href="privacy-policy.html">Privacy Policy</a>
+        <details class="nav-dropdown">
+          <summary>เครื่องมือ</summary>
+          <div class="dropdown-menu">
+            <a href="index.html#bmiForm">BMI Calculator</a>
+            <a href="index.html#tdeeForm">TDEE Calculator</a>
+            <a href="index.html#proteinForm">Protein Calculator</a>
+            <a href="index.html#macroForm">Macro Calculator</a>
+            <a href="index.html#oneRmForm">1RM Calculator</a>
+            <a href="index.html#weightTrackerForm">Weight Tracker</a>
+          </div>
+        </details>
+        <details class="nav-dropdown">
+          <summary>บทความ</summary>
+          <div class="dropdown-menu">
+            <a href="bmi-guide.html">BMI Guide</a>
+            <a href="tdee-guide.html">TDEE Guide</a>
+            <a href="protein-guide.html">Protein Guide</a>
+            <a href="gain-muscle-guide.html">Gain Muscle Guide</a>
+            <a href="lose-fat-guide.html">Lose Fat Guide</a>
+            <a href="progressive-overload-guide.html">Progressive Overload Guide</a>
+          </div>
+        </details>
+        <a href="about.html">เกี่ยวกับ</a>
+        <a href="privacy-policy.html">Privacy</a>
       </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดมืดและสว่าง">
+        <span id="themeIcon">☾</span>
+        <span id="themeText">Dark</span>
+      </button>
     </div>
   </nav>
-
-  <header class="site-header">
+<header class="site-header">
     <div>
       <p class="eyebrow">Muscle Gain Guide</p>
       <h1>เพิ่มกล้ามเนื้อสำหรับมือใหม่</h1>
@@ -51,13 +70,21 @@
   </header>
 
   <main class="article-layout">
-    <nav class="guide-nav" aria-label="ลิงก์ภายในบทความ">
+        <section class="article-toc" aria-label="สารบัญบทความ">
+      <h2>สารบัญ</h2>
+      <ul>
+        <li><a href="#article-content">เนื้อหาหลัก</a></li>
+        <li><a href="#article-faq">FAQ</a></li>
+        <li><a href="#calculator-cta">เปิด Calculator</a></li>
+      </ul>
+    </section>
+<nav class="guide-nav" id="calculator-cta" aria-label="ลิงก์ภายในบทความ">
       <a class="calculator-link" href="index.html#macroForm">กลับไปใช้ Macro Calculator</a>
       <a class="guide-link" href="protein-guide.html">อ่าน Protein Guide</a>
       <a class="guide-link" href="progressive-overload-guide.html">อ่าน Progressive Overload</a>
     </nav>
 
-    <article class="article-card">
+    <article class="article-card" id="article-content">
       <h2>เพิ่มกล้ามเนื้อต้องเริ่มจากอะไร</h2>
       <p>การเพิ่มกล้ามเนื้อเกิดจากการให้ร่างกายมีเหตุผลในการปรับตัว ผ่านการฝึกแรงต้านที่เหมาะสม และให้วัตถุดิบเพียงพอผ่านอาหารกับการพักฟื้น มือใหม่มักคิดว่าต้องซ้อมทุกวันหรือกินโปรตีนจำนวนมาก แต่ความจริงคือพื้นฐานที่ทำซ้ำได้สำคัญกว่า คุณต้องมีโปรแกรมฝึกที่วัดผลได้ กินพลังงานเพียงพอ กินโปรตีนให้ถึง และนอนให้พอเป็นส่วนใหญ่</p>
       <p>กล้ามเนื้อไม่ได้โตในห้องยิมทันที การซ้อมเป็นตัวกระตุ้น ส่วนการฟื้นตัวหลังซ้อมคือช่วงที่ร่างกายซ่อมและสร้างเนื้อเยื่อ ถ้าซ้อมหนักแต่กินน้อย นอนน้อย หรือเปลี่ยนโปรแกรมตลอด ร่างกายจะพัฒนาได้ช้ากว่าที่ควร</p>
@@ -79,7 +106,7 @@
       <h2>การพักฟื้น</h2>
       <p>นอน 7 ถึง 9 ชั่วโมงต่อคืนเป็นพื้นฐานที่ช่วยให้ร่างกายซ่อมแซมกล้ามเนื้อได้ดีขึ้น ความเครียดสูงและนอนน้อยทำให้แรงซ้อมตก หิวมากขึ้น และฟื้นตัวช้า วันพักไม่ใช่วันขี้เกียจ แต่เป็นส่วนหนึ่งของโปรแกรม หากกล้ามเนื้อเจ็บมาก แรงตกต่อเนื่อง หรือไม่อยากซ้อมหลายวันติด อาจต้องลดปริมาณซ้อมหรือเพิ่มการพัก</p>
 
-      <h2>FAQ เพิ่มกล้ามเนื้อ</h2>
+      <h2 id="article-faq">FAQ เพิ่มกล้ามเนื้อ</h2>
       <div class="faq-item">
         <h3>เพิ่มกล้ามพร้อมลดไขมันได้ไหม</h3>
         <p>เป็นไปได้โดยเฉพาะมือใหม่หรือคนกลับมาซ้อมใหม่ แต่ถ้าเป้าหมายชัด การเลือก phase เพิ่มกล้ามหรือ phase ลดไขมันจะวางแผนง่ายกว่า</p>
@@ -96,15 +123,16 @@
   </main>
 
   <footer class="site-footer">
+    <strong class="footer-brand">FitCalc Thai</strong>
     <div class="footer-links">
       <a href="index.html">หน้าแรก</a>
-      <a href="lose-fat-guide.html">Lose Fat</a>
-      <a href="gain-muscle-guide.html">Gain Muscle</a>
-      <a href="progressive-overload-guide.html">Progressive Overload</a>
-      <a href="about.html">About</a>
+      <a href="index.html#bmiForm">เครื่องมือ</a>
+      <a href="bmi-guide.html">บทความ</a>
+      <a href="about.html">เกี่ยวกับ</a>
       <a href="privacy-policy.html">Privacy Policy</a>
     </div>
     <p>© 2026 FitCalc Thai</p>
   </footer>
+  <script src="script.js" defer></script>
 </body>
 </html>

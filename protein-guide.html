@@ -30,19 +30,38 @@
       <a class="nav-brand" href="index.html">FitCalc Thai</a>
       <div class="nav-links">
         <a href="index.html">หน้าแรก</a>
-        <a href="bmi-guide.html">BMI Guide</a>
-        <a href="tdee-guide.html">TDEE Guide</a>
-        <a href="protein-guide.html">Protein Guide</a>
-        <a href="lose-fat-guide.html">Lose Fat</a>
-        <a href="gain-muscle-guide.html">Gain Muscle</a>
-        <a href="progressive-overload-guide.html">Progressive Overload</a>
-        <a href="about.html">About</a>
-        <a href="privacy-policy.html">Privacy Policy</a>
+        <details class="nav-dropdown">
+          <summary>เครื่องมือ</summary>
+          <div class="dropdown-menu">
+            <a href="index.html#bmiForm">BMI Calculator</a>
+            <a href="index.html#tdeeForm">TDEE Calculator</a>
+            <a href="index.html#proteinForm">Protein Calculator</a>
+            <a href="index.html#macroForm">Macro Calculator</a>
+            <a href="index.html#oneRmForm">1RM Calculator</a>
+            <a href="index.html#weightTrackerForm">Weight Tracker</a>
+          </div>
+        </details>
+        <details class="nav-dropdown">
+          <summary>บทความ</summary>
+          <div class="dropdown-menu">
+            <a href="bmi-guide.html">BMI Guide</a>
+            <a href="tdee-guide.html">TDEE Guide</a>
+            <a href="protein-guide.html">Protein Guide</a>
+            <a href="gain-muscle-guide.html">Gain Muscle Guide</a>
+            <a href="lose-fat-guide.html">Lose Fat Guide</a>
+            <a href="progressive-overload-guide.html">Progressive Overload Guide</a>
+          </div>
+        </details>
+        <a href="about.html">เกี่ยวกับ</a>
+        <a href="privacy-policy.html">Privacy</a>
       </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดมืดและสว่าง">
+        <span id="themeIcon">☾</span>
+        <span id="themeText">Dark</span>
+      </button>
     </div>
   </nav>
-
-  <header class="site-header">
+<header class="site-header">
     <div>
       <p class="eyebrow">FitCalc Thai Guide</p>
       <h1>โปรตีนต่อวันควรกินเท่าไหร่? คู่มือสำหรับมือใหม่</h1>
@@ -51,14 +70,22 @@
   </header>
 
   <main class="article-layout">
-    <nav class="guide-nav" aria-label="ลิงก์ภายในเว็บไซต์">
+        <section class="article-toc" aria-label="สารบัญบทความ">
+      <h2>สารบัญ</h2>
+      <ul>
+        <li><a href="#article-content">เนื้อหาหลัก</a></li>
+        <li><a href="#article-faq">FAQ</a></li>
+        <li><a href="#calculator-cta">เปิด Calculator</a></li>
+      </ul>
+    </section>
+<nav class="guide-nav" id="calculator-cta" aria-label="ลิงก์ภายในเว็บไซต์">
       <a class="guide-link" href="index.html">กลับหน้าแรก</a>
       <a class="calculator-link" href="index.html#proteinForm">ไปยัง Protein Calculator</a>
       <a class="guide-link" href="bmi-guide.html">อ่านคู่มือ BMI</a>
       <a class="guide-link" href="tdee-guide.html">อ่านคู่มือ TDEE</a>
     </nav>
 
-    <article class="article-card">
+    <article class="article-card" id="article-content">
       <h2>โปรตีนคืออะไรและสำคัญอย่างไร</h2>
       <p>โปรตีนเป็นสารอาหารหลักที่ร่างกายใช้สร้างและซ่อมแซมเนื้อเยื่อ รวมถึงกล้ามเนื้อ ผิวหนัง เส้นผม เอนไซม์ ฮอร์โมน และระบบภูมิคุ้มกัน สำหรับคนออกกำลังกาย โปรตีนมีบทบาทสำคัญต่อการฟื้นตัวหลังซ้อมและการรักษามวลกล้ามเนื้อ สำหรับคนลดไขมัน โปรตีนช่วยให้อิ่มนานขึ้นและช่วยลดโอกาสสูญเสียกล้ามเนื้อระหว่างกินพลังงานต่ำกว่าที่ใช้</p>
       <p>มือใหม่หลายคนมักสนใจแคลอรี่ก่อน แต่ลืมโปรตีน ทำให้ลดน้ำหนักแล้วรูปร่างดูนิ่ม แรงตก หรือหิวบ่อย การกินโปรตีนให้พอไม่ได้แปลว่าต้องกินอาหารเสริมหรืออกไก่ทุกมื้อ แต่หมายถึงการจัดอาหารทั้งวันให้มีแหล่งโปรตีนที่เหมาะกับชีวิตจริง เช่น ไข่ ปลา ไก่ หมูไม่ติดมัน เต้าหู้ นม กรีกโยเกิร์ต ถั่ว หรือเวย์โปรตีนถ้าสะดวก</p>
@@ -87,7 +114,7 @@
       <h2>ใช้ Protein Calculator อย่างไร</h2>
       <p>บนหน้าแรกของ FitCalc Thai ให้กรอกน้ำหนักตัวและเลือกเป้าหมาย ระบบจะคำนวณปริมาณโปรตีนต่อวันโดยประมาณให้ทันที ถ้าเพิ่งเริ่มต้น ให้เลือกเป้าหมายที่ตรงกับสถานการณ์จริงมากที่สุด แล้วทดลองทำ 2 ถึง 4 สัปดาห์ ดูความอิ่ม แรงซ้อม น้ำหนัก และความสม่ำเสมอ ถ้าทำตามยากเกินไป ให้ลดความซับซ้อนของมื้ออาหารก่อน เช่น ตั้งเป้าว่าทุกมื้อหลักต้องมีแหล่งโปรตีนหนึ่งอย่าง</p>
 
-      <h2>FAQ เกี่ยวกับโปรตีน</h2>
+      <h2 id="article-faq">FAQ เกี่ยวกับโปรตีน</h2>
       <div class="faq-item">
         <h3>ต้องกินโปรตีนทันทีหลังออกกำลังกายไหม</h3>
         <p>ไม่จำเป็นต้องรีบทันทีในไม่กี่นาที สิ่งสำคัญกว่าคือโปรตีนรวมทั้งวัน แต่การกินมื้อที่มีโปรตีนภายในช่วงไม่กี่ชั่วโมงหลังซ้อมเป็นนิสัยที่ดีและทำได้ง่าย</p>
@@ -108,15 +135,16 @@
   </main>
 
   <footer class="site-footer">
+    <strong class="footer-brand">FitCalc Thai</strong>
     <div class="footer-links">
       <a href="index.html">หน้าแรก</a>
-      <a href="lose-fat-guide.html">Lose Fat</a>
-      <a href="gain-muscle-guide.html">Gain Muscle</a>
-      <a href="progressive-overload-guide.html">Progressive Overload</a>
-      <a href="about.html">About</a>
+      <a href="index.html#bmiForm">เครื่องมือ</a>
+      <a href="bmi-guide.html">บทความ</a>
+      <a href="about.html">เกี่ยวกับ</a>
       <a href="privacy-policy.html">Privacy Policy</a>
     </div>
     <p>© 2026 FitCalc Thai</p>
   </footer>
+  <script src="script.js" defer></script>
 </body>
 </html>

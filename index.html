@@ -30,32 +30,69 @@
       <a class="nav-brand" href="index.html">FitCalc Thai</a>
       <div class="nav-links">
         <a href="index.html">หน้าแรก</a>
-        <a href="bmi-guide.html">BMI Guide</a>
-        <a href="tdee-guide.html">TDEE Guide</a>
-        <a href="protein-guide.html">Protein Guide</a>
-        <a href="lose-fat-guide.html">Lose Fat</a>
-        <a href="gain-muscle-guide.html">Gain Muscle</a>
-        <a href="progressive-overload-guide.html">Progressive Overload</a>
-        <a href="about.html">About</a>
-        <a href="privacy-policy.html">Privacy Policy</a>
+        <details class="nav-dropdown">
+          <summary>เครื่องมือ</summary>
+          <div class="dropdown-menu">
+            <a href="index.html#bmiForm">BMI Calculator</a>
+            <a href="index.html#tdeeForm">TDEE Calculator</a>
+            <a href="index.html#proteinForm">Protein Calculator</a>
+            <a href="index.html#macroForm">Macro Calculator</a>
+            <a href="index.html#oneRmForm">1RM Calculator</a>
+            <a href="index.html#weightTrackerForm">Weight Tracker</a>
+          </div>
+        </details>
+        <details class="nav-dropdown">
+          <summary>บทความ</summary>
+          <div class="dropdown-menu">
+            <a href="bmi-guide.html">BMI Guide</a>
+            <a href="tdee-guide.html">TDEE Guide</a>
+            <a href="protein-guide.html">Protein Guide</a>
+            <a href="gain-muscle-guide.html">Gain Muscle Guide</a>
+            <a href="lose-fat-guide.html">Lose Fat Guide</a>
+            <a href="progressive-overload-guide.html">Progressive Overload Guide</a>
+          </div>
+        </details>
+        <a href="about.html">เกี่ยวกับ</a>
+        <a href="privacy-policy.html">Privacy</a>
       </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดมืดและสว่าง">
+        <span id="themeIcon">☾</span>
+        <span id="themeText">Dark</span>
+      </button>
     </div>
   </nav>
-
   <header class="site-header">
     <div>
-      <p class="eyebrow">FitCalc Thai</p>
-      <h1>เครื่องมือคำนวณฟิตเนสภาษาไทย</h1>
-      <p class="intro">คำนวณ BMI, TDEE, โปรตีนที่ควรได้รับ และน้ำหนัก 1RM ได้ในหน้าเดียว</p>
+      <p class="eyebrow">Fitness Platform</p>
+      <h1>FitCalc Thai</h1>
+      <p class="intro">เครื่องมือคำนวณและติดตามสุขภาพ สำหรับคนออกกำลังกายและดูแลสุขภาพ</p>
+      <div class="hero-actions" aria-label="เครื่องมือยอดนิยม">
+        <a class="calculator-link" href="#bmiForm">BMI Calculator</a>
+        <a class="guide-link" href="#tdeeForm">TDEE Calculator</a>
+        <a class="guide-link" href="#weightTrackerForm">Weight Tracker</a>
+      </div>
     </div>
-
-    <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดมืดและสว่าง">
-      <span id="themeIcon">☾</span>
-      <span id="themeText">Dark</span>
-    </button>
   </header>
 
   <main class="tool-grid">
+    <section class="stats-grid" aria-label="สถิติ FitCalc Thai">
+      <div class="stat-card">
+        <strong>6+</strong>
+        <span>เครื่องมือสุขภาพ</span>
+      </div>
+      <div class="stat-card">
+        <strong>6+</strong>
+        <span>บทความความรู้</span>
+      </div>
+      <div class="stat-card">
+        <strong>Weight</strong>
+        <span>Tracking</span>
+      </div>
+      <div class="stat-card">
+        <strong>100%</strong>
+        <span>ใช้ฟรี</span>
+      </div>
+    </section>
     <section class="card">
       <div class="card-header">
         <span class="tool-icon">BMI</span>
@@ -277,12 +314,12 @@
   </main>
 
   <footer class="site-footer">
+    <strong class="footer-brand">FitCalc Thai</strong>
     <div class="footer-links">
       <a href="index.html">หน้าแรก</a>
-      <a href="lose-fat-guide.html">Lose Fat</a>
-      <a href="gain-muscle-guide.html">Gain Muscle</a>
-      <a href="progressive-overload-guide.html">Progressive Overload</a>
-      <a href="about.html">About</a>
+      <a href="index.html#bmiForm">เครื่องมือ</a>
+      <a href="bmi-guide.html">บทความ</a>
+      <a href="about.html">เกี่ยวกับ</a>
       <a href="privacy-policy.html">Privacy Policy</a>
     </div>
     <p>© 2026 FitCalc Thai</p>

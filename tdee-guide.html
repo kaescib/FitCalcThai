@@ -30,19 +30,38 @@
       <a class="nav-brand" href="index.html">FitCalc Thai</a>
       <div class="nav-links">
         <a href="index.html">หน้าแรก</a>
-        <a href="bmi-guide.html">BMI Guide</a>
-        <a href="tdee-guide.html">TDEE Guide</a>
-        <a href="protein-guide.html">Protein Guide</a>
-        <a href="lose-fat-guide.html">Lose Fat</a>
-        <a href="gain-muscle-guide.html">Gain Muscle</a>
-        <a href="progressive-overload-guide.html">Progressive Overload</a>
-        <a href="about.html">About</a>
-        <a href="privacy-policy.html">Privacy Policy</a>
+        <details class="nav-dropdown">
+          <summary>เครื่องมือ</summary>
+          <div class="dropdown-menu">
+            <a href="index.html#bmiForm">BMI Calculator</a>
+            <a href="index.html#tdeeForm">TDEE Calculator</a>
+            <a href="index.html#proteinForm">Protein Calculator</a>
+            <a href="index.html#macroForm">Macro Calculator</a>
+            <a href="index.html#oneRmForm">1RM Calculator</a>
+            <a href="index.html#weightTrackerForm">Weight Tracker</a>
+          </div>
+        </details>
+        <details class="nav-dropdown">
+          <summary>บทความ</summary>
+          <div class="dropdown-menu">
+            <a href="bmi-guide.html">BMI Guide</a>
+            <a href="tdee-guide.html">TDEE Guide</a>
+            <a href="protein-guide.html">Protein Guide</a>
+            <a href="gain-muscle-guide.html">Gain Muscle Guide</a>
+            <a href="lose-fat-guide.html">Lose Fat Guide</a>
+            <a href="progressive-overload-guide.html">Progressive Overload Guide</a>
+          </div>
+        </details>
+        <a href="about.html">เกี่ยวกับ</a>
+        <a href="privacy-policy.html">Privacy</a>
       </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดมืดและสว่าง">
+        <span id="themeIcon">☾</span>
+        <span id="themeText">Dark</span>
+      </button>
     </div>
   </nav>
-
-  <header class="site-header">
+<header class="site-header">
     <div>
       <p class="eyebrow">FitCalc Thai Guide</p>
       <h1>TDEE คืออะไร? วิธีคำนวณแคลอรี่ต่อวันแบบมือใหม่</h1>
@@ -51,14 +70,22 @@
   </header>
 
   <main class="article-layout">
-    <nav class="guide-nav" aria-label="ลิงก์ภายในเว็บไซต์">
+        <section class="article-toc" aria-label="สารบัญบทความ">
+      <h2>สารบัญ</h2>
+      <ul>
+        <li><a href="#article-content">เนื้อหาหลัก</a></li>
+        <li><a href="#article-faq">FAQ</a></li>
+        <li><a href="#calculator-cta">เปิด Calculator</a></li>
+      </ul>
+    </section>
+<nav class="guide-nav" id="calculator-cta" aria-label="ลิงก์ภายในเว็บไซต์">
       <a class="guide-link" href="index.html">กลับหน้าแรก</a>
       <a class="calculator-link" href="index.html#tdeeForm">ไปยัง TDEE Calculator</a>
       <a class="guide-link" href="bmi-guide.html">อ่านคู่มือ BMI</a>
       <a class="guide-link" href="protein-guide.html">อ่านคู่มือโปรตีน</a>
     </nav>
 
-    <article class="article-card">
+    <article class="article-card" id="article-content">
       <h2>TDEE คืออะไร</h2>
       <p>TDEE ย่อมาจาก Total Daily Energy Expenditure แปลเป็นไทยง่าย ๆ คือ พลังงานทั้งหมดที่ร่างกายใช้ในหนึ่งวัน ตัวเลขนี้รวมพลังงานที่ใช้ตอนพัก พลังงานจากการเดิน ทำงาน ออกกำลังกาย ย่อยอาหาร และกิจกรรมเล็ก ๆ ระหว่างวัน ถ้าเรากินพลังงานใกล้เคียง TDEE น้ำหนักมักค่อนข้างคงที่ ถ้ากินน้อยกว่า TDEE ต่อเนื่อง น้ำหนักมักลดลง และถ้ากินมากกว่า TDEE ต่อเนื่อง น้ำหนักมักเพิ่มขึ้น</p>
       <p>สำหรับมือใหม่ TDEE เป็นหนึ่งในตัวเลขที่มีประโยชน์มาก เพราะช่วยให้การลดไขมันหรือเพิ่มกล้ามเนื้อไม่ใช่การเดาสุ่ม หลายคนเริ่มจากการอดอาหารหนักเกินไป ทำให้หิว เหนื่อย และเลิกกลางทาง ในทางกลับกัน บางคนออกกำลังกายเยอะ แต่กินเกินโดยไม่รู้ตัว น้ำหนักจึงไม่ขยับ การรู้ TDEE ทำให้เราตั้งเป้าได้สมเหตุสมผลขึ้น</p>
@@ -84,7 +111,7 @@
       <h2>ใช้ TDEE เพื่อรักษาน้ำหนัก</h2>
       <p>สำหรับคนที่พอใจกับรูปร่างแล้ว TDEE ช่วยให้รู้ช่วงพลังงานสำหรับคุมน้ำหนัก คุณอาจไม่ต้องนับแคลอรี่ตลอดไป แต่การรู้ตัวเลขประมาณจะช่วยให้จัดมื้ออาหารง่ายขึ้น เช่น รู้ว่าถ้าวันไหนกินมื้อใหญ่ ตอนมื้ออื่นอาจเลือกอาหารเบาลง หรือเพิ่มการเดินเพื่อรักษาสมดุลโดยไม่ต้องรู้สึกผิด</p>
 
-      <h2>FAQ เกี่ยวกับ TDEE</h2>
+      <h2 id="article-faq">FAQ เกี่ยวกับ TDEE</h2>
       <div class="faq-item">
         <h3>TDEE แม่นไหม</h3>
         <p>TDEE เป็นค่าประมาณ ไม่ใช่ค่าที่วัดตรงจากร่างกาย ความแม่นขึ้นอยู่กับข้อมูลที่กรอกและระดับกิจกรรม ควรใช้เป็นจุดเริ่มต้นแล้วปรับจากผลน้ำหนักจริง</p>
@@ -105,15 +132,16 @@
   </main>
 
   <footer class="site-footer">
+    <strong class="footer-brand">FitCalc Thai</strong>
     <div class="footer-links">
       <a href="index.html">หน้าแรก</a>
-      <a href="lose-fat-guide.html">Lose Fat</a>
-      <a href="gain-muscle-guide.html">Gain Muscle</a>
-      <a href="progressive-overload-guide.html">Progressive Overload</a>
-      <a href="about.html">About</a>
+      <a href="index.html#bmiForm">เครื่องมือ</a>
+      <a href="bmi-guide.html">บทความ</a>
+      <a href="about.html">เกี่ยวกับ</a>
       <a href="privacy-policy.html">Privacy Policy</a>
     </div>
     <p>© 2026 FitCalc Thai</p>
   </footer>
+  <script src="script.js" defer></script>
 </body>
 </html>

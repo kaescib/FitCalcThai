@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap");
+
 :root {
   --bg: #f4f7fb;
   --surface: #ffffff;
@@ -621,5 +623,253 @@ button[type="submit"]:hover {
   .card,
   .article-card {
     padding: 16px;
+  }
+}
+
+/* Professional fitness platform polish */
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-soft: #f1f5f9;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --primary: #22c55e;
+  --primary-dark: #16a34a;
+  --accent: #22c55e;
+  --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  --shadow-strong: 0 24px 60px rgba(15, 23, 42, 0.14);
+}
+
+body.dark {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-soft: #263449;
+  --text: #f8fafc;
+  --muted: #cbd5e1;
+  --border: #334155;
+  --primary: #22c55e;
+  --primary-dark: #16a34a;
+  --accent: #22c55e;
+  --shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+  --shadow-strong: 0 24px 60px rgba(0, 0, 0, 0.42);
+}
+
+body {
+  font-family: "Sarabun", Arial, "Tahoma", sans-serif;
+}
+
+h1,
+h2,
+h3,
+.nav-brand,
+.nav-links,
+button,
+.card h2,
+.tool-icon,
+.guide-link,
+.calculator-link,
+.article-link-card strong {
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+}
+
+.site-nav {
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+}
+
+.nav-inner {
+  min-height: 70px;
+}
+
+.nav-links {
+  align-items: center;
+}
+
+.nav-links a,
+.nav-dropdown summary {
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 800;
+  list-style: none;
+  padding: 8px 12px;
+  text-decoration: none;
+}
+
+.nav-links a:hover,
+.nav-dropdown summary:hover,
+.nav-dropdown[open] summary {
+  background: var(--surface-soft);
+  color: var(--primary);
+}
+
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown summary::-webkit-details-marker {
+  display: none;
+}
+
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  display: grid;
+  min-width: 250px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-strong);
+  padding: 8px;
+}
+
+.dropdown-menu a {
+  display: block;
+  border-radius: 12px;
+}
+
+.dropdown-menu a:hover {
+  background: var(--surface-soft);
+}
+
+.site-header {
+  padding: 64px 0 36px;
+}
+
+.theme-toggle {
+  border-radius: 999px;
+}
+
+.card,
+.article-card,
+.chart-panel,
+.result-box,
+.history-item,
+.article-link-card {
+  border-radius: 16px;
+}
+
+.card,
+.article-card,
+.article-link-card {
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.card:hover,
+.article-link-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+  box-shadow: var(--shadow-strong);
+  transform: translateY(-3px);
+}
+
+.tool-icon {
+  border-radius: 16px;
+}
+
+input,
+select,
+button[type="submit"],
+.secondary-button,
+.danger-button,
+.guide-link,
+.calculator-link {
+  border-radius: 12px;
+}
+
+.calculator-link,
+button[type="submit"] {
+  background: var(--primary);
+}
+
+.calculator-link:hover,
+button[type="submit"]:hover {
+  background: var(--primary-dark);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.stats-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stat-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.stat-card strong {
+  display: block;
+  color: var(--primary);
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+  font-size: 1.8rem;
+}
+
+.stat-card span {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.article-toc {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.article-toc h2 {
+  margin-bottom: 10px;
+}
+
+.article-toc ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.article-toc a {
+  color: var(--primary);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.footer-brand {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--text);
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+  font-size: 1.2rem;
+}
+
+@media (max-width: 760px) {
+  .dropdown-menu {
+    position: static;
+    min-width: 100%;
+    margin-top: 8px;
+    box-shadow: none;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
 }
