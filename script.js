@@ -38,6 +38,7 @@ function bindCalculatorForms() {
   getElement("bmiForm").addEventListener("submit", handleBmiSubmit);
   getElement("tdeeForm").addEventListener("submit", handleTdeeSubmit);
   getElement("proteinForm").addEventListener("submit", handleProteinSubmit);
+  getElement("macroForm").addEventListener("submit", handleMacroSubmit);
   getElement("oneRmForm").addEventListener("submit", handleOneRepMaxSubmit);
 }
 
@@ -123,6 +124,27 @@ function handleProteinSubmit(event) {
     protein_grams: Math.round(proteinGrams),
     protein_multiplier: proteinMultiplier,
   });
+}
+
+function handleMacroSubmit(event) {
+  event.preventDefault();
+
+  const weightKg = getPositiveNumber("macroWeight");
+  const goal = getElement("macroGoal").value;
+
+  if (!areValidNumbers(weightKg)) {
+    showError("macroResult");
+    return;
+  }
+
+  const macros = calculateMacros(weightKg, goal);
+
+  showResult("macroResult", `
+    <strong>${formatNumber(macros.calories, 0)} kcal/วัน</strong>
+    Protein <span>${formatNumber(macros.protein, 0)} กรัม</span> |
+    Fat <span>${formatNumber(macros.fat, 0)} กรัม</span> |
+    Carbs <span>${formatNumber(macros.carbs, 0)} กรัม</span>
+  `);
 }
 
 function handleOneRepMaxSubmit(event) {
@@ -220,6 +242,39 @@ function calculateTdee(bmr, activityMultiplier) {
 
 function calculateDailyProtein(weightKg, proteinMultiplier) {
   return weightKg * proteinMultiplier;
+}
+
+function calculateMacros(weightKg, goal) {
+  const macroPlans = {
+    fatLoss: {
+      caloriesPerKg: 28,
+      proteinPerKg: 2,
+      fatPerKg: 0.8,
+    },
+    maintenance: {
+      caloriesPerKg: 33,
+      proteinPerKg: 1.6,
+      fatPerKg: 0.9,
+    },
+    muscleGain: {
+      caloriesPerKg: 38,
+      proteinPerKg: 1.8,
+      fatPerKg: 1,
+    },
+  };
+  const plan = macroPlans[goal] || macroPlans.maintenance;
+  const calories = weightKg * plan.caloriesPerKg;
+  const protein = weightKg * plan.proteinPerKg;
+  const fat = weightKg * plan.fatPerKg;
+  const carbCalories = calories - protein * 4 - fat * 9;
+  const carbs = Math.max(carbCalories / 4, 0);
+
+  return {
+    calories,
+    protein,
+    fat,
+    carbs,
+  };
 }
 
 function calculateOneRepMax(liftedWeightKg, reps) {

@@ -432,6 +432,43 @@ button[type="submit"]:hover {
   text-decoration: none;
 }
 
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 16px;
+  margin-bottom: 14px;
+}
+
+.article-links {
+  grid-column: 1 / -1;
+}
+
+.article-link-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.article-link-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--text);
+  padding: 16px;
+  text-decoration: none;
+}
+
+.article-link-card strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.article-link-card span {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
 .article-layout {
   width: min(880px, calc(100% - 32px));
   margin: 0 auto;
@@ -552,6 +589,10 @@ button[type="submit"]:hover {
   .history-item {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .article-link-grid {
+    grid-template-columns: 1fr;
   }
 
   .tracker-buttons {
