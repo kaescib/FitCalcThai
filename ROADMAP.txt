@@ -1,0 +1,22 @@
+# FitCalc Thai Roadmap
+
+## Completed
+- BMI Calculator
+- TDEE Calculator
+- Protein Calculator
+- Macro Calculator
+- 1RM Calculator
+- Weight Tracker
+- Dark Mode
+- Google Analytics
+- Search Console
+- SEO Guides
+
+## Next Sprint
+- Fix Navbar Dropdown UX
+- Workout Tracker
+- Exercise Database
+- Body Fat Calculator
+- FFMI Calculator
+- Creatine Guide
+- Lean Bulk Guide
