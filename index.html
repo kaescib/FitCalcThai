@@ -198,8 +198,8 @@
       <div class="card-header">
         <span class="tool-icon">MAC</span>
         <div>
-          <h2>Macro Calculator</h2>
-          <p>คำนวณ Calories, Protein, Fat และ Carbs จากน้ำหนักตัวและเป้าหมาย</p>
+          <h2>เครื่องคำนวณสารอาหาร</h2>
+          <p>คำนวณแคลอรี โปรตีน ไขมัน และคาร์บ จากน้ำหนักตัวและเป้าหมาย</p>
         </div>
       </div>
 
@@ -211,12 +211,12 @@
         <label>
           เป้าหมาย
           <select id="macroGoal">
-            <option value="fatLoss">Fat Loss</option>
-            <option value="maintenance">Maintenance</option>
-            <option value="muscleGain">Muscle Gain</option>
+            <option value="fatLoss">ลดไขมัน</option>
+            <option value="maintenance">รักษาน้ำหนัก</option>
+            <option value="muscleGain">เพิ่มกล้ามเนื้อ</option>
           </select>
         </label>
-        <button type="submit">คำนวณ Macro</button>
+        <button type="submit">คำนวณสารอาหาร</button>
       </form>
 
       <div class="result-box" id="macroResult" aria-live="polite">กรอกข้อมูลเพื่อเริ่มคำนวณ</div>
@@ -259,11 +259,11 @@
         <div class="two-column">
           <label>
             สัปดาห์
-            <input type="date" id="trackerDate" required>
+            <input type="text" id="trackerDate" inputmode="numeric" autocomplete="off" placeholder="31/05/2026" pattern="\d{1,2}/\d{1,2}/\d{4}" required>
           </label>
           <label>
             น้ำหนัก (กิโลกรัม)
-            <input type="number" id="trackerWeight" min="1" step="0.1" inputmode="decimal" autocomplete="off" placeholder="เช่น 70.5" required>
+            <input type="number" id="trackerWeight" min="1" step="0.01" inputmode="decimal" autocomplete="off" placeholder="เช่น 70.25" required>
           </label>
         </div>
         <button type="submit">บันทึกน้ำหนัก</button>

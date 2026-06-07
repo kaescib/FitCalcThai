@@ -17,19 +17,29 @@ initializeWeightTracker();
 
 function initializeNavbarDropdowns() {
   const navbar = document.querySelector(".site-nav");
+  const navInner = navbar?.querySelector(".nav-inner");
+  const navLinks = navbar?.querySelector(".nav-links");
   const dropdowns = Array.from(document.querySelectorAll(".nav-dropdown"));
 
-  if (!navbar || dropdowns.length === 0) {
+  if (!navbar || !navInner || !navLinks || dropdowns.length === 0) {
     return;
   }
 
-  dropdowns.forEach((dropdown) => {
-    dropdown.addEventListener("toggle", () => {
-      if (!dropdown.open) {
-        return;
-      }
+  const menuToggle = createMobileMenuToggle(navbar, navInner, navLinks);
 
-      closeNavbarDropdowns(dropdowns, dropdown);
+  dropdowns.forEach((dropdown) => {
+    const summary = dropdown.querySelector("summary");
+
+    summary?.addEventListener("click", (event) => {
+      event.preventDefault();
+
+      const shouldOpen = !dropdown.open;
+      closeNavbarDropdowns(dropdowns);
+      dropdown.open = shouldOpen;
+
+      if (shouldOpen) {
+        keepDropdownInViewport(dropdown);
+      }
     });
 
     dropdown.addEventListener("click", (event) => {
@@ -37,27 +47,86 @@ function initializeNavbarDropdowns() {
 
       if (clickedLink) {
         closeNavbarDropdowns(dropdowns);
+        closeMobileMenu(navbar, menuToggle);
       }
     });
+  });
+
+  menuToggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const isOpen = navbar.classList.toggle("is-menu-open");
+    menuToggle.setAttribute("aria-expanded", String(isOpen));
+
+    if (!isOpen) {
+      closeNavbarDropdowns(dropdowns);
+    }
   });
 
   document.addEventListener("click", (event) => {
     if (!event.target.closest(".site-nav")) {
       closeNavbarDropdowns(dropdowns);
+      closeMobileMenu(navbar, menuToggle);
     }
   });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeNavbarDropdowns(dropdowns);
+      closeMobileMenu(navbar, menuToggle);
     }
   });
+}
+
+function createMobileMenuToggle(navbar, navInner, navLinks) {
+  const existingToggle = navbar.querySelector(".nav-menu-toggle");
+
+  if (existingToggle) {
+    return existingToggle;
+  }
+
+  const menuToggle = document.createElement("button");
+  menuToggle.className = "nav-menu-toggle";
+  menuToggle.type = "button";
+  menuToggle.setAttribute("aria-controls", "primaryNavigation");
+  menuToggle.setAttribute("aria-expanded", "false");
+  menuToggle.setAttribute("aria-label", "เปิดเมนูหลัก");
+  menuToggle.innerHTML = "<span></span><span></span><span></span>";
+  navLinks.id = navLinks.id || "primaryNavigation";
+  navInner.insertBefore(menuToggle, navLinks);
+
+  return menuToggle;
+}
+
+function closeMobileMenu(navbar, menuToggle) {
+  navbar.classList.remove("is-menu-open");
+  menuToggle.setAttribute("aria-expanded", "false");
 }
 
 function closeNavbarDropdowns(dropdowns, activeDropdown = null) {
   dropdowns.forEach((dropdown) => {
     if (dropdown !== activeDropdown) {
       dropdown.open = false;
+    }
+  });
+}
+
+function keepDropdownInViewport(dropdown) {
+  window.requestAnimationFrame(() => {
+    const dropdownMenu = dropdown.querySelector(".dropdown-menu");
+
+    if (!dropdownMenu || !window.matchMedia("(max-width: 760px)").matches) {
+      return;
+    }
+
+    const menuRect = dropdownMenu.getBoundingClientRect();
+    const viewportPadding = 16;
+    const overflowBottom = menuRect.bottom - (window.innerHeight - viewportPadding);
+
+    if (overflowBottom > 0) {
+      window.scrollBy({
+        top: overflowBottom + viewportPadding,
+        behavior: "smooth",
+      });
     }
   });
 }
@@ -105,7 +174,7 @@ function initializeWeightTracker() {
     return;
   }
 
-  getElement("trackerDate").value = getTodayDateValue();
+  getElement("trackerDate").value = getTodayDisplayDate();
   getElement("weightTrackerForm").addEventListener("submit", handleWeightTrackerSubmit);
   getElement("clearTrackerButton").addEventListener("click", clearWeightHistory);
   getElement("exportCsvButton").addEventListener("click", exportWeightHistoryCsv);
@@ -208,12 +277,14 @@ function handleMacroSubmit(event) {
   }
 
   const macros = calculateMacros(weightKg, goal);
+  const goalText = getMacroGoalLabel(goal);
 
   showResult("macroResult", `
-    <strong>${formatNumber(macros.calories, 0)} kcal/วัน</strong>
-    Protein <span>${formatNumber(macros.protein, 0)} กรัม</span> |
-    Fat <span>${formatNumber(macros.fat, 0)} กรัม</span> |
-    Carbs <span>${formatNumber(macros.carbs, 0)} กรัม</span>
+    <strong>เป้าหมาย: ${goalText}</strong>
+    แคลอรี <span>${formatNumber(macros.calories, 0)} kcal</span> |
+    โปรตีน <span>${formatNumber(macros.protein, 0)}g</span> |
+    ไขมัน <span>${formatNumber(macros.fat, 0)}g</span> |
+    คาร์บ <span>${formatNumber(macros.carbs, 0)}g</span>
   `);
 }
 
@@ -240,7 +311,7 @@ function handleOneRepMaxSubmit(event) {
 function handleWeightTrackerSubmit(event) {
   event.preventDefault();
 
-  const date = getElement("trackerDate").value;
+  const date = parseDisplayDate(getElement("trackerDate").value);
   const weightKg = getPositiveNumber("trackerWeight");
 
   if (!date || !areValidNumbers(weightKg)) {
@@ -258,7 +329,7 @@ function handleWeightTrackerSubmit(event) {
 }
 
 function getPositiveNumber(id) {
-  const value = Number(getElement(id).value);
+  const value = parseFloat(getElement(id).value);
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
@@ -285,6 +356,13 @@ function trackAnalyticsEvent(eventName, parameters = {}) {
 
 function formatNumber(value, digits = 1) {
   return Number(value.toFixed(digits)).toLocaleString(THAI_LOCALE);
+}
+
+function formatWeight(value) {
+  return value.toLocaleString(THAI_LOCALE, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function calculateBmi(weightKg, heightCm) {
@@ -347,6 +425,16 @@ function calculateMacros(weightKg, goal) {
   };
 }
 
+function getMacroGoalLabel(goal) {
+  const goalLabels = {
+    fatLoss: "ลดไขมัน",
+    maintenance: "รักษาน้ำหนัก",
+    muscleGain: "เพิ่มกล้ามเนื้อ",
+  };
+
+  return goalLabels[goal] || goalLabels.maintenance;
+}
+
 function calculateOneRepMax(liftedWeightKg, reps) {
   // สูตร Epley: 1RM = weight x (1 + reps / 30)
   return reps === 1 ? liftedWeightKg : liftedWeightKg * (1 + reps / 30);
@@ -360,7 +448,7 @@ function getWeightHistory() {
   const savedHistory = localStorage.getItem(WEIGHT_HISTORY_KEY);
 
   try {
-    return savedHistory ? JSON.parse(savedHistory) : [];
+    return savedHistory ? normalizeWeightHistory(JSON.parse(savedHistory)) : [];
   } catch {
     localStorage.removeItem(WEIGHT_HISTORY_KEY);
     return [];
@@ -393,7 +481,7 @@ function clearWeightHistory() {
 }
 
 function sortWeightHistory(history) {
-  return history.sort((first, second) => new Date(second.date) - new Date(first.date));
+  return history.sort((first, second) => getDateTime(second.date) - getDateTime(first.date));
 }
 
 function renderWeightHistory() {
@@ -409,7 +497,7 @@ function renderWeightHistory() {
   }
 
   const latest = history[0];
-  summary.textContent = `บันทึกแล้ว ${history.length} รายการ | ล่าสุด ${formatNumber(latest.weightKg)} กก.`;
+  summary.textContent = `บันทึกแล้ว ${history.length} รายการ | ล่าสุด ${formatWeight(latest.weightKg)} กก.`;
   historyList.innerHTML = history.map(createWeightHistoryItem).join("");
   renderWeightProgressChart(history);
 }
@@ -421,17 +509,13 @@ function createWeightHistoryItem(entry) {
         <strong>${formatThaiDate(entry.date)}</strong>
         <span>บันทึกรายสัปดาห์</span>
       </div>
-      <strong>${formatNumber(entry.weightKg)} กก.</strong>
+      <strong>${formatWeight(entry.weightKg)} กก.</strong>
     </li>
   `;
 }
 
 function formatThaiDate(dateValue) {
-  return new Date(`${dateValue}T00:00:00`).toLocaleDateString(THAI_LOCALE, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return formatDisplayDate(dateValue);
 }
 
 function renderWeightProgressChart(history) {
@@ -495,7 +579,7 @@ function renderWeightProgressChart(history) {
         },
         tooltip: {
           callbacks: {
-            label: (context) => `น้ำหนัก ${formatNumber(context.parsed.y)} กก.`,
+            label: (context) => `น้ำหนัก ${formatWeight(context.parsed.y)} กก.`,
           },
         },
       },
@@ -549,7 +633,7 @@ function exportWeightHistoryCsv() {
     return;
   }
 
-  const csvRows = ["date,weight_kg", ...history.map((entry) => `${entry.date},${entry.weightKg}`)];
+  const csvRows = ["date,weight_kg", ...history.map((entry) => `${formatDisplayDate(entry.date)},${entry.weightKg.toFixed(2)}`)];
   const csvBlob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8" });
   const downloadUrl = URL.createObjectURL(csvBlob);
   const downloadLink = document.createElement("a");
@@ -611,13 +695,14 @@ function parseWeightHistoryCsv(csvText) {
 
 function parseWeightHistoryCsvRow(row) {
   const [date, weightText] = row.split(",").map((cell) => cell.trim());
-  const weightKg = Number(weightText);
+  const weightKg = parseFloat(weightText);
+  const normalizedDate = parseDisplayDate(date);
 
-  if (!isValidDateValue(date) || !areValidNumbers(weightKg)) {
+  if (!normalizedDate || !areValidNumbers(weightKg)) {
     return null;
   }
 
-  return { date, weightKg };
+  return { date: normalizedDate, weightKg };
 }
 
 function mergeWeightHistory(currentHistory, importedHistory) {
@@ -630,6 +715,103 @@ function mergeWeightHistory(currentHistory, importedHistory) {
   return sortWeightHistory([...historyByDate.values()]);
 }
 
+function normalizeWeightHistory(history) {
+  if (!Array.isArray(history)) {
+    return [];
+  }
+
+  return sortWeightHistory(
+    history
+      .map((entry) => {
+        const date = parseDisplayDate(entry.date);
+        const weightKg = parseFloat(entry.weightKg);
+
+        if (!date || !areValidNumbers(weightKg)) {
+          return null;
+        }
+
+        return { date, weightKg };
+      })
+      .filter(Boolean)
+  );
+}
+
+function getTodayDisplayDate() {
+  return formatDisplayDate(getTodayDateValue());
+}
+
+function parseDisplayDate(dateValue) {
+  if (!dateValue) {
+    return null;
+  }
+
+  const trimmedDate = String(dateValue).trim();
+
+  if (isValidDateValue(trimmedDate)) {
+    return trimmedDate;
+  }
+
+  const dateParts = trimmedDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  if (!dateParts) {
+    return null;
+  }
+
+  const [, firstPartText, secondPartText, yearText] = dateParts;
+  let day = Number(firstPartText);
+  let month = Number(secondPartText);
+  const year = Number(yearText);
+
+  if (month > 12 && day <= 12) {
+    day = Number(secondPartText);
+    month = Number(firstPartText);
+  }
+
+  const parsedDate = new Date(year, month - 1, day);
+
+  if (
+    parsedDate.getFullYear() !== year ||
+    parsedDate.getMonth() !== month - 1 ||
+    parsedDate.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return `${yearText}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function formatDisplayDate(dateValue) {
+  const normalizedDate = parseDisplayDate(dateValue);
+
+  if (!normalizedDate) {
+    return "";
+  }
+
+  const [year, month, day] = normalizedDate.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+function getDateTime(dateValue) {
+  const normalizedDate = parseDisplayDate(dateValue);
+  return normalizedDate ? new Date(`${normalizedDate}T00:00:00`).getTime() : 0;
+}
+
 function isValidDateValue(dateValue) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(dateValue) && !Number.isNaN(new Date(`${dateValue}T00:00:00`).getTime());
+  const dateParts = String(dateValue).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (!dateParts) {
+    return false;
+  }
+
+  const [, yearText, monthText, dayText] = dateParts;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const parsedDate = new Date(year, month - 1, day);
+
+  return (
+    parsedDate.getFullYear() === year &&
+    parsedDate.getMonth() === month - 1 &&
+    parsedDate.getDate() === day
+  );
 }

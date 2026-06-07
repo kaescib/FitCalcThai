@@ -685,6 +685,41 @@ button,
   align-items: center;
 }
 
+.nav-menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  gap: 4px;
+  padding: 0;
+}
+
+.nav-menu-toggle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--text);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.site-nav.is-menu-open .nav-menu-toggle span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.site-nav.is-menu-open .nav-menu-toggle span:nth-child(2) {
+  opacity: 0;
+}
+
+.site-nav.is-menu-open .nav-menu-toggle span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
 .nav-links a,
 .nav-dropdown summary {
   border-radius: 999px;
@@ -856,11 +891,70 @@ button[type="submit"]:hover {
 }
 
 @media (max-width: 760px) {
+  .nav-inner {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+
+  .nav-brand {
+    align-self: center;
+  }
+
+  .nav-menu-toggle {
+    display: inline-flex;
+    flex-direction: column;
+  }
+
+  .nav-links {
+    grid-column: 1 / -1;
+    display: grid;
+    width: 100%;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-6px);
+    transition: max-height 0.28s ease, opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .site-nav.is-menu-open .nav-links {
+    max-height: 70vh;
+    overflow-y: auto;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    padding: 8px 0 2px;
+  }
+
+  .nav-links a,
+  .nav-dropdown summary {
+    width: 100%;
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+
+  .nav-dropdown {
+    width: 100%;
+  }
+
   .dropdown-menu {
     position: static;
-    min-width: 100%;
+    width: 100%;
+    min-width: 0;
+    max-height: min(52vh, 360px);
+    overflow-y: auto;
     margin-top: 8px;
     box-shadow: none;
+  }
+
+  .theme-toggle {
+    grid-column: 1 / -1;
+    display: none;
+    width: 100%;
+  }
+
+  .site-nav.is-menu-open .theme-toggle {
+    display: inline-flex;
   }
 
   .stats-grid {
