@@ -95,7 +95,23 @@
             </label>
             <label>
               Workout Name
-              <input type="text" id="workoutName" autocomplete="off" placeholder="Push Day" required>
+              <select id="workoutName" required>
+                <option value="">Select Workout</option>
+                <option value="Push Day">Push Day</option>
+                <option value="Pull Day">Pull Day</option>
+                <option value="Leg Day">Leg Day</option>
+                <option value="Upper Body">Upper Body</option>
+                <option value="Lower Body">Lower Body</option>
+                <option value="Full Body">Full Body</option>
+                <option value="Cardio">Cardio</option>
+                <option value="HIIT">HIIT</option>
+                <option value="Recovery">Recovery</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label class="is-hidden">
+              Custom Workout Name
+              <input type="text" id="customWorkoutName" autocomplete="off" placeholder="Custom Workout Name">
             </label>
           </div>
 
@@ -121,6 +137,39 @@
 
         <div class="workout-history-list" id="workoutHistoryList" aria-live="polite"></div>
       </aside>
+
+      <section class="card tracker-card">
+        <div class="card-header">
+          <span class="tool-icon">DASH</span>
+          <div>
+            <h2>Progress Dashboard</h2>
+            <p>ภาพรวมจำนวน workout, ความสม่ำเสมอ และ session ล่าสุด</p>
+          </div>
+        </div>
+        <div class="dashboard-grid" id="progressDashboard" aria-live="polite"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <span class="tool-icon">PR</span>
+          <div>
+            <h2>Personal Records</h2>
+            <p>คำนวณน้ำหนักที่ดีที่สุดของแต่ละท่าอัตโนมัติ</p>
+          </div>
+        </div>
+        <div class="record-grid" id="personalRecords" aria-live="polite"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <span class="tool-icon">TREND</span>
+          <div>
+            <h2>Weight Trend</h2>
+            <p>เชื่อมข้อมูลจาก Weight Tracker เพื่อดูน้ำหนักล่าสุดและการเปลี่ยนแปลง</p>
+          </div>
+        </div>
+        <div class="dashboard-grid" id="weightTrend" aria-live="polite"></div>
+      </section>
     </div>
   </main>
 

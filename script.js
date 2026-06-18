@@ -9,6 +9,28 @@ const ERROR_MESSAGE = "กรุณากรอกข้อมูลให้ค
 const THAI_LOCALE = "th-TH";
 const WEIGHT_HISTORY_KEY = "fitcalc-weight-history";
 const WORKOUT_HISTORY_KEY = "fitcalc-workout-history";
+const WORKOUT_NAME_OPTIONS = [
+  "Push Day",
+  "Pull Day",
+  "Leg Day",
+  "Upper Body",
+  "Lower Body",
+  "Full Body",
+  "Cardio",
+  "HIIT",
+  "Recovery",
+  "Other",
+];
+const EXERCISE_GROUPS = {
+  Chest: ["Bench Press", "Incline Bench Press", "Dumbbell Press", "Push Up", "Dips"],
+  Back: ["Pull Up", "Chin Up", "Lat Pulldown", "Barbell Row", "Dumbbell Row"],
+  Legs: ["Squat", "Goblet Squat", "Bulgarian Split Squat", "Romanian Deadlift", "Deadlift", "Calf Raise"],
+  Shoulders: ["Overhead Press", "Lateral Raise", "Reverse Fly"],
+  Biceps: ["Bicep Curl", "Hammer Curl"],
+  Triceps: ["Tricep Extension", "Close Grip Push Up"],
+  Core: ["Plank", "Crunch", "Leg Raise", "Russian Twist"],
+  Other: ["Other"],
+};
 let weightProgressChart = null;
 
 initializeTheme();
@@ -549,6 +571,7 @@ function renderWeightHistory() {
     summary.textContent = "ยังไม่มีประวัติน้ำหนัก";
     historyList.innerHTML = "";
     renderWeightProgressChart(history);
+    renderWeightTrend();
     return;
   }
 
@@ -556,6 +579,7 @@ function renderWeightHistory() {
   summary.textContent = `บันทึกแล้ว ${history.length} รายการ | ล่าสุด ${formatWeight(latest.weightKg)} กก.`;
   historyList.innerHTML = history.slice(0, 7).map(createWeightHistoryItem).join("");
   renderWeightProgressChart(history);
+  renderWeightTrend();
 }
 
 function createWeightHistoryItem(entry) {
@@ -884,9 +908,30 @@ function initializeWorkoutTracker() {
   getElement("workoutDate").value = getTodayDateValue();
   addExerciseButton.addEventListener("click", () => addWorkoutExerciseRow());
   exerciseList.addEventListener("click", handleWorkoutExerciseListClick);
+  exerciseList.addEventListener("change", handleWorkoutExerciseListChange);
   workoutForm.addEventListener("submit", handleWorkoutSubmit);
+  getElement("workoutName").addEventListener("change", toggleCustomWorkoutName);
   addWorkoutExerciseRow();
   renderWorkoutHistory();
+  renderProgressDashboard();
+}
+
+function toggleCustomWorkoutName() {
+  const workoutName = getElement("workoutName");
+  const customWorkoutName = getElement("customWorkoutName");
+  const customWorkoutNameField = customWorkoutName?.closest("label");
+
+  if (!workoutName || !customWorkoutName || !customWorkoutNameField) {
+    return;
+  }
+
+  const shouldShowCustomInput = workoutName.value === "Other";
+  customWorkoutNameField.classList.toggle("is-hidden", !shouldShowCustomInput);
+  customWorkoutName.required = shouldShowCustomInput;
+
+  if (!shouldShowCustomInput) {
+    customWorkoutName.value = "";
+  }
 }
 
 function handleWorkoutExerciseListClick(event) {
@@ -909,9 +954,31 @@ function handleWorkoutExerciseListClick(event) {
   currentRow.remove();
 }
 
+function handleWorkoutExerciseListChange(event) {
+  const exerciseSelect = event.target.closest(".exercise-name-input");
+
+  if (!exerciseSelect) {
+    return;
+  }
+
+  const currentRow = exerciseSelect.closest(".workout-exercise-row");
+  const customExerciseInput = currentRow.querySelector(".custom-exercise-input");
+  const customExerciseField = customExerciseInput.closest("label");
+  const shouldShowCustomInput = exerciseSelect.value === "Other";
+
+  customExerciseField.classList.toggle("is-hidden", !shouldShowCustomInput);
+  customExerciseInput.required = shouldShowCustomInput;
+
+  if (!shouldShowCustomInput) {
+    customExerciseInput.value = "";
+  }
+}
+
 function addWorkoutExerciseRow(exercise = {}) {
   const exerciseList = getElement("workoutExerciseList");
   const rowId = `exercise-${Date.now()}-${exerciseList.children.length}`;
+  const optionHtml = createExerciseOptionsHtml(exercise.name);
+  const isCustomExercise = exercise.name && !isKnownExerciseName(exercise.name);
 
   exerciseList.insertAdjacentHTML(
     "beforeend",
@@ -919,7 +986,13 @@ function addWorkoutExerciseRow(exercise = {}) {
       <div class="workout-exercise-row" data-exercise-row>
         <label>
           Exercise Name
-          <input type="text" name="${rowId}-name" class="exercise-name-input" autocomplete="off" placeholder="Bench Press" value="${escapeHtml(exercise.name || "")}" required>
+          <select name="${rowId}-name" class="exercise-name-input" required>
+            ${optionHtml}
+          </select>
+        </label>
+        <label class="${isCustomExercise ? "" : "is-hidden"}">
+          Custom Exercise Name
+          <input type="text" name="${rowId}-custom-name" class="custom-exercise-input" autocomplete="off" placeholder="เช่น Hip Thrust" value="${isCustomExercise ? escapeHtml(exercise.name) : ""}" ${isCustomExercise ? "required" : ""}>
         </label>
         <div class="workout-number-grid">
           <label>
@@ -941,11 +1014,34 @@ function addWorkoutExerciseRow(exercise = {}) {
   );
 }
 
+function createExerciseOptionsHtml(selectedExercise = "") {
+  const knownExercise = isKnownExerciseName(selectedExercise) ? selectedExercise : "";
+  const shouldSelectOther = selectedExercise && !knownExercise;
+  const groupHtml = Object.entries(EXERCISE_GROUPS)
+    .map(([groupName, exercises]) => {
+      const options = exercises
+        .map((exercise) => {
+          const selected = exercise === knownExercise || (exercise === "Other" && shouldSelectOther) ? " selected" : "";
+          return `<option value="${escapeHtml(exercise)}"${selected}>${escapeHtml(exercise)}</option>`;
+        })
+        .join("");
+
+      return `<optgroup label="${escapeHtml(groupName)}">${options}</optgroup>`;
+    })
+    .join("");
+
+  return `<option value="">Select Exercise</option>${groupHtml}`;
+}
+
+function isKnownExerciseName(exerciseName) {
+  return Object.values(EXERCISE_GROUPS).flat().includes(exerciseName);
+}
+
 function handleWorkoutSubmit(event) {
   event.preventDefault();
 
   const workoutDate = getElement("workoutDate").value;
-  const workoutName = getElement("workoutName").value.trim();
+  const workoutName = getSelectedWorkoutName();
   const exercises = collectWorkoutExercises();
 
   if (!isValidDateValue(workoutDate) || !workoutName || exercises.length === 0) {
@@ -965,6 +1061,7 @@ function handleWorkoutSubmit(event) {
   saveWorkoutHistory(history);
   resetWorkoutForm();
   renderWorkoutHistory();
+  renderProgressDashboard();
   updateWorkoutStatus(`Saved ${workoutName} with ${exercises.length} exercises.`);
   trackAnalyticsEvent("workout_saved", {
     workout_name: workoutName,
@@ -972,10 +1069,22 @@ function handleWorkoutSubmit(event) {
   });
 }
 
+function getSelectedWorkoutName() {
+  const selectedName = getElement("workoutName").value;
+
+  if (selectedName === "Other") {
+    return getElement("customWorkoutName").value.trim();
+  }
+
+  return selectedName;
+}
+
 function collectWorkoutExercises() {
   return Array.from(document.querySelectorAll(".workout-exercise-row"))
     .map((row) => {
-      const name = row.querySelector(".exercise-name-input").value.trim();
+      const selectedName = row.querySelector(".exercise-name-input").value;
+      const customName = row.querySelector(".custom-exercise-input").value.trim();
+      const name = selectedName === "Other" ? customName : selectedName;
       const weightKg = parseFloat(row.querySelector(".exercise-weight-input").value);
       const reps = Number(row.querySelector(".exercise-reps-input").value);
       const sets = Number(row.querySelector(".exercise-sets-input").value);
@@ -1059,19 +1168,159 @@ function renderWorkoutHistory() {
 
 function createWorkoutHistoryItem(workout) {
   const exerciseLabel = workout.exercises.length === 1 ? "exercise" : "exercises";
+  const exerciseDetails = workout.exercises
+    .map((exercise) => {
+      const weightText = exercise.weightKg > 0 ? `${formatWeight(exercise.weightKg)} kg` : "Bodyweight";
+      return `
+        <li>
+          <strong>${escapeHtml(exercise.name)}</strong>
+          <span>${weightText} x ${exercise.reps} x ${exercise.sets}</span>
+        </li>
+      `;
+    })
+    .join("");
 
   return `
-    <article class="workout-session-card">
-      <span>${formatThaiDate(workout.date)}</span>
-      <strong>${escapeHtml(workout.name)}</strong>
-      <p>${workout.exercises.length} ${exerciseLabel}</p>
-    </article>
+    <details class="workout-session-card">
+      <summary>
+        <span>${formatThaiDate(workout.date)}</span>
+        <strong>${escapeHtml(workout.name)}</strong>
+        <p>${workout.exercises.length} ${exerciseLabel}</p>
+      </summary>
+      <div class="workout-detail-panel">
+        <p><strong>Date</strong> ${formatThaiDate(workout.date)}</p>
+        <p><strong>Workout Name</strong> ${escapeHtml(workout.name)}</p>
+        <ul class="workout-exercise-details">${exerciseDetails}</ul>
+      </div>
+    </details>
+  `;
+}
+
+function renderProgressDashboard() {
+  const history = getWorkoutHistory();
+  renderWorkoutStats(history);
+  renderPersonalRecords(history);
+  renderWeightTrend();
+}
+
+function renderWorkoutStats(history) {
+  const dashboard = getElement("progressDashboard");
+
+  if (!dashboard) {
+    return;
+  }
+
+  const totalExercises = history.reduce((total, workout) => total + workout.exercises.length, 0);
+  const latestWorkout = history[0]?.name || "ยังไม่มีข้อมูล";
+
+  dashboard.innerHTML = `
+    <div class="dashboard-metric">
+      <span>Total Workouts</span>
+      <strong>${history.length} Sessions</strong>
+    </div>
+    <div class="dashboard-metric">
+      <span>Workouts This Week</span>
+      <strong>${countWorkoutsThisWeek(history)} Sessions</strong>
+    </div>
+    <div class="dashboard-metric">
+      <span>Total Exercises Logged</span>
+      <strong>${totalExercises} Exercises</strong>
+    </div>
+    <div class="dashboard-metric">
+      <span>Last Workout</span>
+      <strong>${escapeHtml(latestWorkout)}</strong>
+    </div>
+  `;
+}
+
+function countWorkoutsThisWeek(history) {
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setHours(0, 0, 0, 0);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+
+  return history.filter((workout) => getDateTime(workout.date) >= startOfWeek.getTime()).length;
+}
+
+function renderPersonalRecords(history) {
+  const personalRecords = getElement("personalRecords");
+
+  if (!personalRecords) {
+    return;
+  }
+
+  const recordsByExercise = new Map();
+
+  history.forEach((workout) => {
+    workout.exercises.forEach((exercise) => {
+      if (exercise.weightKg <= 0) {
+        return;
+      }
+
+      const currentBest = recordsByExercise.get(exercise.name);
+
+      if (!currentBest || exercise.weightKg > currentBest.weightKg) {
+        recordsByExercise.set(exercise.name, exercise);
+      }
+    });
+  });
+
+  const records = Array.from(recordsByExercise.entries()).sort((first, second) => first[0].localeCompare(second[0]));
+
+  if (records.length === 0) {
+    personalRecords.innerHTML = '<p class="empty-state">No personal records yet.</p>';
+    return;
+  }
+
+  personalRecords.innerHTML = records
+    .map(([exerciseName, record]) => `
+      <article class="record-card">
+        <strong>${escapeHtml(exerciseName)}</strong>
+        <span>Best Weight</span>
+        <p>${formatWeight(record.weightKg)} kg</p>
+      </article>
+    `)
+    .join("");
+}
+
+function renderWeightTrend() {
+  const weightTrend = getElement("weightTrend");
+
+  if (!weightTrend) {
+    return;
+  }
+
+  const history = getWeightHistory();
+
+  if (history.length === 0) {
+    weightTrend.innerHTML = '<p class="empty-state">ยังไม่มีข้อมูลน้ำหนัก</p>';
+    return;
+  }
+
+  const latestEntry = history[0];
+  const latestTime = getDateTime(latestEntry.date);
+  const thirtyDaysAgo = latestTime - 30 * 24 * 60 * 60 * 1000;
+  const baselineEntry = history.find((entry) => getDateTime(entry.date) <= thirtyDaysAgo) || history[history.length - 1];
+  const change = latestEntry.weightKg - baselineEntry.weightKg;
+  const changePrefix = change > 0 ? "+" : "";
+
+  weightTrend.innerHTML = `
+    <div class="dashboard-metric">
+      <span>Current</span>
+      <strong>${formatWeight(latestEntry.weightKg)} kg</strong>
+    </div>
+    <div class="dashboard-metric">
+      <span>30 Day Change</span>
+      <strong>${changePrefix}${formatWeight(change)} kg</strong>
+    </div>
   `;
 }
 
 function resetWorkoutForm() {
   getElement("workoutForm").reset();
   getElement("workoutDate").value = getTodayDateValue();
+  getElement("customWorkoutName").closest("label").classList.add("is-hidden");
+  getElement("customWorkoutName").required = false;
   getElement("workoutExerciseList").innerHTML = "";
   addWorkoutExerciseRow();
 }
