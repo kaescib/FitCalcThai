@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Tracker | FitCalc Thai</title>
+  <meta name="description" content="Workout Tracker แบบ Strong Lite สำหรับบันทึกวันซ้อม ชื่อโปรแกรม ท่าออกกำลังกาย น้ำหนัก จำนวนครั้ง และจำนวนเซ็ต ใช้งานฟรี ไม่มี backend และบันทึกในเครื่องด้วย Local Storage">
+  <meta name="keywords" content="Workout Tracker, Strong Lite, บันทึกเวทเทรนนิ่ง, บันทึกออกกำลังกาย, FitCalc Thai, workout log">
+  <meta name="author" content="FitCalc Thai">
+  <meta name="theme-color" content="#22c55e">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Workout Tracker | FitCalc Thai">
+  <meta property="og:description" content="บันทึก workout แบบง่ายสำหรับคนเล่นเวท พร้อมประวัติย้อนหลังในเครื่อง">
+  <meta property="og:site_name" content="FitCalc Thai">
+  <meta property="og:locale" content="th_TH">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XT6JGFNCKM"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+    gtag("config", "G-XT6JGFNCKM");
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="canonical" href="https://kaescib.github.io/FitCalcThai/workout-tracker.html">
+  <meta name="google-site-verification" content="6y9c37ViQs0DbVfomYhz56SrQqQdRK6Nkue2IoiEQuY">
+</head>
+<body>
+  <nav class="site-nav" aria-label="เมนูหลัก">
+    <div class="nav-inner">
+      <a class="nav-brand" href="index.html">FitCalc Thai</a>
+      <div class="nav-links">
+        <a href="index.html">หน้าแรก</a>
+        <details class="nav-dropdown">
+          <summary>เครื่องมือ</summary>
+          <div class="dropdown-menu">
+            <a href="index.html#bmiForm">BMI Calculator</a>
+            <a href="index.html#tdeeForm">TDEE Calculator</a>
+            <a href="index.html#proteinForm">Protein Calculator</a>
+            <a href="index.html#macroForm">Macro Calculator</a>
+            <a href="index.html#oneRmForm">1RM Calculator</a>
+            <a href="index.html#weightTrackerForm">Weight Tracker</a>
+            <a href="workout-tracker.html">Workout Tracker</a>
+          </div>
+        </details>
+        <details class="nav-dropdown">
+          <summary>บทความ</summary>
+          <div class="dropdown-menu">
+            <a href="bmi-guide.html">BMI Guide</a>
+            <a href="tdee-guide.html">TDEE Guide</a>
+            <a href="protein-guide.html">Protein Guide</a>
+            <a href="gain-muscle-guide.html">Gain Muscle Guide</a>
+            <a href="lose-fat-guide.html">Lose Fat Guide</a>
+            <a href="progressive-overload-guide.html">Progressive Overload Guide</a>
+          </div>
+        </details>
+        <a href="about.html">เกี่ยวกับ</a>
+        <a href="privacy-policy.html">Privacy</a>
+      </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดมืดและสว่าง">
+        <span id="themeIcon">☾</span>
+        <span id="themeText">Dark</span>
+      </button>
+    </div>
+  </nav>
+
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">Strong Lite</p>
+      <h1>Workout Tracker</h1>
+      <p class="intro">บันทึก workout รายวันแบบง่าย สำหรับติดตามท่าออกกำลังกาย น้ำหนัก จำนวนครั้ง และจำนวนเซ็ต โดยเก็บข้อมูลไว้ในเครื่องของคุณ</p>
+      <div class="hero-actions" aria-label="ลิงก์เครื่องมือที่เกี่ยวข้อง">
+        <a class="calculator-link" href="#workoutForm">บันทึก Workout</a>
+        <a class="guide-link" href="index.html#oneRmForm">1RM Calculator</a>
+        <a class="guide-link" href="progressive-overload-guide.html">Progressive Overload</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="workout-layout">
+    <div class="workout-grid">
+      <section class="card">
+        <div class="card-header">
+          <span class="tool-icon">LOG</span>
+          <div>
+            <h2>บันทึก Workout</h2>
+            <p>เพิ่มชื่อวันซ้อม แล้วใส่ท่าออกกำลังกายได้หลายรายการใน session เดียว</p>
+          </div>
+        </div>
+
+        <form class="calculator-form" id="workoutForm">
+          <div class="two-column">
+            <label>
+              Date
+              <input type="date" id="workoutDate" lang="en-GB" required>
+            </label>
+            <label>
+              Workout Name
+              <input type="text" id="workoutName" autocomplete="off" placeholder="Push Day" required>
+            </label>
+          </div>
+
+          <div class="workout-exercise-list" id="workoutExerciseList" aria-live="polite"></div>
+
+          <div class="workout-form-actions">
+            <button class="secondary-button" id="addExerciseButton" type="button">Add Exercise</button>
+            <button type="submit">Save Workout</button>
+          </div>
+        </form>
+
+        <p class="workout-status" id="workoutStatus" aria-live="polite">ยังไม่มี workout ที่บันทึกใน session นี้</p>
+      </section>
+
+      <aside class="card">
+        <div class="card-header">
+          <span class="tool-icon">HIS</span>
+          <div>
+            <h2>Workout History</h2>
+            <p>แสดง session ล่าสุด เรียงจากใหม่ไปเก่า</p>
+          </div>
+        </div>
+
+        <div class="workout-history-list" id="workoutHistoryList" aria-live="polite"></div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <strong class="footer-brand">FitCalc Thai</strong>
+    <div class="footer-links">
+      <a href="index.html">หน้าแรก</a>
+      <a href="index.html#bmiForm">เครื่องมือ</a>
+      <a href="bmi-guide.html">บทความ</a>
+      <a href="about.html">เกี่ยวกับ</a>
+      <a href="privacy-policy.html">Privacy Policy</a>
+    </div>
+    <p>© 2026 FitCalc Thai</p>
+  </footer>
+
+  <script src="script.js" defer></script>
+</body>
+</html>

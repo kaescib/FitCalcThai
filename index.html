@@ -39,6 +39,7 @@
             <a href="index.html#macroForm">Macro Calculator</a>
             <a href="index.html#oneRmForm">1RM Calculator</a>
             <a href="index.html#weightTrackerForm">Weight Tracker</a>
+            <a href="workout-tracker.html">Workout Tracker</a>
           </div>
         </details>
         <details class="nav-dropdown">
@@ -259,7 +260,7 @@
         <div class="two-column">
           <label>
             สัปดาห์
-            <input type="text" id="trackerDate" inputmode="numeric" autocomplete="off" placeholder="31/05/2026" pattern="\d{1,2}/\d{1,2}/\d{4}" required>
+            <input type="date" id="trackerDate" lang="en-GB" required>
           </label>
           <label>
             น้ำหนัก (กิโลกรัม)
@@ -285,6 +286,16 @@
       </div>
 
       <ul class="history-list" id="weightHistoryList" aria-live="polite"></ul>
+    </section>
+    <section class="card" id="workoutTrackerCard">
+      <div class="card-header">
+        <span class="tool-icon">LOG</span>
+        <div>
+          <h2>Workout Tracker</h2>
+          <p>บันทึกวันซ้อม ท่าออกกำลังกาย น้ำหนัก จำนวนครั้ง และจำนวนเซ็ตแบบ Strong Lite</p>
+        </div>
+      </div>
+      <a class="calculator-link" href="workout-tracker.html">เปิด Workout Tracker</a>
     </section>
 
     <section class="card article-links">

@@ -8,12 +8,68 @@ const themeText = getElement("themeText");
 const ERROR_MESSAGE = "กรุณากรอกข้อมูลให้ครบและมากกว่า 0";
 const THAI_LOCALE = "th-TH";
 const WEIGHT_HISTORY_KEY = "fitcalc-weight-history";
+const WORKOUT_HISTORY_KEY = "fitcalc-workout-history";
 let weightProgressChart = null;
 
 initializeTheme();
 initializeNavbarDropdowns();
+initializeSmoothAnchorScrolling();
 bindCalculatorForms();
 initializeWeightTracker();
+initializeWorkoutTracker();
+
+function initializeSmoothAnchorScrolling() {
+  document.querySelectorAll('a[href*="#"]').forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const targetUrl = new URL(link.href, window.location.href);
+
+      if (targetUrl.pathname !== window.location.pathname || !targetUrl.hash) {
+        return;
+      }
+
+      const target = getScrollTarget(targetUrl.hash);
+
+      if (!target) {
+        return;
+      }
+
+      event.preventDefault();
+      scrollToHashTarget(targetUrl.hash, true);
+    });
+  });
+
+  if (window.location.hash && getScrollTarget(window.location.hash)) {
+    window.requestAnimationFrame(() => scrollToHashTarget(window.location.hash, false));
+  }
+}
+
+function getScrollTarget(hash) {
+  const targetId = decodeURIComponent(hash.replace("#", ""));
+  const target = document.getElementById(targetId);
+
+  return target?.closest(".card") || target;
+}
+
+function scrollToHashTarget(hash, shouldUpdateHash) {
+  const target = getScrollTarget(hash);
+
+  if (!target) {
+    return;
+  }
+
+  const navbarHeight = document.querySelector(".site-nav")?.offsetHeight || 0;
+  const topOffset = navbarHeight + 18;
+  const targetTop = target.getBoundingClientRect().top + window.pageYOffset - topOffset;
+
+  window.scrollTo({
+    top: Math.max(targetTop, 0),
+    behavior: "smooth",
+  });
+
+  if (shouldUpdateHash) {
+    window.history.pushState(null, "", hash);
+  }
+}
 
 function initializeNavbarDropdowns() {
   const navbar = document.querySelector(".site-nav");
@@ -174,7 +230,7 @@ function initializeWeightTracker() {
     return;
   }
 
-  getElement("trackerDate").value = getTodayDisplayDate();
+  getElement("trackerDate").value = getTodayDateValue();
   getElement("weightTrackerForm").addEventListener("submit", handleWeightTrackerSubmit);
   getElement("clearTrackerButton").addEventListener("click", clearWeightHistory);
   getElement("exportCsvButton").addEventListener("click", exportWeightHistoryCsv);
@@ -498,7 +554,7 @@ function renderWeightHistory() {
 
   const latest = history[0];
   summary.textContent = `บันทึกแล้ว ${history.length} รายการ | ล่าสุด ${formatWeight(latest.weightKg)} กก.`;
-  historyList.innerHTML = history.map(createWeightHistoryItem).join("");
+  historyList.innerHTML = history.slice(0, 7).map(createWeightHistoryItem).join("");
   renderWeightProgressChart(history);
 }
 
@@ -814,4 +870,229 @@ function isValidDateValue(dateValue) {
     parsedDate.getMonth() === month - 1 &&
     parsedDate.getDate() === day
   );
+}
+
+function initializeWorkoutTracker() {
+  const workoutForm = getElement("workoutForm");
+  const exerciseList = getElement("workoutExerciseList");
+  const addExerciseButton = getElement("addExerciseButton");
+
+  if (!workoutForm || !exerciseList || !addExerciseButton) {
+    return;
+  }
+
+  getElement("workoutDate").value = getTodayDateValue();
+  addExerciseButton.addEventListener("click", () => addWorkoutExerciseRow());
+  exerciseList.addEventListener("click", handleWorkoutExerciseListClick);
+  workoutForm.addEventListener("submit", handleWorkoutSubmit);
+  addWorkoutExerciseRow();
+  renderWorkoutHistory();
+}
+
+function handleWorkoutExerciseListClick(event) {
+  const removeButton = event.target.closest(".remove-exercise-button");
+
+  if (!removeButton) {
+    return;
+  }
+
+  const exerciseRows = document.querySelectorAll(".workout-exercise-row");
+  const currentRow = removeButton.closest(".workout-exercise-row");
+
+  if (exerciseRows.length === 1) {
+    currentRow.querySelectorAll("input").forEach((input) => {
+      input.value = "";
+    });
+    return;
+  }
+
+  currentRow.remove();
+}
+
+function addWorkoutExerciseRow(exercise = {}) {
+  const exerciseList = getElement("workoutExerciseList");
+  const rowId = `exercise-${Date.now()}-${exerciseList.children.length}`;
+
+  exerciseList.insertAdjacentHTML(
+    "beforeend",
+    `
+      <div class="workout-exercise-row" data-exercise-row>
+        <label>
+          Exercise Name
+          <input type="text" name="${rowId}-name" class="exercise-name-input" autocomplete="off" placeholder="Bench Press" value="${escapeHtml(exercise.name || "")}" required>
+        </label>
+        <div class="workout-number-grid">
+          <label>
+            Weight (kg)
+            <input type="number" name="${rowId}-weight" class="exercise-weight-input" min="0" step="0.01" inputmode="decimal" placeholder="40" value="${exercise.weightKg || ""}" required>
+          </label>
+          <label>
+            Reps
+            <input type="number" name="${rowId}-reps" class="exercise-reps-input" min="1" step="1" inputmode="numeric" placeholder="8" value="${exercise.reps || ""}" required>
+          </label>
+          <label>
+            Sets
+            <input type="number" name="${rowId}-sets" class="exercise-sets-input" min="1" step="1" inputmode="numeric" placeholder="3" value="${exercise.sets || ""}" required>
+          </label>
+        </div>
+        <button class="secondary-button remove-exercise-button" type="button">Remove Exercise</button>
+      </div>
+    `
+  );
+}
+
+function handleWorkoutSubmit(event) {
+  event.preventDefault();
+
+  const workoutDate = getElement("workoutDate").value;
+  const workoutName = getElement("workoutName").value.trim();
+  const exercises = collectWorkoutExercises();
+
+  if (!isValidDateValue(workoutDate) || !workoutName || exercises.length === 0) {
+    updateWorkoutStatus(ERROR_MESSAGE);
+    return;
+  }
+
+  const workout = {
+    id: createWorkoutId(),
+    date: workoutDate,
+    name: workoutName,
+    exercises,
+    createdAt: new Date().toISOString(),
+  };
+
+  const history = sortWorkoutHistory([workout, ...getWorkoutHistory()]);
+  saveWorkoutHistory(history);
+  resetWorkoutForm();
+  renderWorkoutHistory();
+  updateWorkoutStatus(`Saved ${workoutName} with ${exercises.length} exercises.`);
+  trackAnalyticsEvent("workout_saved", {
+    workout_name: workoutName,
+    exercise_count: exercises.length,
+  });
+}
+
+function collectWorkoutExercises() {
+  return Array.from(document.querySelectorAll(".workout-exercise-row"))
+    .map((row) => {
+      const name = row.querySelector(".exercise-name-input").value.trim();
+      const weightKg = parseFloat(row.querySelector(".exercise-weight-input").value);
+      const reps = Number(row.querySelector(".exercise-reps-input").value);
+      const sets = Number(row.querySelector(".exercise-sets-input").value);
+
+      if (!name || !areValidNumbers(reps, sets) || !Number.isFinite(weightKg) || weightKg < 0) {
+        return null;
+      }
+
+      return {
+        name,
+        weightKg,
+        reps,
+        sets,
+      };
+    })
+    .filter(Boolean);
+}
+
+function getWorkoutHistory() {
+  const savedHistory = localStorage.getItem(WORKOUT_HISTORY_KEY);
+
+  try {
+    return savedHistory ? normalizeWorkoutHistory(JSON.parse(savedHistory)) : [];
+  } catch {
+    localStorage.removeItem(WORKOUT_HISTORY_KEY);
+    return [];
+  }
+}
+
+function normalizeWorkoutHistory(history) {
+  if (!Array.isArray(history)) {
+    return [];
+  }
+
+  return sortWorkoutHistory(
+    history
+      .map((workout) => {
+        const date = parseDisplayDate(workout.date);
+        const name = String(workout.name || "").trim();
+        const exercises = Array.isArray(workout.exercises) ? workout.exercises : [];
+
+        if (!date || !name || exercises.length === 0) {
+          return null;
+        }
+
+        return {
+          id: workout.id || createWorkoutId(),
+          date,
+          name,
+          exercises,
+          createdAt: workout.createdAt || `${date}T00:00:00.000Z`,
+        };
+      })
+      .filter(Boolean)
+  );
+}
+
+function saveWorkoutHistory(history) {
+  localStorage.setItem(WORKOUT_HISTORY_KEY, JSON.stringify(history));
+}
+
+function sortWorkoutHistory(history) {
+  return history.sort((first, second) => getDateTime(second.date) - getDateTime(first.date));
+}
+
+function renderWorkoutHistory() {
+  const historyList = getElement("workoutHistoryList");
+  const history = getWorkoutHistory();
+
+  if (!historyList) {
+    return;
+  }
+
+  if (history.length === 0) {
+    historyList.innerHTML = '<p class="empty-state">No workouts saved yet.</p>';
+    return;
+  }
+
+  historyList.innerHTML = history.slice(0, 7).map(createWorkoutHistoryItem).join("");
+}
+
+function createWorkoutHistoryItem(workout) {
+  const exerciseLabel = workout.exercises.length === 1 ? "exercise" : "exercises";
+
+  return `
+    <article class="workout-session-card">
+      <span>${formatThaiDate(workout.date)}</span>
+      <strong>${escapeHtml(workout.name)}</strong>
+      <p>${workout.exercises.length} ${exerciseLabel}</p>
+    </article>
+  `;
+}
+
+function resetWorkoutForm() {
+  getElement("workoutForm").reset();
+  getElement("workoutDate").value = getTodayDateValue();
+  getElement("workoutExerciseList").innerHTML = "";
+  addWorkoutExerciseRow();
+}
+
+function updateWorkoutStatus(message) {
+  const status = getElement("workoutStatus");
+
+  if (status) {
+    status.textContent = message;
+  }
+}
+
+function createWorkoutId() {
+  return `workout-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
