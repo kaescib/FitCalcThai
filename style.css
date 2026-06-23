@@ -1056,6 +1056,104 @@ button[type="submit"]:hover {
   padding: 16px;
 }
 
+.weekly-goal-control {
+  max-width: 320px;
+  margin-bottom: 16px;
+}
+
+.analytics-dashboard {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-metric p {
+  margin: 8px 0 0;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.exercise-progress-list {
+  display: grid;
+  gap: 14px;
+}
+
+.exercise-progress-card {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+  padding: 16px;
+}
+
+.exercise-progress-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.exercise-progress-header span {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.exercise-progress-header h3 {
+  margin: 2px 0 0;
+  font-size: 1.2rem;
+}
+
+.exercise-progress-header > strong {
+  white-space: nowrap;
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+}
+
+.exercise-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.exercise-progress-grid div,
+.volume-panel {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 12px;
+}
+
+.exercise-progress-grid span {
+  display: block;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.exercise-progress-grid strong {
+  display: block;
+  color: var(--text);
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+}
+
+.volume-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.volume-panel p {
+  margin: 0;
+}
+
+.volume-panel strong {
+  color: var(--text);
+}
+
+.is-positive {
+  color: var(--primary) !important;
+}
+
+.is-negative {
+  color: #ef4444 !important;
+}
+
 .dashboard-metric span,
 .record-card span {
   display: block;
@@ -1159,8 +1257,14 @@ button[type="submit"]:hover {
   .workout-grid,
   .workout-number-grid,
   .dashboard-grid,
-  .record-grid {
+  .record-grid,
+  .analytics-dashboard,
+  .exercise-progress-grid {
     grid-template-columns: 1fr;
+  }
+
+  .weekly-goal-control {
+    max-width: none;
   }
 
   .featured-workout-card {
@@ -1174,6 +1278,10 @@ button[type="submit"]:hover {
   }
 
   .workout-exercise-details li {
+    flex-direction: column;
+  }
+
+  .exercise-progress-header {
     flex-direction: column;
   }
 

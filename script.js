@@ -9,6 +9,7 @@ const ERROR_MESSAGE = "กรุณากรอกข้อมูลให้ค
 const THAI_LOCALE = "th-TH";
 const WEIGHT_HISTORY_KEY = "fitcalc-weight-history";
 const WORKOUT_HISTORY_KEY = "fitcalc-workout-history";
+const WEEKLY_WORKOUT_GOAL_KEY = "fitcalc-weekly-workout-goal";
 const WORKOUT_NAME_OPTIONS = [
   "Push Day",
   "Pull Day",
@@ -911,9 +912,24 @@ function initializeWorkoutTracker() {
   exerciseList.addEventListener("change", handleWorkoutExerciseListChange);
   workoutForm.addEventListener("submit", handleWorkoutSubmit);
   getElement("workoutName").addEventListener("change", toggleCustomWorkoutName);
+  initializeWeeklyWorkoutGoal();
   addWorkoutExerciseRow();
   renderWorkoutHistory();
   renderProgressDashboard();
+}
+
+function initializeWeeklyWorkoutGoal() {
+  const weeklyGoalSelect = getElement("weeklyWorkoutGoal");
+
+  if (!weeklyGoalSelect) {
+    return;
+  }
+
+  weeklyGoalSelect.value = String(getWeeklyWorkoutGoal());
+  weeklyGoalSelect.addEventListener("change", () => {
+    saveWeeklyWorkoutGoal(Number(weeklyGoalSelect.value));
+    renderProgressDashboard();
+  });
 }
 
 function toggleCustomWorkoutName() {
@@ -1134,12 +1150,34 @@ function normalizeWorkoutHistory(history) {
           id: workout.id || createWorkoutId(),
           date,
           name,
-          exercises,
+          exercises: normalizeWorkoutExercises(exercises),
           createdAt: workout.createdAt || `${date}T00:00:00.000Z`,
         };
       })
-      .filter(Boolean)
+      .filter((workout) => workout && workout.exercises.length > 0)
   );
+}
+
+function normalizeWorkoutExercises(exercises) {
+  return exercises
+    .map((exercise) => {
+      const name = String(exercise.name || "").trim();
+      const weightKg = parseFloat(exercise.weightKg);
+      const reps = Number(exercise.reps);
+      const sets = Number(exercise.sets);
+
+      if (!name || !Number.isFinite(weightKg) || weightKg < 0 || !areValidNumbers(reps, sets)) {
+        return null;
+      }
+
+      return {
+        name,
+        weightKg,
+        reps,
+        sets,
+      };
+    })
+    .filter(Boolean);
 }
 
 function saveWorkoutHistory(history) {
@@ -1199,8 +1237,110 @@ function createWorkoutHistoryItem(workout) {
 function renderProgressDashboard() {
   const history = getWorkoutHistory();
   renderWorkoutStats(history);
+  renderStrengthAnalyticsDashboard(history);
+  renderExerciseProgress(history);
   renderPersonalRecords(history);
   renderWeightTrend();
+}
+
+function renderStrengthAnalyticsDashboard(history) {
+  const dashboard = getElement("strengthAnalyticsDashboard");
+
+  if (!dashboard) {
+    return;
+  }
+
+  const analytics = calculateStrengthAnalytics(history);
+  const goalPercent = analytics.weeklyGoal === 0 ? 0 : Math.min((analytics.workoutsThisWeek / analytics.weeklyGoal) * 100, 100);
+
+  dashboard.innerHTML = `
+    <div class="dashboard-metric">
+      <span>Total Workouts</span>
+      <strong>${analytics.totalWorkouts} Sessions</strong>
+    </div>
+    <div class="dashboard-metric">
+      <span>Total Volume</span>
+      <strong>${formatVolume(analytics.totalVolume)} kg</strong>
+    </div>
+    <div class="dashboard-metric">
+      <span>Current Streak</span>
+      <strong>${analytics.currentStreak} Days</strong>
+    </div>
+    <div class="dashboard-metric">
+      <span>Weekly Goal Progress</span>
+      <strong>${analytics.workoutsThisWeek} / ${analytics.weeklyGoal} Sessions</strong>
+      <p>${formatNumber(goalPercent, 0)}%</p>
+    </div>
+    <div class="dashboard-metric">
+      <span>Most Trained Exercise</span>
+      <strong>${escapeHtml(analytics.mostTrainedExercise.name)}</strong>
+      <p>${analytics.mostTrainedExercise.count} Sessions</p>
+    </div>
+    <div class="dashboard-metric">
+      <span>Most Trained Muscle Group</span>
+      <strong>${escapeHtml(analytics.mostTrainedMuscleGroup.name)}</strong>
+      <p>${analytics.mostTrainedMuscleGroup.count} Sessions</p>
+    </div>
+  `;
+}
+
+function renderExerciseProgress(history) {
+  const progressList = getElement("exerciseProgressList");
+
+  if (!progressList) {
+    return;
+  }
+
+  const exerciseProgress = calculateExerciseProgress(history);
+
+  if (exerciseProgress.length === 0) {
+    progressList.innerHTML = '<p class="empty-state">No exercise progress yet.</p>';
+    return;
+  }
+
+  progressList.innerHTML = exerciseProgress.map(createExerciseProgressCard).join("");
+}
+
+function createExerciseProgressCard(progress) {
+  const changeClass = progress.change >= 0 ? "is-positive" : "is-negative";
+  const latestFormula = progress.latest
+    ? `${formatWeight(progress.latest.weightKg)} x ${progress.latest.reps} x ${progress.latest.sets} = ${formatVolume(progress.sessionVolume)} kg`
+    : "-";
+
+  return `
+    <article class="exercise-progress-card">
+      <div class="exercise-progress-header">
+        <div>
+          <span>${escapeHtml(progress.category)}</span>
+          <h3>${escapeHtml(progress.name)}</h3>
+        </div>
+        <strong class="${changeClass}">${formatSignedWeight(progress.change)}</strong>
+      </div>
+      <div class="exercise-progress-grid">
+        <div>
+          <span>Latest Weight</span>
+          <strong>${formatWeight(progress.latestWeight)} kg</strong>
+        </div>
+        <div>
+          <span>Previous Weight</span>
+          <strong>${progress.previousWeight === null ? "-" : `${formatWeight(progress.previousWeight)} kg`}</strong>
+        </div>
+        <div>
+          <span>Best Weight</span>
+          <strong>${formatWeight(progress.bestWeight)} kg</strong>
+        </div>
+        <div>
+          <span>Improvement</span>
+          <strong class="${changeClass}">${formatSignedPercent(progress.improvementPercent)}</strong>
+        </div>
+      </div>
+      <div class="volume-panel">
+        <p><strong>Session Volume</strong> ${latestFormula}</p>
+        <p><strong>Weekly Volume</strong> ${formatVolume(progress.weeklyVolume)} kg</p>
+        <p><strong>Monthly Volume</strong> ${formatVolume(progress.monthlyVolume)} kg</p>
+      </div>
+    </article>
+  `;
 }
 
 function renderWorkoutStats(history) {
@@ -1234,12 +1374,191 @@ function renderWorkoutStats(history) {
 }
 
 function countWorkoutsThisWeek(history) {
-  const today = new Date();
-  const startOfWeek = new Date(today);
-  startOfWeek.setHours(0, 0, 0, 0);
-  startOfWeek.setDate(today.getDate() - today.getDay());
+  const startOfWeek = getStartOfWeek();
 
   return history.filter((workout) => getDateTime(workout.date) >= startOfWeek.getTime()).length;
+}
+
+function calculateStrengthAnalytics(history) {
+  const totalVolume = history.reduce((total, workout) => total + calculateWorkoutVolume(workout), 0);
+  const mostTrainedExercise = getMostTrainedExercise(history);
+  const mostTrainedMuscleGroup = getMostTrainedMuscleGroup(history);
+
+  return {
+    totalWorkouts: history.length,
+    totalVolume,
+    currentStreak: calculateWorkoutStreak(history),
+    workoutsThisWeek: countWorkoutsThisWeek(history),
+    weeklyGoal: getWeeklyWorkoutGoal(),
+    mostTrainedExercise,
+    mostTrainedMuscleGroup,
+  };
+}
+
+function calculateExerciseProgress(history) {
+  const entriesByExercise = new Map();
+  const startOfWeek = getStartOfWeek().getTime();
+  const startOfMonth = getStartOfMonth().getTime();
+
+  history.forEach((workout) => {
+    workout.exercises.forEach((exercise) => {
+      if (exercise.weightKg <= 0) {
+        return;
+      }
+
+      const entry = {
+        ...exercise,
+        date: workout.date,
+        volume: calculateExerciseVolume(exercise),
+      };
+      const exerciseEntries = entriesByExercise.get(exercise.name) || [];
+      exerciseEntries.push(entry);
+      entriesByExercise.set(exercise.name, exerciseEntries);
+    });
+  });
+
+  return Array.from(entriesByExercise.entries())
+    .map(([exerciseName, entries]) => {
+      const sortedEntries = entries.sort((first, second) => getDateTime(second.date) - getDateTime(first.date));
+      const latest = sortedEntries[0];
+      const previous = sortedEntries[1] || null;
+      const bestWeight = Math.max(...sortedEntries.map((entry) => entry.weightKg));
+      const previousWeight = previous ? previous.weightKg : null;
+      const change = previousWeight === null ? 0 : latest.weightKg - previousWeight;
+      const improvementPercent = previousWeight ? (change / previousWeight) * 100 : 0;
+      const weeklyVolume = sortedEntries
+        .filter((entry) => getDateTime(entry.date) >= startOfWeek)
+        .reduce((total, entry) => total + entry.volume, 0);
+      const monthlyVolume = sortedEntries
+        .filter((entry) => getDateTime(entry.date) >= startOfMonth)
+        .reduce((total, entry) => total + entry.volume, 0);
+
+      return {
+        name: exerciseName,
+        category: getExerciseCategory(exerciseName),
+        latest,
+        latestWeight: latest.weightKg,
+        previousWeight,
+        bestWeight,
+        change,
+        improvementPercent,
+        sessionVolume: latest.volume,
+        weeklyVolume,
+        monthlyVolume,
+      };
+    })
+    .sort((first, second) => first.name.localeCompare(second.name));
+}
+
+function calculateWorkoutVolume(workout) {
+  return workout.exercises.reduce((total, exercise) => total + calculateExerciseVolume(exercise), 0);
+}
+
+function calculateExerciseVolume(exercise) {
+  return exercise.weightKg * exercise.reps * exercise.sets;
+}
+
+function calculateWorkoutStreak(history) {
+  const uniqueWorkoutDays = Array.from(new Set(history.map((workout) => workout.date)))
+    .sort((first, second) => getDateTime(second) - getDateTime(first));
+
+  if (uniqueWorkoutDays.length === 0) {
+    return 0;
+  }
+
+  let streak = 1;
+  let expectedTime = getDateTime(uniqueWorkoutDays[0]) - 24 * 60 * 60 * 1000;
+
+  for (const date of uniqueWorkoutDays.slice(1)) {
+    const dateTime = getDateTime(date);
+
+    if (dateTime !== expectedTime) {
+      break;
+    }
+
+    streak += 1;
+    expectedTime -= 24 * 60 * 60 * 1000;
+  }
+
+  return streak;
+}
+
+function getMostTrainedExercise(history) {
+  const exerciseCounts = new Map();
+
+  history.forEach((workout) => {
+    const sessionExercises = new Set(workout.exercises.map((exercise) => exercise.name));
+    sessionExercises.forEach((exerciseName) => {
+      exerciseCounts.set(exerciseName, (exerciseCounts.get(exerciseName) || 0) + 1);
+    });
+  });
+
+  return getTopCount(exerciseCounts, "No data");
+}
+
+function getMostTrainedMuscleGroup(history) {
+  const groupCounts = new Map();
+
+  history.forEach((workout) => {
+    const sessionGroups = new Set(workout.exercises.map((exercise) => getExerciseCategory(exercise.name)));
+    sessionGroups.forEach((groupName) => {
+      groupCounts.set(groupName, (groupCounts.get(groupName) || 0) + 1);
+    });
+  });
+
+  return getTopCount(groupCounts, "No data");
+}
+
+function getTopCount(counts, fallbackName) {
+  const sortedCounts = Array.from(counts.entries()).sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]));
+  const [name, count] = sortedCounts[0] || [fallbackName, 0];
+
+  return { name, count };
+}
+
+function getExerciseCategory(exerciseName) {
+  const matchedGroup = Object.entries(EXERCISE_GROUPS).find(([groupName, exercises]) => (
+    groupName !== "Other" && exercises.includes(exerciseName)
+  ));
+
+  return matchedGroup ? matchedGroup[0] : "Other";
+}
+
+function getWeeklyWorkoutGoal() {
+  const savedGoal = Number(localStorage.getItem(WEEKLY_WORKOUT_GOAL_KEY));
+
+  return Number.isInteger(savedGoal) && savedGoal >= 1 && savedGoal <= 7 ? savedGoal : 4;
+}
+
+function saveWeeklyWorkoutGoal(goal) {
+  const normalizedGoal = Number.isInteger(goal) && goal >= 1 && goal <= 7 ? goal : 4;
+  localStorage.setItem(WEEKLY_WORKOUT_GOAL_KEY, String(normalizedGoal));
+}
+
+function getStartOfWeek(date = new Date()) {
+  const startOfWeek = new Date(date);
+  startOfWeek.setHours(0, 0, 0, 0);
+  startOfWeek.setDate(date.getDate() - date.getDay());
+
+  return startOfWeek;
+}
+
+function getStartOfMonth(date = new Date()) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function formatVolume(value) {
+  return formatNumber(value, value % 1 === 0 ? 0 : 1);
+}
+
+function formatSignedWeight(value) {
+  const prefix = value > 0 ? "+" : "";
+  return `${prefix}${formatWeight(value)} kg`;
+}
+
+function formatSignedPercent(value) {
+  const prefix = value > 0 ? "+" : "";
+  return `${prefix}${formatNumber(value, 1)}%`;
 }
 
 function renderPersonalRecords(history) {

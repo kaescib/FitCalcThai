@@ -149,6 +149,40 @@
         <div class="dashboard-grid" id="progressDashboard" aria-live="polite"></div>
       </section>
 
+      <section class="card tracker-card">
+        <div class="card-header">
+          <span class="tool-icon">STR</span>
+          <div>
+            <h2>Strength Analytics</h2>
+            <p>ติดตาม volume, streak, เป้าหมายรายสัปดาห์ และท่าที่ซ้อมบ่อยที่สุดจากประวัติ workout</p>
+          </div>
+        </div>
+        <label class="weekly-goal-control">
+          Weekly Workout Goal
+          <select id="weeklyWorkoutGoal">
+            <option value="1">1 Session</option>
+            <option value="2">2 Sessions</option>
+            <option value="3">3 Sessions</option>
+            <option value="4">4 Sessions</option>
+            <option value="5">5 Sessions</option>
+            <option value="6">6 Sessions</option>
+            <option value="7">7 Sessions</option>
+          </select>
+        </label>
+        <div class="dashboard-grid analytics-dashboard" id="strengthAnalyticsDashboard" aria-live="polite"></div>
+      </section>
+
+      <section class="card tracker-card">
+        <div class="card-header">
+          <span class="tool-icon">VOL</span>
+          <div>
+            <h2>Exercise Progress</h2>
+            <p>ดูน้ำหนักล่าสุด น้ำหนักก่อนหน้า PR และ volume แยกตามท่าเพื่อใช้วางแผน progressive overload</p>
+          </div>
+        </div>
+        <div class="exercise-progress-list" id="exerciseProgressList" aria-live="polite"></div>
+      </section>
+
       <section class="card">
         <div class="card-header">
           <span class="tool-icon">PR</span>
