@@ -947,9 +947,13 @@ button[type="submit"]:hover {
 
 .exercise-database-controls {
   display: grid;
-  grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(140px, 1fr));
+  grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(140px, 1fr)) minmax(180px, auto);
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.reset-filter-button {
+  align-self: end;
 }
 
 .exercise-database-layout {

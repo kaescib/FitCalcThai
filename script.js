@@ -1011,6 +1011,7 @@ function initializeExerciseDatabase() {
   const exerciseSearch = getElement("exerciseSearch");
   const filterIds = ["exerciseMuscleFilter", "exerciseEquipmentFilter", "exerciseCategoryFilter"];
   const cancelCustomExerciseButton = getElement("cancelCustomExerciseEditButton");
+  const resetExerciseSearchButton = getElement("resetExerciseSearchButton");
 
   if (!exerciseDatabaseList || !customExerciseForm) {
     return;
@@ -1022,6 +1023,7 @@ function initializeExerciseDatabase() {
   exerciseSearch?.addEventListener("input", renderExerciseDatabase);
   filterIds.forEach((filterId) => getElement(filterId)?.addEventListener("change", renderExerciseDatabase));
   cancelCustomExerciseButton?.addEventListener("click", resetCustomExerciseForm);
+  resetExerciseSearchButton?.addEventListener("click", resetExerciseSearchAndFilters);
   renderExerciseDatabase();
 }
 
@@ -1084,6 +1086,11 @@ function renderExerciseDatabase() {
     return;
   }
 
+  if (!hasActiveExerciseSearch()) {
+    exerciseDatabaseList.innerHTML = '<p class="empty-state">พิมพ์ชื่อท่าออกกำลังกาย หรือเลือกตัวกรอง เพื่อค้นหาท่า</p>';
+    return;
+  }
+
   const exercises = filterExercises(getAllExercises());
 
   if (exercises.length === 0) {
@@ -1092,6 +1099,33 @@ function renderExerciseDatabase() {
   }
 
   exerciseDatabaseList.innerHTML = exercises.map(createExerciseDatabaseCard).join("");
+}
+
+function hasActiveExerciseSearch() {
+  return Boolean(
+    (getElement("exerciseSearch")?.value || "").trim() ||
+    getElement("exerciseMuscleFilter")?.value ||
+    getElement("exerciseEquipmentFilter")?.value ||
+    getElement("exerciseCategoryFilter")?.value
+  );
+}
+
+function resetExerciseSearchAndFilters() {
+  const exerciseSearch = getElement("exerciseSearch");
+
+  if (exerciseSearch) {
+    exerciseSearch.value = "";
+  }
+
+  ["exerciseMuscleFilter", "exerciseEquipmentFilter", "exerciseCategoryFilter"].forEach((filterId) => {
+    const filter = getElement(filterId);
+
+    if (filter) {
+      filter.value = "";
+    }
+  });
+
+  renderExerciseDatabase();
 }
 
 function filterExercises(exercises) {
@@ -1244,11 +1278,13 @@ function resetCustomExerciseForm() {
 }
 
 function refreshExerciseDependentUi() {
+  const templateDraft = getTemplateEditorDraft();
   populateExerciseFilters();
   renderExerciseDatabase();
   renderWorkoutTemplates();
   refreshExerciseSelectOptions(".exercise-name-input");
   refreshExerciseSelectOptions(".template-exercise-name-input");
+  restoreTemplateEditorDraft(templateDraft);
 }
 
 function refreshExerciseSelectOptions(selector) {
@@ -1257,6 +1293,55 @@ function refreshExerciseSelectOptions(selector) {
     select.innerHTML = createExerciseOptionsHtml(currentValue);
     select.value = currentValue && isKnownExerciseName(currentValue) ? currentValue : select.value;
   });
+}
+
+function getTemplateEditorDraft() {
+  const templateForm = getElement("templateForm");
+  const templateExerciseList = getElement("templateExerciseList");
+
+  if (!templateForm || !templateExerciseList) {
+    return null;
+  }
+
+  return {
+    templateName: getElement("templateName")?.value || "",
+    editingTemplateId: getElement("editingTemplateId")?.value || "",
+    editorTitle: getElement("templateEditorTitle")?.textContent || "Create Custom Template",
+    status: getElement("templateStatus")?.textContent || "",
+    exercises: getTemplateExerciseDraftRows(),
+  };
+}
+
+function getTemplateExerciseDraftRows() {
+  return Array.from(document.querySelectorAll(".template-exercise-row")).map((row) => {
+    const selectedName = row.querySelector(".template-exercise-name-input")?.value || "";
+    const customName = row.querySelector(".template-custom-exercise-input")?.value.trim() || "";
+
+    return selectedName === "Other" ? customName : selectedName;
+  });
+}
+
+function restoreTemplateEditorDraft(draft) {
+  const templateExerciseList = getElement("templateExerciseList");
+
+  if (!draft || !templateExerciseList) {
+    return;
+  }
+
+  getElement("templateName").value = draft.templateName;
+  getElement("editingTemplateId").value = draft.editingTemplateId;
+  getElement("templateEditorTitle").textContent = draft.editorTitle;
+  templateExerciseList.innerHTML = "";
+
+  if (draft.exercises.length > 0) {
+    draft.exercises.forEach((exerciseName) => addTemplateExerciseRow(exerciseName || ""));
+  } else {
+    addTemplateExerciseRow();
+  }
+
+  if (draft.status) {
+    updateTemplateStatus(draft.status);
+  }
 }
 
 function updateExerciseDatabaseStatus(message) {
