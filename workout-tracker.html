@@ -80,6 +80,84 @@
     <div class="workout-grid">
       <section class="card tracker-card">
         <div class="card-header">
+          <span class="tool-icon">DB</span>
+          <div>
+            <h2>Exercise Database</h2>
+            <p>ค้นหา เลือก และจัดการท่าออกกำลังกายที่ใช้กับ Workout Tracker และ Workout Templates</p>
+          </div>
+        </div>
+
+        <div class="exercise-database-controls">
+          <label>
+            Search
+            <input type="search" id="exerciseSearch" autocomplete="off" placeholder="Search exercise name">
+          </label>
+          <label>
+            Muscle Group
+            <select id="exerciseMuscleFilter"></select>
+          </label>
+          <label>
+            Equipment
+            <select id="exerciseEquipmentFilter"></select>
+          </label>
+          <label>
+            Category
+            <select id="exerciseCategoryFilter"></select>
+          </label>
+        </div>
+
+        <div class="exercise-database-layout">
+          <div class="exercise-database-list" id="exerciseDatabaseList" aria-live="polite"></div>
+
+          <form class="custom-exercise-editor" id="customExerciseForm">
+            <input type="hidden" id="editingExerciseId">
+            <h3 id="customExerciseEditorTitle">Create Custom Exercise</h3>
+            <label>
+              Exercise Name
+              <input type="text" id="customExerciseName" autocomplete="off" placeholder="เช่น Hip Thrust" required>
+            </label>
+            <div class="two-column">
+              <label>
+                Main Muscle Group
+                <input type="text" id="customExerciseMuscle" autocomplete="off" placeholder="Glutes" required>
+              </label>
+              <label>
+                Secondary Muscles
+                <input type="text" id="customExerciseSecondary" autocomplete="off" placeholder="Hamstrings, Core">
+              </label>
+              <label>
+                Equipment
+                <input type="text" id="customExerciseEquipment" autocomplete="off" placeholder="Barbell" required>
+              </label>
+              <label>
+                Category
+                <input type="text" id="customExerciseCategory" autocomplete="off" placeholder="Legs" required>
+              </label>
+              <label>
+                Difficulty
+                <select id="customExerciseDifficulty" required>
+                  <option value="">Select Difficulty</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              Notes
+              <textarea id="customExerciseNotes" rows="3" placeholder="Short coaching note" required></textarea>
+            </label>
+            <div class="template-editor-actions">
+              <button type="submit">Save Exercise</button>
+              <button class="secondary-button" id="cancelCustomExerciseEditButton" type="button">Cancel</button>
+            </div>
+            <p class="workout-status" id="exerciseDatabaseStatus" aria-live="polite">Built-in exercises are ready to use.</p>
+          </form>
+        </div>
+      </section>
+
+      <section class="card tracker-card">
+        <div class="card-header">
           <span class="tool-icon">TPL</span>
           <div>
             <h2>Workout Templates</h2>

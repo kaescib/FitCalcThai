@@ -11,6 +11,7 @@ const WEIGHT_HISTORY_KEY = "fitcalc-weight-history";
 const WORKOUT_HISTORY_KEY = "fitcalc-workout-history";
 const WEEKLY_WORKOUT_GOAL_KEY = "fitcalc-weekly-workout-goal";
 const WORKOUT_TEMPLATE_KEY = "fitcalc-workout-templates";
+const CUSTOM_EXERCISE_KEY = "fitcalc-custom-exercises";
 const WORKOUT_NAME_OPTIONS = [
   "Push Day",
   "Pull Day",
@@ -33,6 +34,43 @@ const EXERCISE_GROUPS = {
   Core: ["Plank", "Crunch", "Leg Raise", "Russian Twist"],
   Other: ["Other"],
 };
+const BUILT_IN_EXERCISES = [
+  createBuiltInExercise("bench-press", "Bench Press", "Chest", ["Triceps", "Shoulders"], "Barbell", "Push", "Beginner", "Main chest pressing movement"),
+  createBuiltInExercise("incline-bench-press", "Incline Bench Press", "Chest", ["Triceps", "Shoulders"], "Barbell", "Push", "Intermediate", "Incline press for upper chest strength"),
+  createBuiltInExercise("incline-dumbbell-press", "Incline Dumbbell Press", "Chest", ["Triceps", "Shoulders"], "Dumbbell", "Push", "Beginner", "Upper chest pressing movement with a natural range of motion"),
+  createBuiltInExercise("dumbbell-press", "Dumbbell Press", "Chest", ["Triceps", "Shoulders"], "Dumbbell", "Push", "Beginner", "Chest press variation that trains each side independently"),
+  createBuiltInExercise("push-up", "Push Up", "Chest", ["Triceps", "Shoulders", "Core"], "Bodyweight", "Push", "Beginner", "Bodyweight pressing movement for chest and triceps"),
+  createBuiltInExercise("chest-dip", "Chest Dip", "Chest", ["Triceps", "Shoulders"], "Bodyweight", "Push", "Intermediate", "Dip variation that emphasizes the chest"),
+  createBuiltInExercise("dips", "Dips", "Chest", ["Triceps", "Shoulders"], "Bodyweight", "Push", "Intermediate", "Bodyweight pressing movement for chest and arms"),
+  createBuiltInExercise("pull-up", "Pull Up", "Back", ["Biceps", "Core"], "Bodyweight", "Pull", "Intermediate", "Vertical pulling movement for back strength"),
+  createBuiltInExercise("chin-up", "Chin Up", "Back", ["Biceps"], "Bodyweight", "Pull", "Intermediate", "Underhand vertical pull with more biceps involvement"),
+  createBuiltInExercise("dumbbell-row", "Dumbbell Row", "Back", ["Biceps", "Rear Delts"], "Dumbbell", "Pull", "Beginner", "Single-arm row for lats and upper back"),
+  createBuiltInExercise("barbell-row", "Barbell Row", "Back", ["Biceps", "Rear Delts"], "Barbell", "Pull", "Intermediate", "Horizontal pulling movement for back thickness"),
+  createBuiltInExercise("lat-pulldown", "Lat Pulldown", "Back", ["Biceps"], "Machine", "Pull", "Beginner", "Cable vertical pull for lats"),
+  createBuiltInExercise("inverted-row", "Inverted Row", "Back", ["Biceps", "Core"], "Bodyweight", "Pull", "Beginner", "Horizontal bodyweight row"),
+  createBuiltInExercise("overhead-press", "Overhead Press", "Shoulders", ["Triceps", "Core"], "Barbell", "Push", "Intermediate", "Main vertical pressing movement"),
+  createBuiltInExercise("lateral-raise", "Lateral Raise", "Shoulders", ["Upper Traps"], "Dumbbell", "Push", "Beginner", "Isolation movement for side delts"),
+  createBuiltInExercise("reverse-fly", "Reverse Fly", "Shoulders", ["Upper Back"], "Dumbbell", "Pull", "Beginner", "Rear delt and upper back isolation movement"),
+  createBuiltInExercise("dumbbell-shrug", "Dumbbell Shrug", "Shoulders", ["Upper Back"], "Dumbbell", "Pull", "Beginner", "Upper trap strengthening movement"),
+  createBuiltInExercise("hammer-curl", "Hammer Curl", "Arms", ["Forearms"], "Dumbbell", "Pull", "Beginner", "Neutral-grip curl for biceps and forearms"),
+  createBuiltInExercise("biceps-curl", "Biceps Curl", "Arms", ["Forearms"], "Dumbbell", "Pull", "Beginner", "Classic curl for biceps strength"),
+  createBuiltInExercise("bicep-curl", "Bicep Curl", "Arms", ["Forearms"], "Dumbbell", "Pull", "Beginner", "Classic curl for biceps strength"),
+  createBuiltInExercise("tricep-extension", "Tricep Extension", "Arms", ["Shoulders"], "Cable", "Push", "Beginner", "Isolation movement for triceps"),
+  createBuiltInExercise("close-grip-push-up", "Close Grip Push Up", "Arms", ["Chest", "Shoulders"], "Bodyweight", "Push", "Beginner", "Bodyweight triceps-focused push movement"),
+  createBuiltInExercise("squat", "Squat", "Legs", ["Glutes", "Core"], "Barbell", "Legs", "Intermediate", "Main lower-body strength movement"),
+  createBuiltInExercise("goblet-squat", "Goblet Squat", "Legs", ["Glutes", "Core"], "Dumbbell", "Legs", "Beginner", "Beginner-friendly squat variation"),
+  createBuiltInExercise("romanian-deadlift", "Romanian Deadlift", "Legs", ["Hamstrings", "Glutes", "Back"], "Barbell", "Legs", "Intermediate", "Hip hinge for hamstrings and glutes"),
+  createBuiltInExercise("deadlift", "Deadlift", "Legs", ["Back", "Glutes", "Core"], "Barbell", "Legs", "Advanced", "Heavy hinge movement for total-body strength"),
+  createBuiltInExercise("bulgarian-split-squat", "Bulgarian Split Squat", "Legs", ["Glutes", "Core"], "Dumbbell", "Legs", "Intermediate", "Single-leg squat variation"),
+  createBuiltInExercise("calf-raise", "Calf Raise", "Legs", ["Ankles"], "Machine", "Legs", "Beginner", "Calf isolation movement"),
+  createBuiltInExercise("glute-bridge", "Glute Bridge", "Legs", ["Hamstrings", "Core"], "Bodyweight", "Legs", "Beginner", "Glute-focused hip extension"),
+  createBuiltInExercise("plank", "Plank", "Core", ["Shoulders", "Glutes"], "Bodyweight", "Core", "Beginner", "Core stability hold"),
+  createBuiltInExercise("hanging-knee-raise", "Hanging Knee Raise", "Core", ["Hip Flexors"], "Bodyweight", "Core", "Intermediate", "Hanging core movement for lower abs"),
+  createBuiltInExercise("crunch", "Crunch", "Core", ["Hip Flexors"], "Bodyweight", "Core", "Beginner", "Basic abdominal flexion movement"),
+  createBuiltInExercise("leg-raise", "Leg Raise", "Core", ["Hip Flexors"], "Bodyweight", "Core", "Beginner", "Lower-ab focused leg raise"),
+  createBuiltInExercise("russian-twist", "Russian Twist", "Core", ["Obliques"], "Bodyweight", "Core", "Beginner", "Rotational core movement"),
+  createBuiltInExercise("dead-bug", "Dead Bug", "Core", ["Hip Flexors"], "Bodyweight", "Core", "Beginner", "Core stability drill that trains control"),
+];
 const BUILT_IN_WORKOUT_TEMPLATES = [
   {
     id: "builtin-push-day",
@@ -946,6 +984,7 @@ function initializeWorkoutTracker() {
   workoutForm.addEventListener("submit", handleWorkoutSubmit);
   getElement("workoutName").addEventListener("change", toggleCustomWorkoutName);
   initializeWeeklyWorkoutGoal();
+  initializeExerciseDatabase();
   initializeWorkoutTemplates();
   addWorkoutExerciseRow();
   renderWorkoutHistory();
@@ -964,6 +1003,268 @@ function initializeWeeklyWorkoutGoal() {
     saveWeeklyWorkoutGoal(Number(weeklyGoalSelect.value));
     renderProgressDashboard();
   });
+}
+
+function initializeExerciseDatabase() {
+  const exerciseDatabaseList = getElement("exerciseDatabaseList");
+  const customExerciseForm = getElement("customExerciseForm");
+  const exerciseSearch = getElement("exerciseSearch");
+  const filterIds = ["exerciseMuscleFilter", "exerciseEquipmentFilter", "exerciseCategoryFilter"];
+  const cancelCustomExerciseButton = getElement("cancelCustomExerciseEditButton");
+
+  if (!exerciseDatabaseList || !customExerciseForm) {
+    return;
+  }
+
+  populateExerciseFilters();
+  exerciseDatabaseList.addEventListener("click", handleExerciseDatabaseClick);
+  customExerciseForm.addEventListener("submit", handleCustomExerciseSubmit);
+  exerciseSearch?.addEventListener("input", renderExerciseDatabase);
+  filterIds.forEach((filterId) => getElement(filterId)?.addEventListener("change", renderExerciseDatabase));
+  cancelCustomExerciseButton?.addEventListener("click", resetCustomExerciseForm);
+  renderExerciseDatabase();
+}
+
+function populateExerciseFilters() {
+  populateFilterOptions("exerciseMuscleFilter", getUniqueExerciseFieldValues("muscleGroup"));
+  populateFilterOptions("exerciseEquipmentFilter", getUniqueExerciseFieldValues("equipment"));
+  populateFilterOptions("exerciseCategoryFilter", getUniqueExerciseFieldValues("category"));
+}
+
+function populateFilterOptions(filterId, values) {
+  const filter = getElement(filterId);
+
+  if (!filter) {
+    return;
+  }
+
+  const currentValue = filter.value;
+  filter.innerHTML = '<option value="">All</option>' + values
+    .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+    .join("");
+  filter.value = values.includes(currentValue) ? currentValue : "";
+}
+
+function getUniqueExerciseFieldValues(fieldName) {
+  return Array.from(new Set(getAllExercises().map((exercise) => exercise[fieldName]).filter(Boolean))).sort();
+}
+
+function handleExerciseDatabaseClick(event) {
+  const actionButton = event.target.closest("[data-exercise-action]");
+
+  if (!actionButton) {
+    return;
+  }
+
+  const exerciseId = actionButton.dataset.exerciseId;
+  const exercise = getAllExercises().find((item) => item.id === exerciseId);
+
+  if (!exercise) {
+    return;
+  }
+
+  const action = actionButton.dataset.exerciseAction;
+
+  if (action === "add-workout") {
+    addExerciseToWorkout(exercise.name);
+  } else if (action === "add-template") {
+    addTemplateExerciseRow(exercise.name);
+    updateTemplateStatus(`Added ${exercise.name} to template editor.`);
+  } else if (action === "edit") {
+    loadCustomExerciseIntoEditor(exercise);
+  } else if (action === "delete") {
+    deleteCustomExercise(exercise);
+  }
+}
+
+function renderExerciseDatabase() {
+  const exerciseDatabaseList = getElement("exerciseDatabaseList");
+
+  if (!exerciseDatabaseList) {
+    return;
+  }
+
+  const exercises = filterExercises(getAllExercises());
+
+  if (exercises.length === 0) {
+    exerciseDatabaseList.innerHTML = '<p class="empty-state">No exercises found.</p>';
+    return;
+  }
+
+  exerciseDatabaseList.innerHTML = exercises.map(createExerciseDatabaseCard).join("");
+}
+
+function filterExercises(exercises) {
+  const searchText = (getElement("exerciseSearch")?.value || "").trim().toLowerCase();
+  const muscleGroup = getElement("exerciseMuscleFilter")?.value || "";
+  const equipment = getElement("exerciseEquipmentFilter")?.value || "";
+  const category = getElement("exerciseCategoryFilter")?.value || "";
+
+  return exercises.filter((exercise) => {
+    const matchesSearch = !searchText || exercise.name.toLowerCase().includes(searchText);
+    const matchesMuscle = !muscleGroup || exercise.muscleGroup === muscleGroup;
+    const matchesEquipment = !equipment || exercise.equipment === equipment;
+    const matchesCategory = !category || exercise.category === category;
+
+    return matchesSearch && matchesMuscle && matchesEquipment && matchesCategory;
+  });
+}
+
+function createExerciseDatabaseCard(exercise) {
+  const customActions = exercise.isBuiltIn
+    ? ""
+    : `
+      <button class="secondary-button compact-button" type="button" data-exercise-action="edit" data-exercise-id="${escapeHtml(exercise.id)}">Edit</button>
+      <button class="danger-button compact-button" type="button" data-exercise-action="delete" data-exercise-id="${escapeHtml(exercise.id)}">Delete</button>
+    `;
+
+  return `
+    <article class="exercise-database-card">
+      <div class="exercise-database-header">
+        <div>
+          <span>${exercise.isBuiltIn ? "Built-in" : "Custom"}</span>
+          <h3>${escapeHtml(exercise.name)}</h3>
+        </div>
+        <strong>${escapeHtml(exercise.difficulty)}</strong>
+      </div>
+      <dl class="exercise-meta-grid">
+        <div><dt>Main</dt><dd>${escapeHtml(exercise.muscleGroup)}</dd></div>
+        <div><dt>Secondary</dt><dd>${escapeHtml(exercise.secondaryMuscles.join(", ") || "-")}</dd></div>
+        <div><dt>Equipment</dt><dd>${escapeHtml(exercise.equipment)}</dd></div>
+        <div><dt>Category</dt><dd>${escapeHtml(exercise.category)}</dd></div>
+      </dl>
+      <p>${escapeHtml(exercise.notes)}</p>
+      <div class="exercise-database-actions">
+        <button type="button" data-exercise-action="add-workout" data-exercise-id="${escapeHtml(exercise.id)}">Add to Workout</button>
+        <button class="secondary-button compact-button" type="button" data-exercise-action="add-template" data-exercise-id="${escapeHtml(exercise.id)}">Add to Template</button>
+        ${customActions}
+      </div>
+    </article>
+  `;
+}
+
+function addExerciseToWorkout(exerciseName) {
+  addWorkoutExerciseRow({ name: exerciseName });
+  updateWorkoutStatus(`Added ${exerciseName} to workout.`);
+  getElement("workoutForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function handleCustomExerciseSubmit(event) {
+  event.preventDefault();
+
+  const exercise = collectCustomExerciseForm();
+
+  if (!exercise) {
+    updateExerciseDatabaseStatus(ERROR_MESSAGE);
+    return;
+  }
+
+  const customExercises = getCustomExercises();
+  const editingExerciseId = getElement("editingExerciseId").value;
+  const existingExerciseIndex = customExercises.findIndex((item) => item.id === editingExerciseId);
+  const savedExercise = {
+    ...exercise,
+    id: existingExerciseIndex >= 0 ? editingExerciseId : createExerciseId(exercise.name),
+    isBuiltIn: false,
+  };
+
+  if (existingExerciseIndex >= 0) {
+    customExercises[existingExerciseIndex] = savedExercise;
+  } else {
+    customExercises.push(savedExercise);
+  }
+
+  saveCustomExercises(customExercises);
+  resetCustomExerciseForm();
+  refreshExerciseDependentUi();
+  updateExerciseDatabaseStatus(`Saved exercise: ${savedExercise.name}`);
+}
+
+function collectCustomExerciseForm() {
+  const name = getElement("customExerciseName").value.trim();
+  const muscleGroup = getElement("customExerciseMuscle").value.trim();
+  const secondaryMuscles = getElement("customExerciseSecondary").value
+    .split(",")
+    .map((muscle) => muscle.trim())
+    .filter(Boolean);
+  const equipment = getElement("customExerciseEquipment").value.trim();
+  const category = getElement("customExerciseCategory").value.trim();
+  const difficulty = getElement("customExerciseDifficulty").value.trim();
+  const notes = getElement("customExerciseNotes").value.trim();
+
+  if (!name || !muscleGroup || !equipment || !category || !difficulty || !notes) {
+    return null;
+  }
+
+  return {
+    name,
+    muscleGroup,
+    secondaryMuscles,
+    equipment,
+    category,
+    difficulty,
+    notes,
+  };
+}
+
+function loadCustomExerciseIntoEditor(exercise) {
+  if (exercise.isBuiltIn) {
+    updateExerciseDatabaseStatus("Built-in exercises cannot be edited.");
+    return;
+  }
+
+  getElement("editingExerciseId").value = exercise.id;
+  getElement("customExerciseName").value = exercise.name;
+  getElement("customExerciseMuscle").value = exercise.muscleGroup;
+  getElement("customExerciseSecondary").value = exercise.secondaryMuscles.join(", ");
+  getElement("customExerciseEquipment").value = exercise.equipment;
+  getElement("customExerciseCategory").value = exercise.category;
+  getElement("customExerciseDifficulty").value = exercise.difficulty;
+  getElement("customExerciseNotes").value = exercise.notes;
+  getElement("customExerciseEditorTitle").textContent = "Edit Custom Exercise";
+  updateExerciseDatabaseStatus(`Editing exercise: ${exercise.name}`);
+  getElement("customExerciseForm").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function deleteCustomExercise(exercise) {
+  if (exercise.isBuiltIn) {
+    updateExerciseDatabaseStatus("Built-in exercises cannot be deleted.");
+    return;
+  }
+
+  saveCustomExercises(getCustomExercises().filter((item) => item.id !== exercise.id));
+  refreshExerciseDependentUi();
+  updateExerciseDatabaseStatus(`Deleted exercise: ${exercise.name}`);
+}
+
+function resetCustomExerciseForm() {
+  getElement("customExerciseForm").reset();
+  getElement("editingExerciseId").value = "";
+  getElement("customExerciseEditorTitle").textContent = "Create Custom Exercise";
+}
+
+function refreshExerciseDependentUi() {
+  populateExerciseFilters();
+  renderExerciseDatabase();
+  renderWorkoutTemplates();
+  refreshExerciseSelectOptions(".exercise-name-input");
+  refreshExerciseSelectOptions(".template-exercise-name-input");
+}
+
+function refreshExerciseSelectOptions(selector) {
+  document.querySelectorAll(selector).forEach((select) => {
+    const currentValue = select.value;
+    select.innerHTML = createExerciseOptionsHtml(currentValue);
+    select.value = currentValue && isKnownExerciseName(currentValue) ? currentValue : select.value;
+  });
+}
+
+function updateExerciseDatabaseStatus(message) {
+  const status = getElement("exerciseDatabaseStatus");
+
+  if (status) {
+    status.textContent = message;
+  }
 }
 
 function initializeWorkoutTemplates() {
@@ -1354,6 +1655,142 @@ function normalizeWorkoutTemplateStore(templateStore) {
   };
 }
 
+function getAllExercises() {
+  const customExercises = getCustomExercises();
+  const knownNames = new Set([...BUILT_IN_EXERCISES, ...customExercises].map((exercise) => exercise.name));
+  const legacyExercises = getLegacyExerciseNames()
+    .filter((exerciseName) => !knownNames.has(exerciseName) && exerciseName !== "Other")
+    .map((exerciseName) => createLegacyExercise(exerciseName));
+
+  return [...BUILT_IN_EXERCISES, ...legacyExercises, ...customExercises];
+}
+
+function getCustomExercises() {
+  const savedExercises = localStorage.getItem(CUSTOM_EXERCISE_KEY);
+
+  try {
+    return normalizeCustomExercises(savedExercises ? JSON.parse(savedExercises) : []);
+  } catch {
+    localStorage.removeItem(CUSTOM_EXERCISE_KEY);
+    return [];
+  }
+}
+
+function saveCustomExercises(exercises) {
+  localStorage.setItem(CUSTOM_EXERCISE_KEY, JSON.stringify(normalizeCustomExercises(exercises)));
+}
+
+function normalizeCustomExercises(exercises) {
+  if (!Array.isArray(exercises)) {
+    return [];
+  }
+
+  return exercises
+    .map((exercise) => {
+      const name = String(exercise.name || "").trim();
+      const muscleGroup = String(exercise.muscleGroup || "").trim();
+      const equipment = String(exercise.equipment || "").trim();
+      const category = String(exercise.category || "").trim();
+      const difficulty = String(exercise.difficulty || "").trim();
+      const notes = String(exercise.notes || "").trim();
+      const secondaryMuscles = Array.isArray(exercise.secondaryMuscles)
+        ? exercise.secondaryMuscles.map((muscle) => String(muscle || "").trim()).filter(Boolean)
+        : String(exercise.secondaryMuscles || "")
+          .split(",")
+          .map((muscle) => muscle.trim())
+          .filter(Boolean);
+
+      if (!name || !muscleGroup || !equipment || !category || !difficulty || !notes) {
+        return null;
+      }
+
+      return {
+        id: exercise.id || createExerciseId(name),
+        name,
+        muscleGroup,
+        secondaryMuscles,
+        equipment,
+        category,
+        difficulty,
+        notes,
+        isBuiltIn: false,
+      };
+    })
+    .filter(Boolean);
+}
+
+function getExerciseDropdownGroups() {
+  const groups = {};
+
+  getAllExercises().forEach((exercise) => {
+    if (!groups[exercise.muscleGroup]) {
+      groups[exercise.muscleGroup] = [];
+    }
+
+    if (!groups[exercise.muscleGroup].includes(exercise.name)) {
+      groups[exercise.muscleGroup].push(exercise.name);
+    }
+  });
+
+  groups.Other = ["Other"];
+  return groups;
+}
+
+function getExerciseDropdownNames() {
+  return Object.values(getExerciseDropdownGroups()).flat();
+}
+
+function getExerciseByName(exerciseName) {
+  return getAllExercises().find((exercise) => exercise.name === exerciseName) || null;
+}
+
+function getLegacyExerciseNames() {
+  const names = new Set(Object.values(EXERCISE_GROUPS).flat());
+
+  getWorkoutHistory().forEach((workout) => {
+    workout.exercises.forEach((exercise) => names.add(exercise.name));
+  });
+
+  getWorkoutTemplates().forEach((template) => {
+    template.exercises.forEach((exerciseName) => names.add(exerciseName));
+  });
+
+  return Array.from(names).filter(Boolean);
+}
+
+function createBuiltInExercise(id, name, muscleGroup, secondaryMuscles, equipment, category, difficulty, notes) {
+  return {
+    id,
+    name,
+    muscleGroup,
+    secondaryMuscles,
+    equipment,
+    category,
+    difficulty,
+    notes,
+    isBuiltIn: true,
+  };
+}
+
+function createLegacyExercise(exerciseName) {
+  return {
+    id: `legacy-${createExerciseSlug(exerciseName)}`,
+    name: exerciseName,
+    muscleGroup: getLegacyExerciseGroup(exerciseName),
+    secondaryMuscles: [],
+    equipment: "Other",
+    category: "Other",
+    difficulty: "Beginner",
+    notes: "Legacy exercise kept for existing workout history and templates.",
+    isBuiltIn: true,
+  };
+}
+
+function getLegacyExerciseGroup(exerciseName) {
+  const matchedGroup = Object.entries(EXERCISE_GROUPS).find(([, exercises]) => exercises.includes(exerciseName));
+  return matchedGroup ? matchedGroup[0] : "Other";
+}
+
 function toggleCustomWorkoutName() {
   const workoutName = getElement("workoutName");
   const customWorkoutName = getElement("customWorkoutName");
@@ -1455,7 +1892,7 @@ function addWorkoutExerciseRow(exercise = {}) {
 function createExerciseOptionsHtml(selectedExercise = "") {
   const knownExercise = isKnownExerciseName(selectedExercise) ? selectedExercise : "";
   const shouldSelectOther = selectedExercise && !knownExercise;
-  const groupHtml = Object.entries(EXERCISE_GROUPS)
+  const groupHtml = Object.entries(getExerciseDropdownGroups())
     .map(([groupName, exercises]) => {
       const options = exercises
         .map((exercise) => {
@@ -1472,7 +1909,7 @@ function createExerciseOptionsHtml(selectedExercise = "") {
 }
 
 function isKnownExerciseName(exerciseName) {
-  return Object.values(EXERCISE_GROUPS).flat().includes(exerciseName);
+  return getExerciseDropdownNames().includes(exerciseName);
 }
 
 function handleWorkoutSubmit(event) {
@@ -1939,6 +2376,12 @@ function getTopCount(counts, fallbackName) {
 }
 
 function getExerciseCategory(exerciseName) {
+  const databaseExercise = getExerciseByName(exerciseName);
+
+  if (databaseExercise) {
+    return databaseExercise.muscleGroup;
+  }
+
   const matchedGroup = Object.entries(EXERCISE_GROUPS).find(([groupName, exercises]) => (
     groupName !== "Other" && exercises.includes(exerciseName)
   ));
@@ -2080,6 +2523,20 @@ function createWorkoutId() {
 
 function createTemplateId() {
   return `template-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function createExerciseId(exerciseName) {
+  const slug = createExerciseSlug(exerciseName);
+
+  return `custom-${slug || "exercise"}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function createExerciseSlug(exerciseName) {
+  return String(exerciseName || "exercise")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function escapeHtml(value) {
