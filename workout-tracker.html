@@ -78,6 +78,40 @@
 
   <main class="workout-layout">
     <div class="workout-grid">
+      <section class="card tracker-card">
+        <div class="card-header">
+          <span class="tool-icon">TPL</span>
+          <div>
+            <h2>Workout Templates</h2>
+            <p>เลือก template เพื่อเติม workout form อัตโนมัติ หรือสร้าง template ส่วนตัวสำหรับวันซ้อมประจำ</p>
+          </div>
+        </div>
+
+        <div class="template-layout">
+          <div>
+            <div class="template-list" id="workoutTemplateList" aria-live="polite"></div>
+          </div>
+
+          <form class="template-editor" id="templateForm">
+            <input type="hidden" id="editingTemplateId">
+            <h3 id="templateEditorTitle">Create Custom Template</h3>
+            <label>
+              Template Name
+              <input type="text" id="templateName" autocomplete="off" placeholder="เช่น Push Strength" required>
+            </label>
+
+            <div class="template-exercise-list" id="templateExerciseList" aria-live="polite"></div>
+
+            <div class="template-editor-actions">
+              <button class="secondary-button" id="addTemplateExerciseButton" type="button">Add Exercise</button>
+              <button type="submit">Save Template</button>
+              <button class="secondary-button" id="cancelTemplateEditButton" type="button">Cancel</button>
+            </div>
+            <p class="workout-status" id="templateStatus" aria-live="polite">Built-in templates are ready to use.</p>
+          </form>
+        </div>
+      </section>
+
       <section class="card">
         <div class="card-header">
           <span class="tool-icon">LOG</span>

@@ -10,6 +10,7 @@ const THAI_LOCALE = "th-TH";
 const WEIGHT_HISTORY_KEY = "fitcalc-weight-history";
 const WORKOUT_HISTORY_KEY = "fitcalc-workout-history";
 const WEEKLY_WORKOUT_GOAL_KEY = "fitcalc-weekly-workout-goal";
+const WORKOUT_TEMPLATE_KEY = "fitcalc-workout-templates";
 const WORKOUT_NAME_OPTIONS = [
   "Push Day",
   "Pull Day",
@@ -23,7 +24,7 @@ const WORKOUT_NAME_OPTIONS = [
   "Other",
 ];
 const EXERCISE_GROUPS = {
-  Chest: ["Bench Press", "Incline Bench Press", "Dumbbell Press", "Push Up", "Dips"],
+  Chest: ["Bench Press", "Incline Bench Press", "Incline Dumbbell Press", "Dumbbell Press", "Push Up", "Dips"],
   Back: ["Pull Up", "Chin Up", "Lat Pulldown", "Barbell Row", "Dumbbell Row"],
   Legs: ["Squat", "Goblet Squat", "Bulgarian Split Squat", "Romanian Deadlift", "Deadlift", "Calf Raise"],
   Shoulders: ["Overhead Press", "Lateral Raise", "Reverse Fly"],
@@ -32,6 +33,38 @@ const EXERCISE_GROUPS = {
   Core: ["Plank", "Crunch", "Leg Raise", "Russian Twist"],
   Other: ["Other"],
 };
+const BUILT_IN_WORKOUT_TEMPLATES = [
+  {
+    id: "builtin-push-day",
+    name: "Push Day",
+    exercises: ["Bench Press", "Incline Dumbbell Press", "Overhead Press", "Lateral Raise", "Tricep Extension"],
+  },
+  {
+    id: "builtin-pull-day",
+    name: "Pull Day",
+    exercises: ["Pull Up", "Dumbbell Row", "Lat Pulldown", "Reverse Fly", "Hammer Curl"],
+  },
+  {
+    id: "builtin-leg-day",
+    name: "Leg Day",
+    exercises: ["Squat", "Romanian Deadlift", "Bulgarian Split Squat", "Calf Raise", "Plank"],
+  },
+  {
+    id: "builtin-upper-body",
+    name: "Upper Body",
+    exercises: ["Bench Press", "Pull Up", "Overhead Press", "Dumbbell Row", "Bicep Curl"],
+  },
+  {
+    id: "builtin-lower-body",
+    name: "Lower Body",
+    exercises: ["Squat", "Romanian Deadlift", "Bulgarian Split Squat", "Calf Raise", "Leg Raise"],
+  },
+  {
+    id: "builtin-full-body",
+    name: "Full Body",
+    exercises: ["Squat", "Bench Press", "Barbell Row", "Overhead Press", "Plank"],
+  },
+];
 let weightProgressChart = null;
 
 initializeTheme();
@@ -913,6 +946,7 @@ function initializeWorkoutTracker() {
   workoutForm.addEventListener("submit", handleWorkoutSubmit);
   getElement("workoutName").addEventListener("change", toggleCustomWorkoutName);
   initializeWeeklyWorkoutGoal();
+  initializeWorkoutTemplates();
   addWorkoutExerciseRow();
   renderWorkoutHistory();
   renderProgressDashboard();
@@ -930,6 +964,394 @@ function initializeWeeklyWorkoutGoal() {
     saveWeeklyWorkoutGoal(Number(weeklyGoalSelect.value));
     renderProgressDashboard();
   });
+}
+
+function initializeWorkoutTemplates() {
+  const templateList = getElement("workoutTemplateList");
+  const templateForm = getElement("templateForm");
+  const templateExerciseList = getElement("templateExerciseList");
+  const addTemplateExerciseButton = getElement("addTemplateExerciseButton");
+  const cancelTemplateEditButton = getElement("cancelTemplateEditButton");
+
+  if (!templateList || !templateForm || !templateExerciseList || !addTemplateExerciseButton) {
+    return;
+  }
+
+  templateList.addEventListener("click", handleTemplateListClick);
+  templateForm.addEventListener("submit", handleTemplateFormSubmit);
+  templateExerciseList.addEventListener("click", handleTemplateExerciseListClick);
+  templateExerciseList.addEventListener("change", handleTemplateExerciseListChange);
+  addTemplateExerciseButton.addEventListener("click", () => addTemplateExerciseRow());
+  cancelTemplateEditButton?.addEventListener("click", resetTemplateForm);
+
+  addTemplateExerciseRow();
+  renderWorkoutTemplates();
+}
+
+function handleTemplateListClick(event) {
+  const actionButton = event.target.closest("[data-template-action]");
+
+  if (!actionButton) {
+    return;
+  }
+
+  const templateId = actionButton.dataset.templateId;
+  const action = actionButton.dataset.templateAction;
+  const template = getWorkoutTemplates().find((item) => item.id === templateId);
+
+  if (!template) {
+    return;
+  }
+
+  if (action === "start") {
+    startWorkoutFromTemplate(template);
+  } else if (action === "favorite") {
+    toggleTemplateFavorite(template.id);
+  } else if (action === "edit") {
+    loadTemplateIntoEditor(template);
+  } else if (action === "duplicate") {
+    duplicateWorkoutTemplate(template);
+  } else if (action === "delete") {
+    deleteWorkoutTemplate(template);
+  }
+}
+
+function handleTemplateFormSubmit(event) {
+  event.preventDefault();
+
+  const templateName = getElement("templateName").value.trim();
+  const exercises = collectTemplateExercises();
+
+  if (!templateName || exercises.length === 0) {
+    updateTemplateStatus(ERROR_MESSAGE);
+    return;
+  }
+
+  const templateStore = getWorkoutTemplateStore();
+  const editingTemplateId = getElement("editingTemplateId").value;
+  const existingTemplateIndex = templateStore.customTemplates.findIndex((template) => template.id === editingTemplateId);
+  const template = {
+    id: existingTemplateIndex >= 0 ? editingTemplateId : createTemplateId(),
+    name: templateName,
+    exercises,
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (existingTemplateIndex >= 0) {
+    templateStore.customTemplates[existingTemplateIndex] = template;
+  } else {
+    templateStore.customTemplates.push(template);
+  }
+
+  saveWorkoutTemplateStore(templateStore);
+  resetTemplateForm();
+  renderWorkoutTemplates();
+  updateTemplateStatus(`Saved template: ${templateName}`);
+}
+
+function handleTemplateExerciseListClick(event) {
+  const button = event.target.closest("[data-template-exercise-action]");
+
+  if (!button) {
+    return;
+  }
+
+  const row = button.closest(".template-exercise-row");
+  const action = button.dataset.templateExerciseAction;
+
+  if (action === "remove") {
+    removeTemplateExerciseRow(row);
+  } else if (action === "up") {
+    moveTemplateExerciseRow(row, "up");
+  } else if (action === "down") {
+    moveTemplateExerciseRow(row, "down");
+  }
+}
+
+function handleTemplateExerciseListChange(event) {
+  const exerciseSelect = event.target.closest(".template-exercise-name-input");
+
+  if (!exerciseSelect) {
+    return;
+  }
+
+  const currentRow = exerciseSelect.closest(".template-exercise-row");
+  const customExerciseInput = currentRow.querySelector(".template-custom-exercise-input");
+  const customExerciseField = customExerciseInput.closest("label");
+  const shouldShowCustomInput = exerciseSelect.value === "Other";
+
+  customExerciseField.classList.toggle("is-hidden", !shouldShowCustomInput);
+  customExerciseInput.required = shouldShowCustomInput;
+
+  if (!shouldShowCustomInput) {
+    customExerciseInput.value = "";
+  }
+}
+
+function renderWorkoutTemplates() {
+  const templateList = getElement("workoutTemplateList");
+
+  if (!templateList) {
+    return;
+  }
+
+  templateList.innerHTML = getWorkoutTemplates().map(createWorkoutTemplateCard).join("");
+}
+
+function createWorkoutTemplateCard(template) {
+  const favoriteLabel = template.favorite ? "Unfavorite" : "Favorite";
+  const favoriteSymbol = template.favorite ? "★" : "☆";
+  const typeLabel = template.builtIn ? "Built-in" : "Custom";
+  const deleteButton = template.builtIn
+    ? ""
+    : `<button class="danger-button compact-button" type="button" data-template-action="delete" data-template-id="${escapeHtml(template.id)}">Delete</button>`;
+
+  return `
+    <article class="template-card ${template.favorite ? "is-favorite" : ""}">
+      <div class="template-card-header">
+        <div>
+          <span>${typeLabel}</span>
+          <h3>${escapeHtml(template.name)}</h3>
+        </div>
+        <button class="icon-button" type="button" aria-label="${favoriteLabel} ${escapeHtml(template.name)}" data-template-action="favorite" data-template-id="${escapeHtml(template.id)}">${favoriteSymbol}</button>
+      </div>
+      <ul class="template-exercise-preview">
+        ${template.exercises.map((exercise) => `<li>${escapeHtml(exercise)}</li>`).join("")}
+      </ul>
+      <div class="template-actions">
+        <button type="button" data-template-action="start" data-template-id="${escapeHtml(template.id)}">Start Workout</button>
+        <button class="secondary-button compact-button" type="button" data-template-action="edit" data-template-id="${escapeHtml(template.id)}">Edit</button>
+        <button class="secondary-button compact-button" type="button" data-template-action="duplicate" data-template-id="${escapeHtml(template.id)}">Duplicate</button>
+        ${deleteButton}
+      </div>
+    </article>
+  `;
+}
+
+function startWorkoutFromTemplate(template) {
+  setWorkoutName(template.name);
+  const exerciseList = getElement("workoutExerciseList");
+  exerciseList.innerHTML = "";
+  template.exercises.forEach((exerciseName) => {
+    addWorkoutExerciseRow({ name: exerciseName });
+  });
+  updateWorkoutStatus(`Loaded template: ${template.name}. Add weight, reps, and sets.`);
+  getElement("workoutForm").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function setWorkoutName(workoutName) {
+  const workoutNameSelect = getElement("workoutName");
+  const customWorkoutName = getElement("customWorkoutName");
+
+  if (WORKOUT_NAME_OPTIONS.includes(workoutName)) {
+    workoutNameSelect.value = workoutName;
+  } else {
+    workoutNameSelect.value = "Other";
+    customWorkoutName.value = workoutName;
+  }
+
+  toggleCustomWorkoutName();
+}
+
+function loadTemplateIntoEditor(template) {
+  getElement("templateName").value = template.name;
+  getElement("editingTemplateId").value = template.builtIn ? "" : template.id;
+  const templateExerciseList = getElement("templateExerciseList");
+  templateExerciseList.innerHTML = "";
+  template.exercises.forEach((exerciseName) => addTemplateExerciseRow(exerciseName));
+  getElement("templateEditorTitle").textContent = template.builtIn ? "Customize Built-in Template" : "Edit Template";
+  updateTemplateStatus(template.builtIn ? "Built-in templates save as custom templates when edited." : `Editing template: ${template.name}`);
+  getElement("templateForm").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function duplicateWorkoutTemplate(template) {
+  const templateStore = getWorkoutTemplateStore();
+  const duplicatedTemplate = {
+    id: createTemplateId(),
+    name: `${template.name} Copy`,
+    exercises: [...template.exercises],
+    updatedAt: new Date().toISOString(),
+  };
+
+  templateStore.customTemplates.push(duplicatedTemplate);
+  saveWorkoutTemplateStore(templateStore);
+  renderWorkoutTemplates();
+  updateTemplateStatus(`Duplicated template: ${template.name}`);
+}
+
+function deleteWorkoutTemplate(template) {
+  if (template.builtIn) {
+    updateTemplateStatus("Built-in templates cannot be deleted.");
+    return;
+  }
+
+  const templateStore = getWorkoutTemplateStore();
+  templateStore.customTemplates = templateStore.customTemplates.filter((item) => item.id !== template.id);
+  templateStore.favoriteTemplateIds = templateStore.favoriteTemplateIds.filter((id) => id !== template.id);
+  saveWorkoutTemplateStore(templateStore);
+  renderWorkoutTemplates();
+  updateTemplateStatus(`Deleted template: ${template.name}`);
+}
+
+function toggleTemplateFavorite(templateId) {
+  const templateStore = getWorkoutTemplateStore();
+  const favoriteSet = new Set(templateStore.favoriteTemplateIds);
+
+  if (favoriteSet.has(templateId)) {
+    favoriteSet.delete(templateId);
+  } else {
+    favoriteSet.add(templateId);
+  }
+
+  templateStore.favoriteTemplateIds = Array.from(favoriteSet);
+  saveWorkoutTemplateStore(templateStore);
+  renderWorkoutTemplates();
+}
+
+function addTemplateExerciseRow(exerciseName = "") {
+  const templateExerciseList = getElement("templateExerciseList");
+  const rowId = `template-exercise-${Date.now()}-${templateExerciseList.children.length}`;
+  const optionHtml = createExerciseOptionsHtml(exerciseName);
+  const isCustomExercise = exerciseName && !isKnownExerciseName(exerciseName);
+
+  templateExerciseList.insertAdjacentHTML(
+    "beforeend",
+    `
+      <div class="template-exercise-row">
+        <label>
+          Exercise
+          <select name="${rowId}-name" class="template-exercise-name-input" required>
+            ${optionHtml}
+          </select>
+        </label>
+        <label class="${isCustomExercise ? "" : "is-hidden"}">
+          Custom Exercise
+          <input type="text" name="${rowId}-custom-name" class="template-custom-exercise-input" autocomplete="off" placeholder="เช่น Hip Thrust" value="${isCustomExercise ? escapeHtml(exerciseName) : ""}" ${isCustomExercise ? "required" : ""}>
+        </label>
+        <div class="template-row-actions">
+          <button class="secondary-button compact-button" type="button" data-template-exercise-action="up">Up</button>
+          <button class="secondary-button compact-button" type="button" data-template-exercise-action="down">Down</button>
+          <button class="danger-button compact-button" type="button" data-template-exercise-action="remove">Remove</button>
+        </div>
+      </div>
+    `
+  );
+}
+
+function removeTemplateExerciseRow(row) {
+  const templateRows = document.querySelectorAll(".template-exercise-row");
+
+  if (templateRows.length === 1) {
+    row.querySelectorAll("input").forEach((input) => {
+      input.value = "";
+    });
+    row.querySelector("select").value = "";
+    return;
+  }
+
+  row.remove();
+}
+
+function moveTemplateExerciseRow(row, direction) {
+  if (direction === "up" && row.previousElementSibling) {
+    row.parentElement.insertBefore(row, row.previousElementSibling);
+  }
+
+  if (direction === "down" && row.nextElementSibling) {
+    row.parentElement.insertBefore(row.nextElementSibling, row);
+  }
+}
+
+function collectTemplateExercises() {
+  return Array.from(document.querySelectorAll(".template-exercise-row"))
+    .map((row) => {
+      const selectedName = row.querySelector(".template-exercise-name-input").value;
+      const customName = row.querySelector(".template-custom-exercise-input").value.trim();
+      return selectedName === "Other" ? customName : selectedName;
+    })
+    .filter(Boolean);
+}
+
+function resetTemplateForm() {
+  const templateExerciseList = getElement("templateExerciseList");
+  getElement("templateForm").reset();
+  getElement("editingTemplateId").value = "";
+  getElement("templateEditorTitle").textContent = "Create Custom Template";
+  templateExerciseList.innerHTML = "";
+  addTemplateExerciseRow();
+}
+
+function getWorkoutTemplates() {
+  const templateStore = getWorkoutTemplateStore();
+  const favoriteSet = new Set(templateStore.favoriteTemplateIds);
+  const builtInTemplates = BUILT_IN_WORKOUT_TEMPLATES.map((template, index) => ({
+    ...template,
+    builtIn: true,
+    favorite: favoriteSet.has(template.id),
+    sortIndex: index,
+  }));
+  const customTemplates = templateStore.customTemplates.map((template, index) => ({
+    ...template,
+    builtIn: false,
+    favorite: favoriteSet.has(template.id),
+    sortIndex: BUILT_IN_WORKOUT_TEMPLATES.length + index,
+  }));
+
+  return [...builtInTemplates, ...customTemplates].sort((first, second) => {
+    if (first.favorite !== second.favorite) {
+      return first.favorite ? -1 : 1;
+    }
+
+    return first.sortIndex - second.sortIndex;
+  });
+}
+
+function getWorkoutTemplateStore() {
+  const savedTemplates = localStorage.getItem(WORKOUT_TEMPLATE_KEY);
+
+  try {
+    return normalizeWorkoutTemplateStore(savedTemplates ? JSON.parse(savedTemplates) : {});
+  } catch {
+    localStorage.removeItem(WORKOUT_TEMPLATE_KEY);
+    return normalizeWorkoutTemplateStore({});
+  }
+}
+
+function saveWorkoutTemplateStore(templateStore) {
+  localStorage.setItem(WORKOUT_TEMPLATE_KEY, JSON.stringify(normalizeWorkoutTemplateStore(templateStore)));
+}
+
+function normalizeWorkoutTemplateStore(templateStore) {
+  const rawCustomTemplates = Array.isArray(templateStore)
+    ? templateStore
+    : Array.isArray(templateStore.customTemplates)
+      ? templateStore.customTemplates
+      : [];
+  const rawFavoriteTemplateIds = Array.isArray(templateStore.favoriteTemplateIds) ? templateStore.favoriteTemplateIds : [];
+  const customTemplates = rawCustomTemplates
+    .map((template) => {
+      const name = String(template.name || "").trim();
+      const exercises = Array.isArray(template.exercises)
+        ? template.exercises.map((exercise) => String(exercise || "").trim()).filter(Boolean)
+        : [];
+
+      if (!name || exercises.length === 0) {
+        return null;
+      }
+
+      return {
+        id: template.id || createTemplateId(),
+        name,
+        exercises,
+        updatedAt: template.updatedAt || new Date().toISOString(),
+      };
+    })
+    .filter(Boolean);
+
+  return {
+    customTemplates,
+    favoriteTemplateIds: rawFavoriteTemplateIds.map(String),
+  };
 }
 
 function toggleCustomWorkoutName() {
@@ -1654,6 +2076,10 @@ function updateWorkoutStatus(message) {
 
 function createWorkoutId() {
   return `workout-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function createTemplateId() {
+  return `template-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function escapeHtml(value) {

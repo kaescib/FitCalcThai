@@ -937,6 +937,137 @@ button[type="submit"]:hover {
   gap: 20px;
 }
 
+.template-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 16px;
+  min-width: 0;
+}
+
+.template-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  min-width: 0;
+}
+
+.template-card,
+.template-editor,
+.template-exercise-row {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+  padding: 14px;
+}
+
+.template-card {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.template-card.is-favorite {
+  border-color: color-mix(in srgb, var(--primary) 54%, var(--border));
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+.template-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.template-card-header > div {
+  min-width: 0;
+}
+
+.template-card-header span {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.template-card-header h3,
+.template-editor h3 {
+  margin: 2px 0 0;
+  font-size: 1.15rem;
+}
+
+.icon-button {
+  display: inline-flex;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--primary);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.template-exercise-preview {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.template-actions,
+.template-editor-actions,
+.template-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.template-actions button[data-template-action="start"] {
+  min-height: 42px;
+  max-width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 9px 14px;
+}
+
+.template-actions button[data-template-action="start"]:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.compact-button {
+  min-height: 38px;
+  padding: 7px 11px;
+}
+
+.template-editor {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.template-exercise-list {
+  display: grid;
+  gap: 10px;
+}
+
+.template-exercise-row {
+  display: grid;
+  gap: 10px;
+  background: var(--surface);
+}
+
 .workout-exercise-list {
   display: grid;
   gap: 14px;
@@ -1255,6 +1386,8 @@ button[type="submit"]:hover {
   }
 
   .workout-grid,
+  .template-layout,
+  .template-list,
   .workout-number-grid,
   .dashboard-grid,
   .record-grid,
@@ -1286,8 +1419,17 @@ button[type="submit"]:hover {
   }
 
   .workout-form-actions .secondary-button,
-  .workout-form-actions button[type="submit"] {
+  .workout-form-actions button[type="submit"],
+  .template-editor-actions .secondary-button,
+  .template-editor-actions button[type="submit"],
+  .template-actions button {
     width: 100%;
+  }
+
+  .template-actions,
+  .template-editor-actions,
+  .template-row-actions {
+    flex-direction: column;
   }
 }
 
