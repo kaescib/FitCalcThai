@@ -109,8 +109,410 @@ initializeTheme();
 initializeNavbarDropdowns();
 initializeSmoothAnchorScrolling();
 bindCalculatorForms();
+initializeHomeDashboard();
 initializeWeightTracker();
 initializeWorkoutTracker();
+
+function initializeHomeDashboard() {
+  if (!getElement("dashboardSummaryCards")) {
+    return;
+  }
+
+  const dashboardData = getHomeDashboardData();
+  renderDashboardBeginnerPanel(dashboardData);
+  renderDashboardSummaryCards(dashboardData);
+  renderDashboardWeightSummary(dashboardData);
+  renderDashboardWorkoutSummary(dashboardData);
+  renderDashboardWeeklyGoal(dashboardData);
+  renderDashboardLibrarySummary(dashboardData);
+  renderDashboardRecentActivity(dashboardData);
+}
+
+function getHomeDashboardData() {
+  const weightHistory = sortWeightHistory(readDashboardArray(WEIGHT_HISTORY_KEY).map(normalizeDashboardWeightEntry).filter(Boolean));
+  const workoutHistory = sortWorkoutHistory(readDashboardArray(WORKOUT_HISTORY_KEY).map(normalizeDashboardWorkoutEntry).filter(Boolean));
+  const templateStore = normalizeWorkoutTemplateStore(readDashboardValue(WORKOUT_TEMPLATE_KEY) || {});
+  const customExercises = normalizeCustomExercises(readDashboardArray(CUSTOM_EXERCISE_KEY));
+  const weeklyGoalRaw = localStorage.getItem(WEEKLY_WORKOUT_GOAL_KEY);
+  const weeklyGoal = Number(weeklyGoalRaw);
+  const hasWeeklyGoal = weeklyGoalRaw !== null && Number.isInteger(weeklyGoal) && weeklyGoal >= 1 && weeklyGoal <= 7;
+
+  return {
+    weightHistory,
+    workoutHistory,
+    templateStore,
+    customExercises,
+    weeklyGoal: hasWeeklyGoal ? weeklyGoal : null,
+  };
+}
+
+function readDashboardValue(storageKey) {
+  const savedValue = localStorage.getItem(storageKey);
+
+  if (!savedValue) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(savedValue);
+  } catch {
+    return null;
+  }
+}
+
+function readDashboardArray(storageKey) {
+  const value = readDashboardValue(storageKey);
+  return Array.isArray(value) ? value : [];
+}
+
+function normalizeDashboardWeightEntry(entry) {
+  const date = parseDisplayDate(entry?.date);
+  const weightKg = parseFloat(entry?.weightKg);
+
+  return date && areValidNumbers(weightKg) ? { date, weightKg } : null;
+}
+
+function normalizeDashboardWorkoutEntry(workout) {
+  const date = parseDisplayDate(workout?.date);
+  const name = String(workout?.name || "").trim();
+  const exercises = Array.isArray(workout?.exercises) ? normalizeWorkoutExercises(workout.exercises) : [];
+
+  if (!date || !name || exercises.length === 0) {
+    return null;
+  }
+
+  return {
+    id: workout.id || "",
+    date,
+    name,
+    exercises,
+    createdAt: workout.createdAt || `${date}T00:00:00.000Z`,
+  };
+}
+
+function renderDashboardBeginnerPanel(data) {
+  const panel = getElement("dashboardBeginnerPanel");
+
+  if (!panel) {
+    return;
+  }
+
+  const hasAnyData = data.weightHistory.length > 0 ||
+    data.workoutHistory.length > 0 ||
+    data.templateStore.customTemplates.length > 0 ||
+    data.customExercises.length > 0 ||
+    data.weeklyGoal !== null;
+
+  panel.classList.toggle("is-hidden", hasAnyData);
+}
+
+function renderDashboardSummaryCards(data) {
+  const summaryCards = getElement("dashboardSummaryCards");
+  const weightSummary = getDashboardWeightSummary(data.weightHistory);
+  const workoutSummary = getDashboardWorkoutSummary(data.workoutHistory);
+  const weeklyGoal = getDashboardWeeklyGoalSummary(data.workoutHistory, data.weeklyGoal);
+  const librarySummary = getDashboardLibrarySummary(data.templateStore, data.customExercises);
+
+  summaryCards.innerHTML = [
+    createDashboardSummaryCard("น้ำหนักล่าสุด", weightSummary.latestText, weightSummary.latestSubtext),
+    createDashboardSummaryCard("น้ำหนักเฉลี่ย 7 วัน", weightSummary.averageText, weightSummary.trendText),
+    createDashboardSummaryCard("การเปลี่ยนแปลงน้ำหนัก", weightSummary.changeText, weightSummary.previousText),
+    createDashboardSummaryCard("Workout สัปดาห์นี้", `${workoutSummary.thisWeek} ครั้ง`, `สัปดาห์ก่อน ${workoutSummary.lastWeek} ครั้ง`),
+    createDashboardSummaryCard("เป้าหมายรายสัปดาห์", weeklyGoal.progressText, weeklyGoal.statusText),
+    createDashboardSummaryCard("Workout ล่าสุด", workoutSummary.lastWorkoutText, workoutSummary.lastWorkoutDateText),
+    createDashboardSummaryCard("Templates ทั้งหมด", `${librarySummary.totalTemplates} รายการ`, `${librarySummary.favoriteTemplates} favorite`),
+    createDashboardSummaryCard("Exercises ทั้งหมด", `${librarySummary.totalExercises} ท่า`, `${librarySummary.customExercises} custom`),
+  ].join("");
+}
+
+function createDashboardSummaryCard(label, value, detail) {
+  return `
+    <article class="dashboard-summary-card">
+      <span>${label}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <p>${escapeHtml(detail)}</p>
+    </article>
+  `;
+}
+
+function renderDashboardWeightSummary(data) {
+  const panel = getElement("dashboardWeightSummary");
+  const summary = getDashboardWeightSummary(data.weightHistory);
+
+  if (data.weightHistory.length === 0) {
+    panel.innerHTML = '<p class="empty-state">ยังไม่มีข้อมูลน้ำหนัก</p>';
+    return;
+  }
+
+  panel.innerHTML = `
+    <div class="dashboard-mini-grid">
+      ${createDashboardMetric("ล่าสุด", summary.latestText)}
+      ${createDashboardMetric("ก่อนหน้า", summary.previousValueText)}
+      ${createDashboardMetric("เปลี่ยนแปลง", summary.changeText)}
+      ${createDashboardMetric("เฉลี่ย 7 วัน", summary.averageText)}
+      ${createDashboardMetric("แนวโน้ม", summary.trendText)}
+    </div>
+  `;
+}
+
+function renderDashboardWorkoutSummary(data) {
+  const panel = getElement("dashboardWorkoutSummary");
+  const summary = getDashboardWorkoutSummary(data.workoutHistory);
+
+  if (data.workoutHistory.length === 0) {
+    panel.innerHTML = '<p class="empty-state">ยังไม่มีประวัติการออกกำลังกาย</p>';
+    return;
+  }
+
+  panel.innerHTML = `
+    <div class="dashboard-mini-grid">
+      ${createDashboardMetric("สัปดาห์นี้", `${summary.thisWeek} ครั้ง`)}
+      ${createDashboardMetric("สัปดาห์ก่อน", `${summary.lastWeek} ครั้ง`)}
+      ${createDashboardMetric("รวมทั้งหมด", `${summary.totalWorkouts} ครั้ง`)}
+      ${createDashboardMetric("ล่าสุด", summary.lastWorkoutText)}
+      ${createDashboardMetric("วันที่ล่าสุด", summary.lastWorkoutDateText)}
+      ${createDashboardMetric("Volume รวม", summary.totalVolumeText)}
+    </div>
+  `;
+}
+
+function renderDashboardWeeklyGoal(data) {
+  const panel = getElement("dashboardWeeklyGoal");
+  const summary = getDashboardWeeklyGoalSummary(data.workoutHistory, data.weeklyGoal);
+
+  if (data.weeklyGoal === null) {
+    panel.innerHTML = '<p class="empty-state">ยังไม่ได้ตั้งเป้าหมายรายสัปดาห์</p>';
+    return;
+  }
+
+  panel.innerHTML = `
+    <div class="dashboard-goal-widget">
+      <div>
+        <strong>${summary.completed} / ${summary.target} ครั้ง</strong>
+        <span>${summary.statusText}</span>
+      </div>
+      <div class="dashboard-progress-bar" aria-label="Weekly goal progress ${summary.percent}%">
+        <span style="width: ${summary.percent}%"></span>
+      </div>
+      <p>${summary.percent}% สำเร็จแล้ว</p>
+    </div>
+  `;
+}
+
+function renderDashboardLibrarySummary(data) {
+  const panel = getElement("dashboardLibrarySummary");
+  const summary = getDashboardLibrarySummary(data.templateStore, data.customExercises);
+
+  panel.innerHTML = `
+    <div class="dashboard-mini-grid">
+      ${createDashboardMetric("Templates ทั้งหมด", `${summary.totalTemplates} รายการ`)}
+      ${createDashboardMetric("Favorite Templates", `${summary.favoriteTemplates} รายการ`)}
+      ${createDashboardMetric("Custom Templates", `${summary.customTemplates} รายการ`)}
+      ${createDashboardMetric("Exercises ทั้งหมด", `${summary.totalExercises} ท่า`)}
+      ${createDashboardMetric("Custom Exercises", `${summary.customExercises} ท่า`)}
+    </div>
+  `;
+}
+
+function renderDashboardRecentActivity(data) {
+  const panel = getElement("dashboardRecentActivity");
+  const activities = getDashboardRecentActivities(data).slice(0, 5);
+
+  if (activities.length === 0) {
+    panel.innerHTML = '<p class="empty-state">ยังไม่มีกิจกรรมล่าสุด</p>';
+    return;
+  }
+
+  panel.innerHTML = `
+    <ul class="dashboard-activity-list">
+      ${activities.map((activity) => `
+        <li>
+          <span>${escapeHtml(activity.type)}</span>
+          <strong>${escapeHtml(activity.title)}</strong>
+          <time>${formatThaiDate(activity.date)}</time>
+        </li>
+      `).join("")}
+    </ul>
+  `;
+}
+
+function createDashboardMetric(label, value) {
+  return `
+    <div class="dashboard-mini-metric">
+      <span>${label}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </div>
+  `;
+}
+
+function getDashboardWeightSummary(weightHistory) {
+  if (weightHistory.length === 0) {
+    return {
+      latestText: "ยังไม่มีข้อมูล",
+      latestSubtext: "เริ่มบันทึกน้ำหนัก",
+      averageText: "ยังไม่มีข้อมูล",
+      changeText: "ยังไม่มีข้อมูล",
+      previousText: "ไม่มีข้อมูลก่อนหน้า",
+      previousValueText: "ยังไม่มีข้อมูล",
+      trendText: "ยังไม่มีข้อมูลน้ำหนัก",
+    };
+  }
+
+  const latest = weightHistory[0];
+  const previous = weightHistory[1] || null;
+  const change = previous ? latest.weightKg - previous.weightKg : 0;
+  const sevenDaysAgo = getDateTime(latest.date) - 6 * 24 * 60 * 60 * 1000;
+  const recentEntries = weightHistory.filter((entry) => getDateTime(entry.date) >= sevenDaysAgo);
+  const averageWeight = recentEntries.reduce((total, entry) => total + entry.weightKg, 0) / recentEntries.length;
+  const trendText = getWeightTrendText(change);
+
+  return {
+    latestText: `${formatWeight(latest.weightKg)} kg`,
+    latestSubtext: `ล่าสุด ${formatThaiDate(latest.date)}`,
+    averageText: `${formatWeight(averageWeight)} kg`,
+    changeText: previous ? `${change > 0 ? "+" : ""}${formatWeight(change)} kg` : "ยังไม่มีข้อมูลก่อนหน้า",
+    previousText: previous ? `เทียบกับ ${formatThaiDate(previous.date)}` : "ไม่มีข้อมูลก่อนหน้า",
+    previousValueText: previous ? `${formatWeight(previous.weightKg)} kg` : "ยังไม่มีข้อมูล",
+    trendText,
+  };
+}
+
+function getWeightTrendText(change) {
+  if (Math.abs(change) < 0.05) {
+    return "ทรงตัว";
+  }
+
+  return change > 0 ? "เพิ่มขึ้น" : "ลดลง";
+}
+
+function getDashboardWorkoutSummary(workoutHistory) {
+  const lastWorkout = workoutHistory[0] || null;
+  const totalVolume = workoutHistory.reduce((total, workout) => total + calculateWorkoutVolume(workout), 0);
+
+  return {
+    thisWeek: countDashboardWorkoutsThisWeek(workoutHistory),
+    lastWeek: countDashboardWorkoutsLastWeek(workoutHistory),
+    totalWorkouts: workoutHistory.length,
+    lastWorkoutText: lastWorkout ? lastWorkout.name : "ยังไม่มีข้อมูล",
+    lastWorkoutDateText: lastWorkout ? formatThaiDate(lastWorkout.date) : "ยังไม่มีประวัติ",
+    totalVolumeText: workoutHistory.length > 0 ? `${formatVolume(totalVolume)} kg` : "ยังไม่มีข้อมูล",
+  };
+}
+
+function countDashboardWorkoutsThisWeek(workoutHistory) {
+  const startOfWeek = getStartOfWeek().getTime();
+  return workoutHistory.filter((workout) => getDateTime(workout.date) >= startOfWeek).length;
+}
+
+function countDashboardWorkoutsLastWeek(workoutHistory) {
+  const startOfThisWeek = getStartOfWeek();
+  const startOfLastWeek = new Date(startOfThisWeek);
+  startOfLastWeek.setDate(startOfThisWeek.getDate() - 7);
+  const startTime = startOfLastWeek.getTime();
+  const endTime = startOfThisWeek.getTime();
+
+  return workoutHistory.filter((workout) => {
+    const workoutTime = getDateTime(workout.date);
+    return workoutTime >= startTime && workoutTime < endTime;
+  }).length;
+}
+
+function getDashboardWeeklyGoalSummary(workoutHistory, weeklyGoal) {
+  if (weeklyGoal === null) {
+    return {
+      target: 0,
+      completed: countDashboardWorkoutsThisWeek(workoutHistory),
+      percent: 0,
+      progressText: "ยังไม่ได้ตั้ง",
+      statusText: "ยังไม่ได้ตั้งเป้าหมายรายสัปดาห์",
+    };
+  }
+
+  const completed = countDashboardWorkoutsThisWeek(workoutHistory);
+  const percent = Math.min(Math.round((completed / weeklyGoal) * 100), 100);
+
+  return {
+    target: weeklyGoal,
+    completed,
+    percent,
+    progressText: `${completed} / ${weeklyGoal} ครั้ง`,
+    statusText: getWeeklyGoalStatusText(completed, weeklyGoal, percent),
+  };
+}
+
+function getWeeklyGoalStatusText(completed, target, percent) {
+  if (completed === 0) {
+    return "ยังไม่เริ่ม";
+  }
+
+  if (completed >= target) {
+    return "สำเร็จแล้ว";
+  }
+
+  if (percent >= 75) {
+    return "ใกล้ถึงเป้าหมาย";
+  }
+
+  return "กำลังไปได้ดี";
+}
+
+function getDashboardLibrarySummary(templateStore, customExercises) {
+  return {
+    totalTemplates: BUILT_IN_WORKOUT_TEMPLATES.length + templateStore.customTemplates.length,
+    favoriteTemplates: templateStore.favoriteTemplateIds.length,
+    customTemplates: templateStore.customTemplates.length,
+    totalExercises: BUILT_IN_EXERCISES.length + customExercises.length,
+    customExercises: customExercises.length,
+  };
+}
+
+function getDashboardRecentActivities(data) {
+  const activities = [];
+
+  data.weightHistory.forEach((entry) => {
+    activities.push({
+      type: "น้ำหนัก",
+      title: `${formatWeight(entry.weightKg)} kg`,
+      date: entry.date,
+      time: getDateTime(entry.date),
+    });
+  });
+
+  data.workoutHistory.forEach((workout) => {
+    activities.push({
+      type: "Workout",
+      title: workout.name,
+      date: workout.date,
+      time: getDateTime(workout.date),
+    });
+  });
+
+  data.templateStore.customTemplates.forEach((template) => {
+    const date = parseDisplayDate(String(template.updatedAt || "").slice(0, 10));
+    if (date) {
+      activities.push({
+        type: "Template",
+        title: template.name,
+        date,
+        time: getDateTime(date),
+      });
+    }
+  });
+
+  data.customExercises.forEach((exercise) => {
+    const date = parseDisplayDate(String(exercise.updatedAt || exercise.createdAt || "").slice(0, 10));
+    if (date) {
+      activities.push({
+        type: "Exercise",
+        title: exercise.name,
+        date,
+        time: getDateTime(date),
+      });
+    }
+  });
+
+  return activities.sort((first, second) => second.time - first.time);
+}
 
 function initializeSmoothAnchorScrolling() {
   document.querySelectorAll('a[href*="#"]').forEach((link) => {
@@ -134,12 +536,19 @@ function initializeSmoothAnchorScrolling() {
 
   if (window.location.hash && getScrollTarget(window.location.hash)) {
     window.requestAnimationFrame(() => scrollToHashTarget(window.location.hash, false));
+    window.setTimeout(() => scrollToHashTarget(window.location.hash, false), 120);
   }
 }
 
 function getScrollTarget(hash) {
   const targetId = decodeURIComponent(hash.replace("#", ""));
-  const target = document.getElementById(targetId);
+  const anchorAliases = {
+    workoutForm: "workoutTrackerSection",
+    workoutTemplateList: "workoutTemplatesSection",
+    exerciseDatabaseList: "exerciseDatabaseSection",
+    weeklyWorkoutGoal: "weeklyGoalSection",
+  };
+  const target = document.getElementById(anchorAliases[targetId] || targetId);
 
   return target?.closest(".card") || target;
 }
@@ -152,7 +561,7 @@ function scrollToHashTarget(hash, shouldUpdateHash) {
   }
 
   const navbarHeight = document.querySelector(".site-nav")?.offsetHeight || 0;
-  const topOffset = navbarHeight + 18;
+  const topOffset = navbarHeight + 34;
   const targetTop = target.getBoundingClientRect().top + window.pageYOffset - topOffset;
 
   window.scrollTo({
@@ -472,6 +881,7 @@ function handleWeightTrackerSubmit(event) {
   saveWeeklyWeight(date, weightKg);
   getElement("trackerWeight").value = "";
   renderWeightHistory();
+  initializeHomeDashboard();
   trackAnalyticsEvent("weight_saved", {
     entry_date: date,
     weight_kg: weightKg,
@@ -628,6 +1038,7 @@ function saveWeeklyWeight(date, weightKg) {
 function clearWeightHistory() {
   localStorage.removeItem(WEIGHT_HISTORY_KEY);
   renderWeightHistory();
+  initializeHomeDashboard();
 }
 
 function sortWeightHistory(history) {
@@ -827,6 +1238,7 @@ function importWeightHistoryCsv(csvText) {
   const mergedHistory = mergeWeightHistory(getWeightHistory(), importedHistory);
   saveWeightHistory(mergedHistory);
   renderWeightHistory();
+  initializeHomeDashboard();
   trackAnalyticsEvent("csv_imported", {
     imported_count: importedHistory.length,
     total_count: mergedHistory.length,
@@ -1180,7 +1592,7 @@ function createExerciseDatabaseCard(exercise) {
 function addExerciseToWorkout(exerciseName) {
   addWorkoutExerciseRow({ name: exerciseName });
   updateWorkoutStatus(`Added ${exerciseName} to workout.`);
-  getElement("workoutForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  scrollToHashTarget("#workoutTrackerSection", false);
 }
 
 function handleCustomExerciseSubmit(event) {
@@ -1522,7 +1934,7 @@ function startWorkoutFromTemplate(template) {
     addWorkoutExerciseRow({ name: exerciseName });
   });
   updateWorkoutStatus(`Loaded template: ${template.name}. Add weight, reps, and sets.`);
-  getElement("workoutForm").scrollIntoView({ behavior: "smooth", block: "start" });
+  scrollToHashTarget("#workoutTrackerSection", false);
 }
 
 function setWorkoutName(workoutName) {
@@ -1798,6 +2210,8 @@ function normalizeCustomExercises(exercises) {
         category,
         difficulty,
         notes,
+        createdAt: exercise.createdAt || "",
+        updatedAt: exercise.updatedAt || "",
         isBuiltIn: false,
       };
     })

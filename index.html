@@ -76,6 +76,78 @@
   </header>
 
   <main class="tool-grid">
+    <section class="card dashboard-v2-card">
+      <div class="dashboard-v2-header">
+        <div>
+          <p class="eyebrow">Dashboard</p>
+          <h2>FitCalc Thai Dashboard</h2>
+          <p>สรุปสุขภาพและการออกกำลังกายของคุณในที่เดียว</p>
+        </div>
+        <div class="dashboard-quick-actions">
+          <a class="calculator-link" href="#weightTrackerForm">บันทึกน้ำหนัก</a>
+          <a class="guide-link" href="workout-tracker.html#workoutTrackerSection">บันทึก Workout</a>
+        </div>
+      </div>
+
+      <div class="beginner-panel is-hidden" id="dashboardBeginnerPanel">
+        <div>
+          <h3>เริ่มต้นใช้งาน FitCalc Thai</h3>
+          <p>เริ่มจากคำนวณพื้นฐาน บันทึกน้ำหนัก หรือบันทึก workout แรก เพื่อให้ dashboard สรุปข้อมูลของคุณได้แม่นขึ้น</p>
+        </div>
+        <div class="dashboard-quick-actions">
+          <a class="calculator-link" href="#bmiForm">คำนวณ BMI / TDEE</a>
+          <a class="guide-link" href="#weightTrackerForm">บันทึกน้ำหนัก</a>
+          <a class="guide-link" href="workout-tracker.html#workoutTrackerSection">บันทึก Workout แรก</a>
+        </div>
+      </div>
+
+      <div class="dashboard-summary-grid" id="dashboardSummaryCards" aria-live="polite"></div>
+
+      <div class="dashboard-detail-grid">
+        <section class="dashboard-panel">
+          <div class="dashboard-panel-header">
+            <h3>Weight Summary</h3>
+            <a class="guide-link" href="#weightTrackerForm">บันทึกน้ำหนัก</a>
+          </div>
+          <div id="dashboardWeightSummary" aria-live="polite"></div>
+        </section>
+
+        <section class="dashboard-panel">
+          <div class="dashboard-panel-header">
+            <h3>Workout Summary</h3>
+            <a class="guide-link" href="workout-tracker.html#workoutTrackerSection">บันทึก Workout</a>
+          </div>
+          <div id="dashboardWorkoutSummary" aria-live="polite"></div>
+        </section>
+
+        <section class="dashboard-panel">
+          <div class="dashboard-panel-header">
+            <h3>Weekly Goal</h3>
+            <a class="guide-link" href="workout-tracker.html#weeklyGoalSection">ตั้งเป้าหมาย</a>
+          </div>
+          <div id="dashboardWeeklyGoal" aria-live="polite"></div>
+        </section>
+
+        <section class="dashboard-panel">
+          <div class="dashboard-panel-header">
+            <h3>Templates & Exercises</h3>
+            <div class="dashboard-link-group">
+              <a class="guide-link" href="workout-tracker.html#workoutTemplatesSection">เปิด Workout Templates</a>
+              <a class="guide-link" href="workout-tracker.html#exerciseDatabaseSection">เปิด Exercise Database</a>
+            </div>
+          </div>
+          <div id="dashboardLibrarySummary" aria-live="polite"></div>
+        </section>
+      </div>
+
+      <section class="dashboard-panel dashboard-recent-panel">
+        <div class="dashboard-panel-header">
+          <h3>Recent Activity</h3>
+        </div>
+        <div id="dashboardRecentActivity" aria-live="polite"></div>
+      </section>
+    </section>
+
     <section class="featured-workout-card">
       <div>
         <p class="eyebrow">Featured Tool</p>
