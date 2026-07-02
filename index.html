@@ -107,7 +107,10 @@
         <section class="dashboard-panel">
           <div class="dashboard-panel-header">
             <h3>Weight Summary</h3>
-            <a class="guide-link" href="#weightTrackerForm">บันทึกน้ำหนัก</a>
+            <div class="dashboard-link-group">
+              <a class="guide-link" href="#weightTrackerForm">บันทึกน้ำหนัก</a>
+              <a class="guide-link" href="#bodyMeasurementsSection">บันทึกสัดส่วน</a>
+            </div>
           </div>
           <div id="dashboardWeightSummary" aria-live="polite"></div>
         </section>
@@ -368,6 +371,109 @@
 
       <ul class="history-list" id="weightHistoryList" aria-live="polite"></ul>
     </section>
+
+    <section class="card tracker-card anchor-section" id="bodyMeasurementsSection">
+      <div class="card-header">
+        <span class="tool-icon">BODY</span>
+        <div>
+          <h2>Body Measurements</h2>
+          <p>ติดตามสัดส่วนร่างกาย เพื่อดูพัฒนาการรูปร่างนอกเหนือจากน้ำหนัก</p>
+        </div>
+      </div>
+
+      <div class="measurement-summary-grid" id="measurementSummary" aria-live="polite"></div>
+
+      <form class="calculator-form measurement-form" id="bodyMeasurementForm">
+        <input type="hidden" id="measurementEditingId">
+
+        <fieldset>
+          <legend>Core</legend>
+          <div class="measurement-field-grid">
+            <label>
+              Date
+              <input type="date" id="measurementDate" lang="en-GB" required>
+            </label>
+            <label>
+              Weight kg optional
+              <input type="number" id="measurementWeight" min="0" step="0.01" inputmode="decimal" autocomplete="off" placeholder="65.25">
+            </label>
+            <label>
+              Chest cm
+              <input type="number" id="measurementChest" min="0" step="0.01" inputmode="decimal" autocomplete="off" placeholder="90">
+            </label>
+            <label>
+              Waist cm
+              <input type="number" id="measurementWaist" min="0" step="0.01" inputmode="decimal" autocomplete="off" placeholder="78">
+            </label>
+            <label>
+              Hips cm
+              <input type="number" id="measurementHips" min="0" step="0.01" inputmode="decimal" autocomplete="off" placeholder="88">
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Upper Body</legend>
+          <div class="measurement-field-grid">
+            <label>
+              Shoulder cm
+              <input type="number" id="measurementShoulder" min="0" step="0.01" inputmode="decimal" autocomplete="off">
+            </label>
+            <label>
+              Neck cm
+              <input type="number" id="measurementNeck" min="0" step="0.01" inputmode="decimal" autocomplete="off">
+            </label>
+            <label>
+              Upper Arm Left cm
+              <input type="number" id="measurementUpperArmLeft" min="0" step="0.01" inputmode="decimal" autocomplete="off">
+            </label>
+            <label>
+              Upper Arm Right cm
+              <input type="number" id="measurementUpperArmRight" min="0" step="0.01" inputmode="decimal" autocomplete="off">
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Lower Body</legend>
+          <div class="measurement-field-grid">
+            <label>
+              Thigh Left cm
+              <input type="number" id="measurementThighLeft" min="0" step="0.01" inputmode="decimal" autocomplete="off">
+            </label>
+            <label>
+              Thigh Right cm
+              <input type="number" id="measurementThighRight" min="0" step="0.01" inputmode="decimal" autocomplete="off">
+            </label>
+            <label>
+              Calf Left cm
+              <input type="number" id="measurementCalfLeft" min="0" step="0.01" inputmode="decimal" autocomplete="off">
+            </label>
+            <label>
+              Calf Right cm
+              <input type="number" id="measurementCalfRight" min="0" step="0.01" inputmode="decimal" autocomplete="off">
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Notes</legend>
+          <label>
+            Notes
+            <textarea id="measurementNotes" rows="3" placeholder="เช่น เช้าวันจันทร์ หลังตื่นนอน"></textarea>
+          </label>
+        </fieldset>
+
+        <div class="measurement-actions">
+          <button type="submit">Save Measurement</button>
+          <button class="secondary-button" id="cancelMeasurementEditButton" type="button">Cancel Edit</button>
+        </div>
+      </form>
+
+      <p class="workout-status" id="measurementStatus" aria-live="polite">ยังไม่มีข้อมูลสัดส่วนร่างกาย</p>
+      <div class="measurement-history-list" id="measurementHistoryList" aria-live="polite"></div>
+    </section>
+
     <section class="card" id="workoutTrackerCard">
       <div class="card-header">
         <span class="tool-icon">LOG</span>

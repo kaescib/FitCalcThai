@@ -444,6 +444,106 @@ button[type="submit"]:hover {
   font-size: 0.95rem;
 }
 
+.measurement-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.measurement-summary-card,
+.measurement-history-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+  padding: 14px;
+}
+
+.measurement-summary-card span,
+.measurement-history-card span,
+.measurement-history-grid span {
+  display: block;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.measurement-summary-card strong,
+.measurement-history-card strong,
+.measurement-history-grid strong {
+  display: block;
+  color: var(--text);
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+}
+
+.measurement-summary-card p {
+  margin: 8px 0 0;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.measurement-form fieldset {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+  padding: 16px;
+}
+
+.measurement-form legend {
+  color: var(--primary);
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+  font-weight: 800;
+  padding: 0 8px;
+}
+
+.measurement-field-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.measurement-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.measurement-history-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.measurement-history-card {
+  display: grid;
+  gap: 12px;
+}
+
+.measurement-history-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.measurement-history-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.measurement-history-grid div {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 10px 12px;
+}
+
+.measurement-note {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
 .site-footer {
   padding: 28px 0 40px;
   color: var(--muted);
@@ -613,6 +713,22 @@ button[type="submit"]:hover {
   .history-item {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .measurement-summary-grid,
+  .measurement-field-grid,
+  .measurement-history-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .measurement-history-header,
+  .measurement-actions {
+    flex-direction: column;
+  }
+
+  .measurement-actions button,
+  .measurement-actions .secondary-button {
+    width: 100%;
   }
 
   .article-link-grid {

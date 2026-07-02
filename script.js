@@ -8,6 +8,7 @@ const themeText = getElement("themeText");
 const ERROR_MESSAGE = "กรุณากรอกข้อมูลให้ครบและมากกว่า 0";
 const THAI_LOCALE = "th-TH";
 const WEIGHT_HISTORY_KEY = "fitcalc-weight-history";
+const BODY_MEASUREMENT_KEY = "fitcalc-body-measurements";
 const WORKOUT_HISTORY_KEY = "fitcalc-workout-history";
 const WEEKLY_WORKOUT_GOAL_KEY = "fitcalc-weekly-workout-goal";
 const WORKOUT_TEMPLATE_KEY = "fitcalc-workout-templates";
@@ -34,6 +35,20 @@ const EXERCISE_GROUPS = {
   Core: ["Plank", "Crunch", "Leg Raise", "Russian Twist"],
   Other: ["Other"],
 };
+const BODY_MEASUREMENT_FIELDS = [
+  { key: "weight", inputId: "measurementWeight", label: "Weight", unit: "kg" },
+  { key: "chest", inputId: "measurementChest", label: "Chest", unit: "cm" },
+  { key: "waist", inputId: "measurementWaist", label: "Waist", unit: "cm" },
+  { key: "hips", inputId: "measurementHips", label: "Hips", unit: "cm" },
+  { key: "shoulder", inputId: "measurementShoulder", label: "Shoulder", unit: "cm" },
+  { key: "neck", inputId: "measurementNeck", label: "Neck", unit: "cm" },
+  { key: "upperArmLeft", inputId: "measurementUpperArmLeft", label: "Upper Arm Left", unit: "cm" },
+  { key: "upperArmRight", inputId: "measurementUpperArmRight", label: "Upper Arm Right", unit: "cm" },
+  { key: "thighLeft", inputId: "measurementThighLeft", label: "Thigh Left", unit: "cm" },
+  { key: "thighRight", inputId: "measurementThighRight", label: "Thigh Right", unit: "cm" },
+  { key: "calfLeft", inputId: "measurementCalfLeft", label: "Calf Left", unit: "cm" },
+  { key: "calfRight", inputId: "measurementCalfRight", label: "Calf Right", unit: "cm" },
+];
 const BUILT_IN_EXERCISES = [
   createBuiltInExercise("bench-press", "Bench Press", "Chest", ["Triceps", "Shoulders"], "Barbell", "Push", "Beginner", "Main chest pressing movement"),
   createBuiltInExercise("incline-bench-press", "Incline Bench Press", "Chest", ["Triceps", "Shoulders"], "Barbell", "Push", "Intermediate", "Incline press for upper chest strength"),
@@ -111,6 +126,7 @@ initializeSmoothAnchorScrolling();
 bindCalculatorForms();
 initializeHomeDashboard();
 initializeWeightTracker();
+initializeBodyMeasurements();
 initializeWorkoutTracker();
 
 function initializeHomeDashboard() {
@@ -130,6 +146,7 @@ function initializeHomeDashboard() {
 
 function getHomeDashboardData() {
   const weightHistory = sortWeightHistory(readDashboardArray(WEIGHT_HISTORY_KEY).map(normalizeDashboardWeightEntry).filter(Boolean));
+  const bodyMeasurements = sortBodyMeasurements(readDashboardArray(BODY_MEASUREMENT_KEY).map(normalizeBodyMeasurementRecord).filter(Boolean));
   const workoutHistory = sortWorkoutHistory(readDashboardArray(WORKOUT_HISTORY_KEY).map(normalizeDashboardWorkoutEntry).filter(Boolean));
   const templateStore = normalizeWorkoutTemplateStore(readDashboardValue(WORKOUT_TEMPLATE_KEY) || {});
   const customExercises = normalizeCustomExercises(readDashboardArray(CUSTOM_EXERCISE_KEY));
@@ -139,6 +156,7 @@ function getHomeDashboardData() {
 
   return {
     weightHistory,
+    bodyMeasurements,
     workoutHistory,
     templateStore,
     customExercises,
@@ -198,6 +216,7 @@ function renderDashboardBeginnerPanel(data) {
   }
 
   const hasAnyData = data.weightHistory.length > 0 ||
+    data.bodyMeasurements.length > 0 ||
     data.workoutHistory.length > 0 ||
     data.templateStore.customTemplates.length > 0 ||
     data.customExercises.length > 0 ||
@@ -209,6 +228,7 @@ function renderDashboardBeginnerPanel(data) {
 function renderDashboardSummaryCards(data) {
   const summaryCards = getElement("dashboardSummaryCards");
   const weightSummary = getDashboardWeightSummary(data.weightHistory);
+  const measurementSummary = getDashboardMeasurementSummary(data.bodyMeasurements);
   const workoutSummary = getDashboardWorkoutSummary(data.workoutHistory);
   const weeklyGoal = getDashboardWeeklyGoalSummary(data.workoutHistory, data.weeklyGoal);
   const librarySummary = getDashboardLibrarySummary(data.templateStore, data.customExercises);
@@ -217,6 +237,7 @@ function renderDashboardSummaryCards(data) {
     createDashboardSummaryCard("น้ำหนักล่าสุด", weightSummary.latestText, weightSummary.latestSubtext),
     createDashboardSummaryCard("น้ำหนักเฉลี่ย 7 วัน", weightSummary.averageText, weightSummary.trendText),
     createDashboardSummaryCard("การเปลี่ยนแปลงน้ำหนัก", weightSummary.changeText, weightSummary.previousText),
+    createDashboardSummaryCard("สัดส่วนล่าสุด", measurementSummary.latestWaistText, measurementSummary.changeText),
     createDashboardSummaryCard("Workout สัปดาห์นี้", `${workoutSummary.thisWeek} ครั้ง`, `สัปดาห์ก่อน ${workoutSummary.lastWeek} ครั้ง`),
     createDashboardSummaryCard("เป้าหมายรายสัปดาห์", weeklyGoal.progressText, weeklyGoal.statusText),
     createDashboardSummaryCard("Workout ล่าสุด", workoutSummary.lastWorkoutText, workoutSummary.lastWorkoutDateText),
@@ -238,9 +259,10 @@ function createDashboardSummaryCard(label, value, detail) {
 function renderDashboardWeightSummary(data) {
   const panel = getElement("dashboardWeightSummary");
   const summary = getDashboardWeightSummary(data.weightHistory);
+  const measurementSummary = getDashboardMeasurementSummary(data.bodyMeasurements);
 
-  if (data.weightHistory.length === 0) {
-    panel.innerHTML = '<p class="empty-state">ยังไม่มีข้อมูลน้ำหนัก</p>';
+  if (data.weightHistory.length === 0 && data.bodyMeasurements.length === 0) {
+    panel.innerHTML = '<p class="empty-state">ยังไม่มีข้อมูลน้ำหนักหรือสัดส่วน</p>';
     return;
   }
 
@@ -251,6 +273,9 @@ function renderDashboardWeightSummary(data) {
       ${createDashboardMetric("เปลี่ยนแปลง", summary.changeText)}
       ${createDashboardMetric("เฉลี่ย 7 วัน", summary.averageText)}
       ${createDashboardMetric("แนวโน้ม", summary.trendText)}
+      ${createDashboardMetric("เอวล่าสุด", measurementSummary.latestWaistText)}
+      ${createDashboardMetric("เอวเปลี่ยนแปลง", measurementSummary.changeText)}
+      ${createDashboardMetric("วันที่วัดล่าสุด", measurementSummary.latestDateText)}
     </div>
   `;
 }
@@ -377,6 +402,28 @@ function getDashboardWeightSummary(weightHistory) {
   };
 }
 
+function getDashboardMeasurementSummary(measurements) {
+  if (measurements.length === 0) {
+    return {
+      latestWaistText: "ยังไม่มีข้อมูล",
+      changeText: "ยังไม่มีข้อมูลสัดส่วน",
+      latestDateText: "ยังไม่มีข้อมูล",
+    };
+  }
+
+  const latest = measurements[0];
+  const previous = measurements[1] || null;
+  const waistChange = previous && hasMeasurementValue(latest.waist) && hasMeasurementValue(previous.waist)
+    ? latest.waist - previous.waist
+    : null;
+
+  return {
+    latestWaistText: hasMeasurementValue(latest.waist) ? `${formatMeasurementValue(latest.waist)} cm` : "ไม่มีค่าเอว",
+    changeText: waistChange === null ? "ยังไม่มีข้อมูลเปรียบเทียบ" : `${waistChange > 0 ? "+" : ""}${formatMeasurementValue(waistChange)} cm`,
+    latestDateText: formatThaiDate(latest.date),
+  };
+}
+
 function getWeightTrendText(change) {
   if (Math.abs(change) < 0.05) {
     return "ทรงตัว";
@@ -484,6 +531,15 @@ function getDashboardRecentActivities(data) {
       title: workout.name,
       date: workout.date,
       time: getDateTime(workout.date),
+    });
+  });
+
+  data.bodyMeasurements.forEach((record) => {
+    activities.push({
+      type: "Body Measurement",
+      title: "บันทึกสัดส่วนร่างกาย",
+      date: record.date,
+      time: getDateTime(record.date),
     });
   });
 
@@ -1298,6 +1354,359 @@ function normalizeWeightHistory(history) {
       })
       .filter(Boolean)
   );
+}
+
+function initializeBodyMeasurements() {
+  const measurementForm = getElement("bodyMeasurementForm");
+  const measurementHistoryList = getElement("measurementHistoryList");
+
+  if (!measurementForm || !measurementHistoryList) {
+    return;
+  }
+
+  getElement("measurementDate").value = getTodayDateValue();
+  measurementForm.addEventListener("submit", handleBodyMeasurementSubmit);
+  measurementHistoryList.addEventListener("click", handleMeasurementHistoryClick);
+  getElement("cancelMeasurementEditButton")?.addEventListener("click", resetBodyMeasurementForm);
+  renderBodyMeasurements();
+}
+
+function handleBodyMeasurementSubmit(event) {
+  event.preventDefault();
+
+  const record = collectBodyMeasurementForm();
+
+  if (!record) {
+    updateMeasurementStatus("กรุณากรอกวันที่ และกรอกค่าสัดส่วนอย่างน้อย 1 ช่อง โดยต้องไม่ติดลบ");
+    return;
+  }
+
+  const history = getBodyMeasurements();
+  const editingId = getElement("measurementEditingId").value;
+  const editingIndex = history.findIndex((item) => item.id === editingId);
+  const sameDateIndex = history.findIndex((item) => item.date === record.date);
+  const existingIndex = editingIndex >= 0 ? editingIndex : sameDateIndex;
+
+  if (sameDateIndex >= 0 && sameDateIndex !== editingIndex) {
+    const shouldOverwrite = window.confirm("มีข้อมูลสัดส่วนของวันที่นี้อยู่แล้ว ต้องการอัปเดตข้อมูลเดิมหรือไม่?");
+
+    if (!shouldOverwrite) {
+      updateMeasurementStatus("ยกเลิกการบันทึกเพื่อป้องกันข้อมูลซ้ำ");
+      return;
+    }
+
+    if (editingIndex >= 0) {
+      history.splice(editingIndex, 1);
+    }
+  }
+
+  const targetIndex = sameDateIndex >= 0 && sameDateIndex !== editingIndex ? history.findIndex((item) => item.date === record.date) : existingIndex;
+
+  if (targetIndex >= 0) {
+    history[targetIndex] = {
+      ...history[targetIndex],
+      ...record,
+      id: history[targetIndex].id,
+      createdAt: history[targetIndex].createdAt || record.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+  } else {
+    history.push(record);
+  }
+
+  saveBodyMeasurements(sortBodyMeasurements(history));
+  resetBodyMeasurementForm();
+  renderBodyMeasurements();
+  initializeHomeDashboard();
+  updateMeasurementStatus("บันทึกสัดส่วนเรียบร้อยแล้ว");
+}
+
+function collectBodyMeasurementForm() {
+  const date = parseDisplayDate(getElement("measurementDate").value);
+
+  if (!date) {
+    return null;
+  }
+
+  const record = {
+    id: `measurement-${date}`,
+    date,
+    notes: getElement("measurementNotes").value.trim(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  let hasMeasurement = false;
+
+  for (const field of BODY_MEASUREMENT_FIELDS) {
+    const input = getElement(field.inputId);
+    const rawValue = String(input.value || "").trim();
+
+    if (rawValue === "") {
+      record[field.key] = null;
+      continue;
+    }
+
+    const value = parseFloat(rawValue);
+
+    if (!Number.isFinite(value) || value < 0) {
+      return null;
+    }
+
+    record[field.key] = value;
+    hasMeasurement = true;
+  }
+
+  return hasMeasurement ? record : null;
+}
+
+function getBodyMeasurements() {
+  const savedMeasurements = localStorage.getItem(BODY_MEASUREMENT_KEY);
+
+  try {
+    return savedMeasurements ? sortBodyMeasurements(JSON.parse(savedMeasurements).map(normalizeBodyMeasurementRecord).filter(Boolean)) : [];
+  } catch {
+    localStorage.removeItem(BODY_MEASUREMENT_KEY);
+    return [];
+  }
+}
+
+function saveBodyMeasurements(measurements) {
+  localStorage.setItem(BODY_MEASUREMENT_KEY, JSON.stringify(sortBodyMeasurements(measurements)));
+}
+
+function normalizeBodyMeasurementRecord(record) {
+  const date = parseDisplayDate(record?.date);
+
+  if (!date) {
+    return null;
+  }
+
+  const normalizedRecord = {
+    id: record.id || `measurement-${date}`,
+    date,
+    notes: String(record.notes || "").trim(),
+    createdAt: record.createdAt || `${date}T00:00:00.000Z`,
+    updatedAt: record.updatedAt || record.createdAt || `${date}T00:00:00.000Z`,
+  };
+
+  BODY_MEASUREMENT_FIELDS.forEach((field) => {
+    const value = parseFloat(record[field.key]);
+    normalizedRecord[field.key] = Number.isFinite(value) && value >= 0 ? value : null;
+  });
+
+  const hasMeasurement = BODY_MEASUREMENT_FIELDS.some((field) => hasMeasurementValue(normalizedRecord[field.key]));
+  return hasMeasurement ? normalizedRecord : null;
+}
+
+function sortBodyMeasurements(measurements) {
+  return measurements.sort((first, second) => getDateTime(second.date) - getDateTime(first.date));
+}
+
+function renderBodyMeasurements() {
+  const measurements = getBodyMeasurements();
+  renderMeasurementSummary(measurements);
+  renderMeasurementHistory(measurements);
+}
+
+function renderMeasurementSummary(measurements) {
+  const summary = getElement("measurementSummary");
+
+  if (!summary) {
+    return;
+  }
+
+  if (measurements.length === 0) {
+    summary.innerHTML = '<p class="empty-state">ยังไม่มีข้อมูลสัดส่วนร่างกาย</p>';
+    return;
+  }
+
+  const latest = measurements[0];
+  const previous = measurements[1] || null;
+  const latestArmAverage = calculateMeasurementAverage(latest.upperArmLeft, latest.upperArmRight);
+  const latestThighAverage = calculateMeasurementAverage(latest.thighLeft, latest.thighRight);
+
+  summary.innerHTML = `
+    ${createMeasurementSummaryCard("Latest waist", latest.waist, "cm", getMeasurementTrend(latest.waist, previous?.waist))}
+    ${createMeasurementSummaryCard("Waist change", calculateMeasurementChange(latest.waist, previous?.waist), "cm", previous ? "เทียบครั้งก่อน" : "ยังไม่มีข้อมูลเปรียบเทียบ", true)}
+    ${createMeasurementSummaryCard("Latest chest", latest.chest, "cm", getMeasurementTrend(latest.chest, previous?.chest))}
+    ${createMeasurementSummaryCard("Latest hips", latest.hips, "cm", getMeasurementTrend(latest.hips, previous?.hips))}
+    ${createMeasurementSummaryCard("Arm average", latestArmAverage, "cm", getMeasurementTrend(latestArmAverage, calculateMeasurementAverage(previous?.upperArmLeft, previous?.upperArmRight)))}
+    ${createMeasurementSummaryCard("Thigh average", latestThighAverage, "cm", getMeasurementTrend(latestThighAverage, calculateMeasurementAverage(previous?.thighLeft, previous?.thighRight)))}
+    ${createMeasurementTextCard("Total records", `${measurements.length} records`, "จำนวนข้อมูลสัดส่วน")}
+    ${createMeasurementTextCard("Last measurement", formatThaiDate(latest.date), "วันที่วัดล่าสุด")}
+  `;
+}
+
+function createMeasurementSummaryCard(label, value, unit, detail, isChange = false) {
+  const valueText = hasMeasurementValue(value)
+    ? `${isChange && value > 0 ? "+" : ""}${formatMeasurementValue(value)} ${unit}`
+    : "ยังไม่มีข้อมูล";
+
+  return createMeasurementTextCard(label, valueText, detail);
+}
+
+function createMeasurementTextCard(label, value, detail) {
+  return `
+    <article class="measurement-summary-card">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <p>${escapeHtml(detail)}</p>
+    </article>
+  `;
+}
+
+function renderMeasurementHistory(measurements) {
+  const historyList = getElement("measurementHistoryList");
+
+  if (!historyList) {
+    return;
+  }
+
+  if (measurements.length === 0) {
+    historyList.innerHTML = '<p class="empty-state">ยังไม่มีข้อมูลสัดส่วนร่างกาย</p>';
+    return;
+  }
+
+  historyList.innerHTML = measurements.map(createMeasurementHistoryCard).join("");
+}
+
+function createMeasurementHistoryCard(record) {
+  return `
+    <article class="measurement-history-card">
+      <div class="measurement-history-header">
+        <div>
+          <span>${formatThaiDate(record.date)}</span>
+          <strong>${formatMeasurementOptional(record.weight, "kg", "Weight")}</strong>
+        </div>
+        <div class="measurement-actions">
+          <button class="secondary-button compact-button" type="button" data-measurement-action="edit" data-measurement-id="${escapeHtml(record.id)}">Edit</button>
+          <button class="danger-button compact-button" type="button" data-measurement-action="delete" data-measurement-id="${escapeHtml(record.id)}">Delete</button>
+        </div>
+      </div>
+      <div class="measurement-history-grid">
+        ${createMeasurementHistoryMetric("Chest", record.chest)}
+        ${createMeasurementHistoryMetric("Waist", record.waist)}
+        ${createMeasurementHistoryMetric("Hips", record.hips)}
+        ${createMeasurementHistoryMetric("Shoulder", record.shoulder)}
+        ${createMeasurementHistoryMetric("Arms average", calculateMeasurementAverage(record.upperArmLeft, record.upperArmRight))}
+        ${createMeasurementHistoryMetric("Thighs average", calculateMeasurementAverage(record.thighLeft, record.thighRight))}
+      </div>
+      ${record.notes ? `<p class="measurement-note">${escapeHtml(record.notes)}</p>` : ""}
+    </article>
+  `;
+}
+
+function createMeasurementHistoryMetric(label, value) {
+  return `
+    <div>
+      <span>${escapeHtml(label)}</span>
+      <strong>${hasMeasurementValue(value) ? `${formatMeasurementValue(value)} cm` : "-"}</strong>
+    </div>
+  `;
+}
+
+function handleMeasurementHistoryClick(event) {
+  const actionButton = event.target.closest("[data-measurement-action]");
+
+  if (!actionButton) {
+    return;
+  }
+
+  const measurementId = actionButton.dataset.measurementId;
+  const measurement = getBodyMeasurements().find((record) => record.id === measurementId);
+
+  if (!measurement) {
+    return;
+  }
+
+  if (actionButton.dataset.measurementAction === "edit") {
+    loadMeasurementIntoForm(measurement);
+  } else if (actionButton.dataset.measurementAction === "delete") {
+    deleteMeasurementRecord(measurement);
+  }
+}
+
+function loadMeasurementIntoForm(record) {
+  getElement("measurementEditingId").value = record.id;
+  getElement("measurementDate").value = record.date;
+  BODY_MEASUREMENT_FIELDS.forEach((field) => {
+    getElement(field.inputId).value = hasMeasurementValue(record[field.key]) ? record[field.key] : "";
+  });
+  getElement("measurementNotes").value = record.notes || "";
+  updateMeasurementStatus(`Editing measurement from ${formatThaiDate(record.date)}`);
+  getElement("bodyMeasurementForm").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function deleteMeasurementRecord(record) {
+  const shouldDelete = window.confirm(`ลบข้อมูลสัดส่วนวันที่ ${formatThaiDate(record.date)} หรือไม่?`);
+
+  if (!shouldDelete) {
+    return;
+  }
+
+  saveBodyMeasurements(getBodyMeasurements().filter((item) => item.id !== record.id));
+  renderBodyMeasurements();
+  initializeHomeDashboard();
+  updateMeasurementStatus("ลบข้อมูลสัดส่วนเรียบร้อยแล้ว");
+}
+
+function resetBodyMeasurementForm() {
+  getElement("bodyMeasurementForm").reset();
+  getElement("measurementEditingId").value = "";
+  getElement("measurementDate").value = getTodayDateValue();
+  updateMeasurementStatus("พร้อมบันทึกข้อมูลสัดส่วนใหม่");
+}
+
+function updateMeasurementStatus(message) {
+  const status = getElement("measurementStatus");
+
+  if (status) {
+    status.textContent = message;
+  }
+}
+
+function calculateMeasurementAverage(firstValue, secondValue) {
+  const values = [firstValue, secondValue].filter(hasMeasurementValue);
+
+  if (values.length === 0) {
+    return null;
+  }
+
+  return values.reduce((total, value) => total + value, 0) / values.length;
+}
+
+function calculateMeasurementChange(latestValue, previousValue) {
+  return hasMeasurementValue(latestValue) && hasMeasurementValue(previousValue) ? latestValue - previousValue : null;
+}
+
+function getMeasurementTrend(latestValue, previousValue) {
+  const change = calculateMeasurementChange(latestValue, previousValue);
+
+  if (change === null) {
+    return "ยังไม่มีข้อมูลเปรียบเทียบ";
+  }
+
+  if (Math.abs(change) < 0.1) {
+    return "ทรงตัว";
+  }
+
+  return change > 0 ? "เพิ่มขึ้น" : "ลดลง";
+}
+
+function hasMeasurementValue(value) {
+  return Number.isFinite(value);
+}
+
+function formatMeasurementValue(value) {
+  return Number(value.toFixed(2)).toLocaleString(THAI_LOCALE, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
+
+function formatMeasurementOptional(value, unit, label) {
+  return hasMeasurementValue(value) ? `${label}: ${formatMeasurementValue(value)} ${unit}` : `${label}: -`;
 }
 
 function getTodayDisplayDate() {
