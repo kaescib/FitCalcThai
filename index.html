@@ -126,7 +126,10 @@
         <section class="dashboard-panel">
           <div class="dashboard-panel-header">
             <h3>Weekly Goal</h3>
-            <a class="guide-link" href="workout-tracker.html#weeklyGoalSection">ตั้งเป้าหมาย</a>
+            <div class="dashboard-link-group">
+              <a class="guide-link" href="workout-tracker.html#weeklyGoalSection">ตั้งเป้าหมาย Workout</a>
+              <a class="guide-link" href="#goalTrackingSection">ตั้งเป้าหมาย</a>
+            </div>
           </div>
           <div id="dashboardWeeklyGoal" aria-live="polite"></div>
         </section>
@@ -149,6 +152,83 @@
         </div>
         <div id="dashboardRecentActivity" aria-live="polite"></div>
       </section>
+    </section>
+
+    <section class="card tracker-card anchor-section" id="goalTrackingSection">
+      <div class="card-header">
+        <span class="tool-icon">GOAL</span>
+        <div>
+          <h2>Goal Tracking</h2>
+          <p>ตั้งเป้าหมายสุขภาพและติดตามความคืบหน้าจากข้อมูลที่คุณบันทึกจริง</p>
+        </div>
+      </div>
+
+      <p class="workout-status">เป้าหมาย Workout รายสัปดาห์เดิมยังทำงานตามปกติ</p>
+
+      <form class="calculator-form goal-form" id="goalForm">
+        <input type="hidden" id="goalEditingId">
+        <div class="two-column">
+          <label>
+            ประเภทเป้าหมาย
+            <select id="goalType" required>
+              <option value="">เลือกประเภทเป้าหมาย</option>
+              <option value="weight">เป้าหมายน้ำหนัก</option>
+              <option value="waist">เป้าหมายรอบเอว</option>
+              <option value="weeklyWorkout">เป้าหมาย Workout รายสัปดาห์</option>
+              <option value="bodyMeasurement">เป้าหมายสัดส่วนร่างกาย</option>
+            </select>
+          </label>
+          <label>
+            ชื่อเป้าหมาย
+            <input type="text" id="goalTitle" autocomplete="off" placeholder="เช่น ลดเอวให้เหลือ 78 cm" required>
+          </label>
+          <label>
+            สัดส่วนที่ต้องการติดตาม
+            <select id="goalMeasurementField">
+              <option value="chest">รอบอก</option>
+              <option value="hips">สะโพก</option>
+              <option value="shoulder">ไหล่</option>
+              <option value="upperArmAverage">ต้นแขนเฉลี่ย</option>
+              <option value="thighAverage">ต้นขาเฉลี่ย</option>
+            </select>
+          </label>
+          <label>
+            ค่าเป้าหมาย
+            <input type="number" id="goalTargetValue" min="0.01" step="0.01" inputmode="decimal" autocomplete="off" required>
+          </label>
+          <label>
+            หน่วย
+            <input type="text" id="goalUnit" autocomplete="off" placeholder="kg" required>
+          </label>
+          <label>
+            วันที่เริ่ม
+            <input type="date" id="goalStartDate" lang="en-GB" required>
+          </label>
+          <label>
+            วันที่เป้าหมาย (ไม่บังคับ)
+            <input type="date" id="goalTargetDate" lang="en-GB">
+          </label>
+          <label>
+            สถานะ
+            <select id="goalStatus" required>
+              <option value="Active">กำลังทำ</option>
+              <option value="Completed">สำเร็จแล้ว</option>
+              <option value="Paused">พักไว้ก่อน</option>
+            </select>
+          </label>
+        </div>
+        <label>
+          โน้ต (ไม่บังคับ)
+          <textarea id="goalNotes" rows="3" placeholder="บันทึกเป้าหมายหรือแผนคร่าว ๆ"></textarea>
+        </label>
+        <div class="goal-form-actions">
+          <button type="submit">บันทึกเป้าหมาย</button>
+          <button class="secondary-button" id="cancelGoalEditButton" type="button">ยกเลิกการแก้ไข</button>
+        </div>
+      </form>
+
+      <p class="workout-status" id="goalStatusMessage" aria-live="polite">ยังไม่มีเป้าหมายที่บันทึกไว้</p>
+      <div class="goal-list" id="goalList" aria-live="polite"></div>
     </section>
 
     <section class="featured-workout-card">

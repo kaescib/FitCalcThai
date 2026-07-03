@@ -544,6 +544,65 @@ button[type="submit"]:hover {
   padding-top: 10px;
 }
 
+.goal-form-actions,
+.goal-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.goal-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.goal-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+  padding: 16px;
+}
+
+.goal-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.goal-card-header span {
+  display: block;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.goal-card-header h3 {
+  margin: 2px 0 0;
+  font-size: 1.18rem;
+}
+
+.goal-card-header > strong {
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--primary);
+  padding: 5px 9px;
+}
+
+.goal-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.goal-status-text {
+  color: var(--primary);
+  font-weight: 800;
+}
+
 .site-footer {
   padding: 28px 0 40px;
   color: var(--muted);
@@ -717,17 +776,25 @@ button[type="submit"]:hover {
 
   .measurement-summary-grid,
   .measurement-field-grid,
-  .measurement-history-grid {
+  .measurement-history-grid,
+  .goal-list,
+  .goal-progress-grid {
     grid-template-columns: 1fr;
   }
 
   .measurement-history-header,
-  .measurement-actions {
+  .measurement-actions,
+  .goal-card-header,
+  .goal-form-actions,
+  .goal-card-actions {
     flex-direction: column;
   }
 
   .measurement-actions button,
-  .measurement-actions .secondary-button {
+  .measurement-actions .secondary-button,
+  .goal-form-actions button,
+  .goal-form-actions .secondary-button,
+  .goal-card-actions button {
     width: 100%;
   }
 

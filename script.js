@@ -9,6 +9,7 @@ const ERROR_MESSAGE = "กรุณากรอกข้อมูลให้ค
 const THAI_LOCALE = "th-TH";
 const WEIGHT_HISTORY_KEY = "fitcalc-weight-history";
 const BODY_MEASUREMENT_KEY = "fitcalc-body-measurements";
+const GOALS_KEY = "fitcalc-goals";
 const WORKOUT_HISTORY_KEY = "fitcalc-workout-history";
 const WEEKLY_WORKOUT_GOAL_KEY = "fitcalc-weekly-workout-goal";
 const WORKOUT_TEMPLATE_KEY = "fitcalc-workout-templates";
@@ -127,6 +128,7 @@ bindCalculatorForms();
 initializeHomeDashboard();
 initializeWeightTracker();
 initializeBodyMeasurements();
+initializeGoalTracking();
 initializeWorkoutTracker();
 
 function initializeHomeDashboard() {
@@ -147,6 +149,7 @@ function initializeHomeDashboard() {
 function getHomeDashboardData() {
   const weightHistory = sortWeightHistory(readDashboardArray(WEIGHT_HISTORY_KEY).map(normalizeDashboardWeightEntry).filter(Boolean));
   const bodyMeasurements = sortBodyMeasurements(readDashboardArray(BODY_MEASUREMENT_KEY).map(normalizeBodyMeasurementRecord).filter(Boolean));
+  const goals = sortGoals(readDashboardArray(GOALS_KEY).map(normalizeGoalRecord).filter(Boolean));
   const workoutHistory = sortWorkoutHistory(readDashboardArray(WORKOUT_HISTORY_KEY).map(normalizeDashboardWorkoutEntry).filter(Boolean));
   const templateStore = normalizeWorkoutTemplateStore(readDashboardValue(WORKOUT_TEMPLATE_KEY) || {});
   const customExercises = normalizeCustomExercises(readDashboardArray(CUSTOM_EXERCISE_KEY));
@@ -157,6 +160,7 @@ function getHomeDashboardData() {
   return {
     weightHistory,
     bodyMeasurements,
+    goals,
     workoutHistory,
     templateStore,
     customExercises,
@@ -217,6 +221,7 @@ function renderDashboardBeginnerPanel(data) {
 
   const hasAnyData = data.weightHistory.length > 0 ||
     data.bodyMeasurements.length > 0 ||
+    data.goals.length > 0 ||
     data.workoutHistory.length > 0 ||
     data.templateStore.customTemplates.length > 0 ||
     data.customExercises.length > 0 ||
@@ -231,6 +236,7 @@ function renderDashboardSummaryCards(data) {
   const measurementSummary = getDashboardMeasurementSummary(data.bodyMeasurements);
   const workoutSummary = getDashboardWorkoutSummary(data.workoutHistory);
   const weeklyGoal = getDashboardWeeklyGoalSummary(data.workoutHistory, data.weeklyGoal);
+  const goalSummary = getDashboardGoalSummary(data.goals);
   const librarySummary = getDashboardLibrarySummary(data.templateStore, data.customExercises);
 
   summaryCards.innerHTML = [
@@ -240,6 +246,7 @@ function renderDashboardSummaryCards(data) {
     createDashboardSummaryCard("สัดส่วนล่าสุด", measurementSummary.latestWaistText, measurementSummary.changeText),
     createDashboardSummaryCard("Workout สัปดาห์นี้", `${workoutSummary.thisWeek} ครั้ง`, `สัปดาห์ก่อน ${workoutSummary.lastWeek} ครั้ง`),
     createDashboardSummaryCard("เป้าหมายรายสัปดาห์", weeklyGoal.progressText, weeklyGoal.statusText),
+    createDashboardSummaryCard("เป้าหมาย", `${goalSummary.activeGoals} กำลังทำ`, `${goalSummary.completedGoals} สำเร็จแล้ว`),
     createDashboardSummaryCard("Workout ล่าสุด", workoutSummary.lastWorkoutText, workoutSummary.lastWorkoutDateText),
     createDashboardSummaryCard("Templates ทั้งหมด", `${librarySummary.totalTemplates} รายการ`, `${librarySummary.favoriteTemplates} favorite`),
     createDashboardSummaryCard("Exercises ทั้งหมด", `${librarySummary.totalExercises} ท่า`, `${librarySummary.customExercises} custom`),
@@ -304,9 +311,18 @@ function renderDashboardWorkoutSummary(data) {
 function renderDashboardWeeklyGoal(data) {
   const panel = getElement("dashboardWeeklyGoal");
   const summary = getDashboardWeeklyGoalSummary(data.workoutHistory, data.weeklyGoal);
+  const goalSummary = getDashboardGoalSummary(data.goals);
 
   if (data.weeklyGoal === null) {
-    panel.innerHTML = '<p class="empty-state">ยังไม่ได้ตั้งเป้าหมายรายสัปดาห์</p>';
+    panel.innerHTML = `
+      <p class="empty-state">ยังไม่ได้ตั้งเป้าหมายรายสัปดาห์</p>
+      <div class="dashboard-mini-grid">
+        ${createDashboardMetric("เป้าหมายที่กำลังทำ", `${goalSummary.activeGoals}`)}
+        ${createDashboardMetric("เป้าหมายที่สำเร็จ", `${goalSummary.completedGoals}`)}
+        ${createDashboardMetric("วันเป้าหมายถัดไป", goalSummary.nextTargetText)}
+        ${createDashboardMetric("เป้าหมายที่ใกล้สำเร็จ", goalSummary.closestGoalText)}
+      </div>
+    `;
     return;
   }
 
@@ -320,6 +336,12 @@ function renderDashboardWeeklyGoal(data) {
         <span style="width: ${summary.percent}%"></span>
       </div>
       <p>${summary.percent}% สำเร็จแล้ว</p>
+    </div>
+    <div class="dashboard-mini-grid">
+      ${createDashboardMetric("เป้าหมายที่กำลังทำ", `${goalSummary.activeGoals}`)}
+      ${createDashboardMetric("เป้าหมายที่สำเร็จ", `${goalSummary.completedGoals}`)}
+      ${createDashboardMetric("วันเป้าหมายถัดไป", goalSummary.nextTargetText)}
+      ${createDashboardMetric("เป้าหมายที่ใกล้สำเร็จ", goalSummary.closestGoalText)}
     </div>
   `;
 }
@@ -541,6 +563,29 @@ function getDashboardRecentActivities(data) {
       date: record.date,
       time: getDateTime(record.date),
     });
+  });
+
+  data.goals.forEach((goal) => {
+    const createdDate = parseDisplayDate(String(goal.createdAt || "").slice(0, 10));
+    const updatedDate = parseDisplayDate(String(goal.updatedAt || "").slice(0, 10));
+
+    if (createdDate) {
+      activities.push({
+        type: "Goal",
+        title: `สร้างเป้าหมาย: ${goal.title}`,
+        date: createdDate,
+        time: getDateTime(createdDate),
+      });
+    }
+
+    if (updatedDate && updatedDate !== createdDate) {
+      activities.push({
+        type: "Goal",
+        title: goal.status === "Completed" ? `ทำเป้าหมายสำเร็จ: ${goal.title}` : `อัปเดตเป้าหมาย: ${goal.title}`,
+        date: updatedDate,
+        time: getDateTime(updatedDate),
+      });
+    }
   });
 
   data.templateStore.customTemplates.forEach((template) => {
@@ -1707,6 +1752,433 @@ function formatMeasurementValue(value) {
 
 function formatMeasurementOptional(value, unit, label) {
   return hasMeasurementValue(value) ? `${label}: ${formatMeasurementValue(value)} ${unit}` : `${label}: -`;
+}
+
+function initializeGoalTracking() {
+  const goalForm = getElement("goalForm");
+  const goalList = getElement("goalList");
+
+  if (!goalForm || !goalList) {
+    return;
+  }
+
+  getElement("goalStartDate").value = getTodayDateValue();
+  getElement("goalType").addEventListener("change", updateGoalUnitFromType);
+  goalForm.addEventListener("submit", handleGoalSubmit);
+  goalList.addEventListener("click", handleGoalListClick);
+  getElement("cancelGoalEditButton")?.addEventListener("click", resetGoalForm);
+  updateGoalUnitFromType();
+  renderGoals();
+}
+
+function handleGoalSubmit(event) {
+  event.preventDefault();
+
+  const goal = collectGoalForm();
+
+  if (!goal) {
+    updateGoalStatus("กรุณากรอกข้อมูลเป้าหมายให้ครบ และตรวจสอบวันที่/ค่าเป้าหมาย");
+    return;
+  }
+
+  const goals = getGoals();
+  const editingId = getElement("goalEditingId").value;
+  const existingIndex = goals.findIndex((item) => item.id === editingId);
+
+  if (existingIndex >= 0) {
+    goals[existingIndex] = {
+      ...goals[existingIndex],
+      ...goal,
+      id: goals[existingIndex].id,
+      startValue: goals[existingIndex].startValue,
+      createdAt: goals[existingIndex].createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+  } else {
+    goals.push(goal);
+  }
+
+  saveGoals(goals);
+  resetGoalForm();
+  renderGoals();
+  initializeHomeDashboard();
+  updateGoalStatus("บันทึกเป้าหมายเรียบร้อยแล้ว");
+}
+
+function collectGoalForm() {
+  const type = getElement("goalType").value;
+  const title = getElement("goalTitle").value.trim();
+  const targetValue = parseFloat(getElement("goalTargetValue").value);
+  const unit = getElement("goalUnit").value.trim();
+  const startDate = parseDisplayDate(getElement("goalStartDate").value);
+  const targetDate = parseDisplayDate(getElement("goalTargetDate").value);
+  const status = getElement("goalStatus").value;
+  const notes = getElement("goalNotes").value.trim();
+  const measurementField = type === "bodyMeasurement" ? getElement("goalMeasurementField").value : "";
+
+  if (!type || !title || !unit || !startDate || !areValidNumbers(targetValue)) {
+    return null;
+  }
+
+  if (targetDate && getDateTime(targetDate) < getDateTime(startDate)) {
+    return null;
+  }
+
+  const currentValue = getCurrentGoalValue({ type, measurementField });
+
+  return {
+    id: createGoalId(startDate),
+    type,
+    title,
+    targetValue,
+    unit,
+    startDate,
+    targetDate: targetDate || "",
+    status,
+    notes,
+    measurementField,
+    startValue: currentValue.value,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function getGoals() {
+  const savedGoals = localStorage.getItem(GOALS_KEY);
+
+  try {
+    return savedGoals ? sortGoals(JSON.parse(savedGoals).map(normalizeGoalRecord).filter(Boolean)) : [];
+  } catch {
+    localStorage.removeItem(GOALS_KEY);
+    return [];
+  }
+}
+
+function saveGoals(goals) {
+  localStorage.setItem(GOALS_KEY, JSON.stringify(sortGoals(goals.map(normalizeGoalRecord).filter(Boolean))));
+}
+
+function normalizeGoalRecord(goal) {
+  const type = String(goal?.type || "").trim();
+  const title = String(goal?.title || "").trim();
+  const targetValue = parseFloat(goal?.targetValue);
+  const startDate = parseDisplayDate(goal?.startDate);
+  const targetDate = goal?.targetDate ? parseDisplayDate(goal.targetDate) : "";
+  const status = ["Active", "Completed", "Paused"].includes(goal?.status) ? goal.status : "Active";
+
+  if (!type || !title || !areValidNumbers(targetValue) || !startDate) {
+    return null;
+  }
+
+  return {
+    id: goal.id || createGoalId(startDate),
+    type,
+    title,
+    targetValue,
+    unit: String(goal.unit || getDefaultGoalUnit(type)).trim(),
+    startDate,
+    targetDate: targetDate || "",
+    status,
+    notes: String(goal.notes || "").trim(),
+    measurementField: String(goal.measurementField || "").trim(),
+    startValue: Number.isFinite(parseFloat(goal.startValue)) ? parseFloat(goal.startValue) : null,
+    createdAt: goal.createdAt || `${startDate}T00:00:00.000Z`,
+    updatedAt: goal.updatedAt || goal.createdAt || `${startDate}T00:00:00.000Z`,
+  };
+}
+
+function sortGoals(goals) {
+  return goals.sort((first, second) => getDateTime(second.updatedAt?.slice(0, 10) || second.startDate) - getDateTime(first.updatedAt?.slice(0, 10) || first.startDate));
+}
+
+function renderGoals() {
+  const goalList = getElement("goalList");
+
+  if (!goalList) {
+    return;
+  }
+
+  const goals = getGoals();
+
+  if (goals.length === 0) {
+    goalList.innerHTML = '<p class="empty-state">ยังไม่มีเป้าหมายที่บันทึกไว้</p>';
+    return;
+  }
+
+  goalList.innerHTML = goals.map(createGoalCard).join("");
+}
+
+function createGoalCard(goal) {
+  const progress = calculateGoalProgress(goal);
+  const pauseAction = goal.status === "Paused" ? "resume" : "pause";
+  const pauseLabel = goal.status === "Paused" ? "ทำต่อ" : "พักไว้ก่อน";
+
+  return `
+    <article class="goal-card">
+      <div class="goal-card-header">
+        <div>
+          <span>${escapeHtml(getGoalTypeLabel(goal))}</span>
+          <h3>${escapeHtml(goal.title)}</h3>
+        </div>
+        <strong>${escapeHtml(getGoalStatusLabel(goal.status))}</strong>
+      </div>
+      <div class="goal-progress-grid">
+        ${createDashboardMetric("ปัจจุบัน", progress.currentText)}
+        ${createDashboardMetric("เป้าหมาย", `${formatGoalNumber(goal.targetValue)} ${goal.unit}`)}
+        ${createDashboardMetric("เหลืออีก", progress.remainingText)}
+        ${createDashboardMetric("ความคืบหน้า", `${progress.percent}%`)}
+      </div>
+      <div class="dashboard-progress-bar" aria-label="Goal progress ${progress.percent}%">
+        <span style="width: ${progress.percent}%"></span>
+      </div>
+      <p class="goal-status-text">${escapeHtml(progress.statusText)}</p>
+      ${goal.targetDate ? `<p>วันที่เป้าหมาย: <strong>${formatThaiDate(goal.targetDate)}</strong></p>` : ""}
+      ${goal.notes ? `<p>${escapeHtml(goal.notes)}</p>` : ""}
+      <div class="goal-card-actions">
+        <button class="secondary-button compact-button" type="button" data-goal-action="edit" data-goal-id="${escapeHtml(goal.id)}">แก้ไข</button>
+        <button class="secondary-button compact-button" type="button" data-goal-action="complete" data-goal-id="${escapeHtml(goal.id)}">ทำสำเร็จ</button>
+        <button class="secondary-button compact-button" type="button" data-goal-action="${pauseAction}" data-goal-id="${escapeHtml(goal.id)}">${pauseLabel}</button>
+        <button class="danger-button compact-button" type="button" data-goal-action="delete" data-goal-id="${escapeHtml(goal.id)}">ลบ</button>
+      </div>
+    </article>
+  `;
+}
+
+function calculateGoalProgress(goal) {
+  const current = getCurrentGoalValue(goal);
+
+  if (!current.hasData) {
+    return {
+      currentText: current.emptyText,
+      remainingText: "ยังไม่มีข้อมูล",
+      percent: goal.status === "Completed" ? 100 : 0,
+      statusText: "ยังไม่มีข้อมูล",
+    };
+  }
+
+  const startValue = Number.isFinite(goal.startValue) ? goal.startValue : getStartGoalValue(goal);
+  const targetValue = goal.targetValue;
+  const currentValue = current.value;
+  const direction = Number.isFinite(startValue) && startValue !== targetValue
+    ? Math.sign(targetValue - startValue)
+    : Math.sign(targetValue - currentValue) || 1;
+  const remaining = Math.abs(targetValue - currentValue);
+  const isReached = direction >= 0 ? currentValue >= targetValue : currentValue <= targetValue;
+  let percent = isReached ? 100 : 0;
+
+  if (Number.isFinite(startValue) && startValue !== targetValue) {
+    percent = Math.min(Math.max(Math.round((Math.abs(currentValue - startValue) / Math.abs(targetValue - startValue)) * 100), 0), 100);
+  }
+
+  if (goal.status === "Completed") {
+    percent = 100;
+  }
+
+  return {
+    currentText: `${formatGoalNumber(currentValue)} ${goal.unit}`,
+    remainingText: `${formatGoalNumber(remaining)} ${goal.unit}`,
+    percent,
+    statusText: goal.status === "Completed" || isReached ? "สำเร็จแล้ว" : getGoalProgressStatusText(percent),
+  };
+}
+
+function getCurrentGoalValue(goal) {
+  if (goal.type === "weight") {
+    const latest = getWeightHistory()[0];
+    return latest ? { hasData: true, value: latest.weightKg } : { hasData: false, value: null, emptyText: "ยังไม่มีข้อมูลน้ำหนักสำหรับคำนวณเป้าหมาย" };
+  }
+
+  if (goal.type === "waist") {
+    const latest = getBodyMeasurements().find((record) => hasMeasurementValue(record.waist));
+    return latest ? { hasData: true, value: latest.waist } : { hasData: false, value: null, emptyText: "ยังไม่มีข้อมูลเอวสำหรับคำนวณเป้าหมาย" };
+  }
+
+  if (goal.type === "weeklyWorkout") {
+    return { hasData: true, value: countDashboardWorkoutsThisWeek(getWorkoutHistory()) };
+  }
+
+  if (goal.type === "bodyMeasurement") {
+    const value = getLatestMeasurementFieldValue(goal.measurementField);
+    return hasMeasurementValue(value) ? { hasData: true, value } : { hasData: false, value: null, emptyText: "ยังไม่มีข้อมูลสัดส่วนสำหรับคำนวณเป้าหมาย" };
+  }
+
+  return { hasData: false, value: null, emptyText: "ยังไม่มีข้อมูล" };
+}
+
+function getStartGoalValue(goal) {
+  if (Number.isFinite(goal.startValue)) {
+    return goal.startValue;
+  }
+
+  const records = goal.type === "weight" ? getWeightHistory() : getBodyMeasurements();
+  const matchingRecord = [...records]
+    .reverse()
+    .find((record) => getDateTime(record.date) >= getDateTime(goal.startDate));
+
+  if (!matchingRecord) {
+    return null;
+  }
+
+  if (goal.type === "weight") return matchingRecord.weightKg;
+  if (goal.type === "waist") return matchingRecord.waist;
+  if (goal.type === "bodyMeasurement") return getMeasurementFieldValue(matchingRecord, goal.measurementField);
+  return null;
+}
+
+function getLatestMeasurementFieldValue(fieldName) {
+  const record = getBodyMeasurements().find((item) => hasMeasurementValue(getMeasurementFieldValue(item, fieldName)));
+  return record ? getMeasurementFieldValue(record, fieldName) : null;
+}
+
+function getMeasurementFieldValue(record, fieldName) {
+  if (!record) return null;
+  if (fieldName === "upperArmAverage") return calculateMeasurementAverage(record.upperArmLeft, record.upperArmRight);
+  if (fieldName === "thighAverage") return calculateMeasurementAverage(record.thighLeft, record.thighRight);
+  return record[fieldName];
+}
+
+function getGoalProgressStatusText(percent) {
+  if (percent <= 0) return "เริ่มต้นแล้ว";
+  if (percent >= 90) return "ใกล้ถึงเป้าหมาย";
+  if (percent >= 40) return "กำลังไปได้ดี";
+  return "เริ่มต้นแล้ว";
+}
+
+function handleGoalListClick(event) {
+  const button = event.target.closest("[data-goal-action]");
+
+  if (!button) return;
+
+  const goalId = button.dataset.goalId;
+  const action = button.dataset.goalAction;
+  const goal = getGoals().find((item) => item.id === goalId);
+
+  if (!goal) return;
+
+  if (action === "edit") loadGoalIntoForm(goal);
+  if (action === "delete") deleteGoal(goal);
+  if (action === "complete") updateGoalStatusValue(goal.id, "Completed");
+  if (action === "pause") updateGoalStatusValue(goal.id, "Paused");
+  if (action === "resume") updateGoalStatusValue(goal.id, "Active");
+}
+
+function loadGoalIntoForm(goal) {
+  getElement("goalEditingId").value = goal.id;
+  getElement("goalType").value = goal.type;
+  getElement("goalTitle").value = goal.title;
+  getElement("goalMeasurementField").value = goal.measurementField || "chest";
+  getElement("goalTargetValue").value = goal.targetValue;
+  getElement("goalUnit").value = goal.unit;
+  getElement("goalStartDate").value = goal.startDate;
+  getElement("goalTargetDate").value = goal.targetDate || "";
+  getElement("goalStatus").value = goal.status;
+  getElement("goalNotes").value = goal.notes || "";
+  updateGoalStatus("กำลังแก้ไขเป้าหมาย");
+  getElement("goalForm").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function deleteGoal(goal) {
+  if (!window.confirm(`ลบเป้าหมาย: ${goal.title}?`)) return;
+  saveGoals(getGoals().filter((item) => item.id !== goal.id));
+  renderGoals();
+  initializeHomeDashboard();
+  updateGoalStatus("ลบเป้าหมายเรียบร้อยแล้ว");
+}
+
+function updateGoalStatusValue(goalId, status) {
+  const goals = getGoals();
+  const goalIndex = goals.findIndex((goal) => goal.id === goalId);
+
+  if (goalIndex < 0) return;
+
+  goals[goalIndex].status = status;
+  goals[goalIndex].updatedAt = new Date().toISOString();
+  saveGoals(goals);
+  renderGoals();
+  initializeHomeDashboard();
+}
+
+function resetGoalForm() {
+  getElement("goalForm").reset();
+  getElement("goalEditingId").value = "";
+  getElement("goalStartDate").value = getTodayDateValue();
+  getElement("goalStatus").value = "Active";
+  updateGoalUnitFromType();
+  updateGoalStatus("พร้อมบันทึกเป้าหมายใหม่");
+}
+
+function updateGoalUnitFromType() {
+  const type = getElement("goalType")?.value || "";
+  const unit = getElement("goalUnit");
+
+  if (unit) {
+    unit.value = getDefaultGoalUnit(type);
+  }
+}
+
+function getDefaultGoalUnit(type) {
+  if (type === "weight") return "kg";
+  if (type === "weeklyWorkout") return "workouts/week";
+  if (type === "waist" || type === "bodyMeasurement") return "cm";
+  return "";
+}
+
+function getGoalTypeLabel(goal) {
+  const labels = {
+    weight: "เป้าหมายน้ำหนัก",
+    waist: "เป้าหมายรอบเอว",
+    weeklyWorkout: "เป้าหมาย Workout รายสัปดาห์",
+    bodyMeasurement: "เป้าหมายสัดส่วนร่างกาย",
+  };
+
+  return labels[goal.type] || "เป้าหมาย";
+}
+
+function getGoalStatusLabel(status) {
+  const labels = {
+    Active: "กำลังทำ",
+    Completed: "สำเร็จแล้ว",
+    Paused: "พักไว้ก่อน",
+  };
+
+  return labels[status] || "กำลังทำ";
+}
+
+function getDashboardGoalSummary(goals) {
+  const activeGoals = goals.filter((goal) => goal.status === "Active");
+  const completedGoals = goals.filter((goal) => goal.status === "Completed");
+  const nextTarget = activeGoals
+    .filter((goal) => goal.targetDate)
+    .sort((first, second) => getDateTime(first.targetDate) - getDateTime(second.targetDate))[0];
+  const closestGoal = activeGoals
+    .map((goal) => ({ goal, progress: calculateGoalProgress(goal) }))
+    .sort((first, second) => second.progress.percent - first.progress.percent)[0]?.goal;
+
+  return {
+    activeGoals: activeGoals.length,
+    completedGoals: completedGoals.length,
+    nextTargetText: nextTarget ? formatThaiDate(nextTarget.targetDate) : "ยังไม่มีวันที่เป้าหมาย",
+    closestGoalText: closestGoal ? closestGoal.title : "ยังไม่มีเป้าหมายที่กำลังทำ",
+  };
+}
+
+function updateGoalStatus(message) {
+  const status = getElement("goalStatusMessage");
+
+  if (status) {
+    status.textContent = message;
+  }
+}
+
+function createGoalId(startDate) {
+  return `goal-${startDate}-${Math.random().toString(16).slice(2)}`;
+}
+
+function formatGoalNumber(value) {
+  return Number(value.toFixed(2)).toLocaleString(THAI_LOCALE, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
 }
 
 function getTodayDisplayDate() {
