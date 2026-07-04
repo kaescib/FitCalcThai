@@ -152,6 +152,14 @@
           </div>
           <div id="dashboardAchievementSummary" aria-live="polite"></div>
         </section>
+
+        <section class="dashboard-panel">
+          <div class="dashboard-panel-header">
+            <h3>Data Backup</h3>
+            <a class="guide-link" href="#dataBackupSection">สำรองข้อมูล</a>
+          </div>
+          <div id="dashboardBackupSummary" aria-live="polite"></div>
+        </section>
       </div>
 
       <section class="dashboard-panel dashboard-recent-panel">
@@ -202,6 +210,44 @@
       </div>
 
       <div class="achievement-card-list" id="achievementCardList" aria-live="polite"></div>
+    </section>
+
+    <section class="card tracker-card anchor-section" id="dataBackupSection">
+      <div class="card-header">
+        <span class="tool-icon">SAVE</span>
+        <div>
+          <h2>Data Backup</h2>
+          <p>สำรอง กู้คืน และจัดการข้อมูล FitCalc Thai ของคุณอย่างปลอดภัย</p>
+        </div>
+      </div>
+
+      <div class="backup-summary-grid" id="backupSummaryGrid" aria-live="polite"></div>
+
+      <div class="backup-warning">
+        <strong>Import Warning</strong>
+        <p>ตรวจสอบ preview ก่อนนำเข้าทุกครั้ง โหมด Merge จะไม่ลบข้อมูลเดิม ส่วน Replace จะต้องยืนยันก่อนแทนที่ข้อมูล</p>
+      </div>
+
+      <div class="backup-actions">
+        <button type="button" id="exportBackupButton">Export Backup</button>
+        <button class="secondary-button" type="button" id="copyBackupButton">Copy Backup JSON</button>
+      </div>
+
+      <label class="backup-file-label">
+        Import Backup JSON
+        <input type="file" id="importBackupFile" accept="application/json,.json">
+      </label>
+
+      <div class="backup-preview" id="backupImportPreview" aria-live="polite">
+        <p class="empty-state">ยังไม่ได้เลือกไฟล์สำรองข้อมูล</p>
+      </div>
+
+      <div class="backup-actions">
+        <button type="button" id="mergeImportButton" disabled>Import แบบรวมข้อมูล</button>
+        <button class="danger-button" type="button" id="replaceImportButton" disabled>Replace ข้อมูลทั้งหมด</button>
+      </div>
+
+      <p class="workout-status" id="backupStatusMessage" aria-live="polite"></p>
     </section>
 
     <section class="card tracker-card anchor-section" id="goalTrackingSection">

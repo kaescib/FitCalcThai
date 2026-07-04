@@ -705,6 +705,76 @@ button[type="submit"]:hover {
   margin: 0;
 }
 
+.backup-summary-grid,
+.backup-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.backup-warning,
+.backup-preview,
+.backup-result {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+  padding: 16px;
+}
+
+.backup-warning {
+  margin-top: 16px;
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.backup-warning strong {
+  color: var(--primary);
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+}
+
+.backup-warning p,
+.backup-preview p {
+  margin: 6px 0 0;
+}
+
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.backup-actions button {
+  min-height: 44px;
+}
+
+.backup-file-label {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.backup-file-label input {
+  cursor: pointer;
+}
+
+.backup-preview {
+  margin-top: 16px;
+}
+
+.backup-warning-list {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding-left: 20px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.backup-error {
+  color: #ef4444;
+  font-weight: 800;
+}
+
 .site-footer {
   padding: 28px 0 40px;
   color: var(--muted);
@@ -882,7 +952,9 @@ button[type="submit"]:hover {
   .goal-list,
   .goal-progress-grid,
   .achievement-summary-grid,
-  .achievement-card-list {
+  .achievement-card-list,
+  .backup-summary-grid,
+  .backup-preview-grid {
     grid-template-columns: 1fr;
   }
 
@@ -891,6 +963,7 @@ button[type="submit"]:hover {
   .goal-card-header,
   .goal-form-actions,
   .goal-card-actions,
+  .backup-actions,
   .achievement-empty-state,
   .achievement-card-header,
   .achievement-card-footer {
@@ -902,6 +975,7 @@ button[type="submit"]:hover {
   .goal-form-actions button,
   .goal-form-actions .secondary-button,
   .goal-card-actions button,
+  .backup-actions button,
   .achievement-empty-state a,
   .achievement-toolbar label {
     width: 100%;
@@ -1980,7 +2054,9 @@ button[type="submit"]:hover {
   .dashboard-detail-grid,
   .dashboard-mini-grid,
   .achievement-summary-grid,
-  .achievement-card-list {
+  .achievement-card-list,
+  .backup-summary-grid,
+  .backup-preview-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1992,8 +2068,13 @@ button[type="submit"]:hover {
 
   .dashboard-quick-actions a,
   .dashboard-link-group a,
+  .backup-actions button,
   .achievement-empty-state a {
     width: 100%;
+  }
+
+  .backup-actions {
+    flex-direction: column;
   }
 
   .achievement-empty-state,

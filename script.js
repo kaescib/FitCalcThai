@@ -11,10 +11,22 @@ const WEIGHT_HISTORY_KEY = "fitcalc-weight-history";
 const BODY_MEASUREMENT_KEY = "fitcalc-body-measurements";
 const GOALS_KEY = "fitcalc-goals";
 const ACHIEVEMENTS_KEY = "fitcalc-achievements";
+const LAST_BACKUP_EXPORT_KEY = "fitcalc-last-backup-export";
 const WORKOUT_HISTORY_KEY = "fitcalc-workout-history";
 const WEEKLY_WORKOUT_GOAL_KEY = "fitcalc-weekly-workout-goal";
 const WORKOUT_TEMPLATE_KEY = "fitcalc-workout-templates";
 const CUSTOM_EXERCISE_KEY = "fitcalc-custom-exercises";
+const FITCALC_KNOWN_STORAGE_KEYS = [
+  WEIGHT_HISTORY_KEY,
+  BODY_MEASUREMENT_KEY,
+  WORKOUT_HISTORY_KEY,
+  WORKOUT_TEMPLATE_KEY,
+  CUSTOM_EXERCISE_KEY,
+  WEEKLY_WORKOUT_GOAL_KEY,
+  GOALS_KEY,
+  ACHIEVEMENTS_KEY,
+  LAST_BACKUP_EXPORT_KEY,
+];
 const WORKOUT_NAME_OPTIONS = [
   "Push Day",
   "Pull Day",
@@ -147,6 +159,7 @@ const ACHIEVEMENT_DEFINITIONS = [
   createAchievementDefinition("five-custom-exercises", "Templates", "customExercises", 5, "5 Custom Exercises", "สร้างท่าออกกำลังกายเองครบ 5 ท่า", "ฐานข้อมูลท่าส่วนตัวเริ่มเป็นของคุณจริง ๆ", "📚"),
 ];
 let weightProgressChart = null;
+let pendingBackupImport = null;
 
 initializeTheme();
 initializeNavbarDropdowns();
@@ -154,6 +167,7 @@ initializeSmoothAnchorScrolling();
 bindCalculatorForms();
 initializeHomeDashboard();
 initializeAchievementSection();
+initializeDataBackupSection();
 initializeWeightTracker();
 initializeBodyMeasurements();
 initializeGoalTracking();
@@ -172,6 +186,7 @@ function initializeHomeDashboard() {
   renderDashboardWeeklyGoal(dashboardData);
   renderDashboardLibrarySummary(dashboardData);
   renderDashboardAchievementSummary(dashboardData);
+  renderDashboardBackupSummary(dashboardData);
   renderDashboardRecentActivity(dashboardData);
   renderAchievementSection(dashboardData);
 }
@@ -186,6 +201,7 @@ function getHomeDashboardData() {
   const weeklyGoalRaw = localStorage.getItem(WEEKLY_WORKOUT_GOAL_KEY);
   const weeklyGoal = Number(weeklyGoalRaw);
   const hasWeeklyGoal = weeklyGoalRaw !== null && Number.isInteger(weeklyGoal) && weeklyGoal >= 1 && weeklyGoal <= 7;
+  const backupSummary = getBackupSummary();
 
   const dashboardData = {
     weightHistory,
@@ -195,6 +211,7 @@ function getHomeDashboardData() {
     templateStore,
     customExercises,
     weeklyGoal: hasWeeklyGoal ? weeklyGoal : null,
+    backupSummary,
   };
 
   dashboardData.achievements = evaluateAchievements(dashboardData);
@@ -271,6 +288,7 @@ function renderDashboardSummaryCards(data) {
   const weeklyGoal = getDashboardWeeklyGoalSummary(data.workoutHistory, data.weeklyGoal);
   const goalSummary = getDashboardGoalSummary(data.goals);
   const achievementSummary = data.achievements.summary;
+  const backupSummary = data.backupSummary;
   const librarySummary = getDashboardLibrarySummary(data.templateStore, data.customExercises);
 
   summaryCards.innerHTML = [
@@ -286,6 +304,7 @@ function renderDashboardSummaryCards(data) {
     createDashboardSummaryCard("Exercises ทั้งหมด", `${librarySummary.totalExercises} ท่า`, `${librarySummary.customExercises} custom`),
     createDashboardSummaryCard("Achievements", `${achievementSummary.unlockedCount} ปลดล็อก`, `Streak ${achievementSummary.currentWorkoutStreak} วัน`),
   ].join("");
+  summaryCards.innerHTML += createDashboardSummaryCard("Backup", `${backupSummary.totalKeys} keys`, backupSummary.lastExportText);
 }
 
 function createDashboardSummaryCard(label, value, detail) {
@@ -411,6 +430,25 @@ function renderDashboardAchievementSummary(data) {
       ${createDashboardMetric("Best Streak", `${summary.bestWorkoutStreak} วัน`)}
       ${createDashboardMetric("ปลดล็อกแล้ว", `${summary.unlockedCount} / ${summary.totalAchievements}`)}
       ${createDashboardMetric("ล่าสุด", summary.latestUnlockedTitle)}
+    </div>
+  `;
+}
+
+function renderDashboardBackupSummary(data) {
+  const panel = getElement("dashboardBackupSummary");
+
+  if (!panel) {
+    return;
+  }
+
+  const summary = data.backupSummary;
+
+  panel.innerHTML = `
+    <div class="dashboard-mini-grid">
+      ${createDashboardMetric("FitCalc keys", `${summary.totalKeys} keys`)}
+      ${createDashboardMetric("Data items", `${summary.totalRecords} records`)}
+      ${createDashboardMetric("Last export", summary.lastExportText)}
+      ${createDashboardMetric("Status", summary.statusText)}
     </div>
   `;
 }
@@ -678,6 +716,15 @@ function getDashboardRecentActivities(data) {
       });
     }
   });
+
+  if (data.backupSummary.lastExportDate) {
+    activities.push({
+      type: "Backup",
+      title: "สำรองข้อมูล FitCalc Thai",
+      date: data.backupSummary.lastExportDate,
+      time: getDateTime(data.backupSummary.lastExportDate),
+    });
+  }
 
   return activities.sort((first, second) => second.time - first.time);
 }
@@ -2522,6 +2569,713 @@ function createAchievementCard(achievement) {
       </div>
     </article>
   `;
+}
+
+function initializeDataBackupSection() {
+  if (!getElement("dataBackupSection")) {
+    return;
+  }
+
+  getElement("exportBackupButton")?.addEventListener("click", exportFitCalcBackup);
+  getElement("copyBackupButton")?.addEventListener("click", copyFitCalcBackupJson);
+  getElement("importBackupFile")?.addEventListener("change", handleBackupFileSelection);
+  getElement("mergeImportButton")?.addEventListener("click", () => importPendingBackup("merge"));
+  getElement("replaceImportButton")?.addEventListener("click", () => importPendingBackup("replace"));
+  renderBackupSectionSummary();
+}
+
+function getFitCalcStorageKeys() {
+  const keys = new Set(FITCALC_KNOWN_STORAGE_KEYS);
+
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key && key.startsWith("fitcalc-")) {
+      keys.add(key);
+    }
+  }
+
+  return [...keys].sort();
+}
+
+function getSafeEmptyStorageValue(key) {
+  if ([WEIGHT_HISTORY_KEY, BODY_MEASUREMENT_KEY, WORKOUT_HISTORY_KEY, CUSTOM_EXERCISE_KEY, GOALS_KEY].includes(key)) {
+    return [];
+  }
+
+  if (key === WORKOUT_TEMPLATE_KEY) {
+    return { customTemplates: [], favoriteTemplateIds: [] };
+  }
+
+  if (key === ACHIEVEMENTS_KEY) {
+    return { unlocked: {}, bestWorkoutStreak: 0, bestWeightStreak: 0, lastUpdated: "" };
+  }
+
+  if (key === WEEKLY_WORKOUT_GOAL_KEY) {
+    return "";
+  }
+
+  return "";
+}
+
+function readStorageValueForBackup(key) {
+  const rawValue = localStorage.getItem(key);
+
+  if (rawValue === null) {
+    return getSafeEmptyStorageValue(key);
+  }
+
+  try {
+    return JSON.parse(rawValue);
+  } catch {
+    if (key === LAST_BACKUP_EXPORT_KEY) {
+      return rawValue;
+    }
+
+    return {
+      __warning: "Malformed JSON value was exported as raw string.",
+      __raw: rawValue,
+    };
+  }
+}
+
+function createFitCalcBackupPayload() {
+  const data = {};
+  const keys = getFitCalcStorageKeys();
+
+  keys.forEach((key) => {
+    data[key] = readStorageValueForBackup(key);
+  });
+
+  const totalRecords = countBackupRecords(data);
+
+  return {
+    app: "FitCalc Thai",
+    backupVersion: "1.0",
+    exportedAt: new Date().toISOString(),
+    source: "localStorage",
+    data,
+    metadata: {
+      totalKeys: keys.length,
+      totalRecords,
+      generatedBy: "FitCalc Thai",
+    },
+  };
+}
+
+function exportFitCalcBackup() {
+  const backup = createFitCalcBackupPayload();
+  const backupText = JSON.stringify(backup, null, 2);
+  const blob = new Blob([backupText], { type: "application/json;charset=utf-8" });
+  const downloadUrl = URL.createObjectURL(blob);
+  const downloadLink = document.createElement("a");
+  const exportedAt = new Date(backup.exportedAt);
+
+  downloadLink.href = downloadUrl;
+  downloadLink.download = `fitcalc-thai-backup-${formatBackupFileTimestamp(exportedAt)}.json`;
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+  URL.revokeObjectURL(downloadUrl);
+  localStorage.setItem(LAST_BACKUP_EXPORT_KEY, backup.exportedAt);
+  updateBackupStatus(`สำรองข้อมูลเรียบร้อยแล้ว | ${formatBackupDateTime(backup.exportedAt)} | ${backup.metadata.totalKeys} keys | ${backup.metadata.totalRecords} records`);
+  refreshAfterBackupChange();
+  trackAnalyticsEvent("backup_exported", {
+    total_keys: backup.metadata.totalKeys,
+    total_records: backup.metadata.totalRecords,
+  });
+}
+
+async function copyFitCalcBackupJson() {
+  const backupText = JSON.stringify(createFitCalcBackupPayload(), null, 2);
+
+  try {
+    if (!navigator.clipboard?.writeText) {
+      throw new Error("Clipboard unavailable");
+    }
+
+    await navigator.clipboard.writeText(backupText);
+    updateBackupStatus("คัดลอก Backup JSON เรียบร้อยแล้ว");
+  } catch {
+    updateBackupStatus("ไม่สามารถคัดลอกอัตโนมัติได้ กรุณาใช้ปุ่ม Export Backup แทน");
+  }
+}
+
+function handleBackupFileSelection(event) {
+  const file = event.target.files?.[0];
+  pendingBackupImport = null;
+  toggleImportButtons(false);
+
+  if (!file) {
+    renderBackupPreviewMessage("ยังไม่ได้เลือกไฟล์สำรองข้อมูล");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.addEventListener("load", () => {
+    const validation = validateBackupText(String(reader.result || ""));
+
+    if (!validation.valid) {
+      renderBackupPreviewMessage("ไฟล์สำรองข้อมูลไม่ถูกต้อง หรือไม่ใช่ไฟล์ของ FitCalc Thai", true);
+      updateBackupStatus(validation.message);
+      return;
+    }
+
+    pendingBackupImport = validation.backup;
+    renderBackupImportPreview(validation.backup);
+    toggleImportButtons(true);
+    updateBackupStatus("ตรวจพบไฟล์สำรองข้อมูล กรุณาตรวจ preview ก่อนนำเข้า");
+  });
+  reader.addEventListener("error", () => {
+    renderBackupPreviewMessage("อ่านไฟล์สำรองข้อมูลไม่สำเร็จ", true);
+    updateBackupStatus("อ่านไฟล์สำรองข้อมูลไม่สำเร็จ");
+  });
+  reader.readAsText(file);
+}
+
+function validateBackupText(text) {
+  let backup;
+
+  try {
+    backup = JSON.parse(text);
+  } catch {
+    return { valid: false, message: "ไฟล์ JSON ไม่ถูกต้อง" };
+  }
+
+  if (!backup || typeof backup !== "object" || Array.isArray(backup) || !backup.data || typeof backup.data !== "object" || Array.isArray(backup.data)) {
+    return { valid: false, message: "ไม่พบ data object ในไฟล์ backup" };
+  }
+
+  const fitCalcKeys = Object.keys(backup.data).filter((key) => key.startsWith("fitcalc-"));
+  const looksLikeFitCalc = backup.app === "FitCalc Thai" || fitCalcKeys.length > 0;
+
+  if (!looksLikeFitCalc || fitCalcKeys.length === 0) {
+    return { valid: false, message: "ไม่พบข้อมูล FitCalc Thai ในไฟล์ backup" };
+  }
+
+  return {
+    valid: true,
+    backup: {
+      app: backup.app || "FitCalc Thai",
+      backupVersion: String(backup.backupVersion || "unknown"),
+      exportedAt: backup.exportedAt || "",
+      source: backup.source || "localStorage",
+      data: sanitizeBackupData(backup.data),
+      metadata: backup.metadata || {},
+    },
+  };
+}
+
+function sanitizeBackupData(data) {
+  const safeData = {};
+
+  Object.entries(data || {}).forEach(([key, value]) => {
+    if (String(key).startsWith("fitcalc-")) {
+      safeData[key] = value;
+    }
+  });
+
+  return safeData;
+}
+
+function renderBackupImportPreview(backup) {
+  const preview = getElement("backupImportPreview");
+  const counts = getBackupPreviewCounts(backup.data);
+  const keys = Object.keys(backup.data).sort();
+  const missingKeys = FITCALC_KNOWN_STORAGE_KEYS.filter((key) => !keys.includes(key));
+  const existingKeys = keys.filter((key) => localStorage.getItem(key) !== null);
+  const warnings = [
+    ...missingKeys.map((key) => `ไม่พบ key ในไฟล์: ${key}`),
+    ...(existingKeys.length > 0 ? [`มีข้อมูลในเครื่องอยู่แล้ว ${existingKeys.length} keys`] : []),
+  ];
+
+  preview.innerHTML = `
+    <div class="backup-preview-grid">
+      ${createDashboardMetric("Exported", backup.exportedAt ? formatBackupDateTime(backup.exportedAt) : "ไม่ระบุ")}
+      ${createDashboardMetric("Version", backup.backupVersion)}
+      ${createDashboardMetric("Keys found", `${keys.length}`)}
+      ${createDashboardMetric("Records", `${countBackupRecords(backup.data)}`)}
+      ${createDashboardMetric("Weight records", `${counts.weightRecords}`)}
+      ${createDashboardMetric("Body measurements", `${counts.measurementRecords}`)}
+      ${createDashboardMetric("Workout records", `${counts.workoutRecords}`)}
+      ${createDashboardMetric("Templates", `${counts.templates}`)}
+      ${createDashboardMetric("Custom exercises", `${counts.customExercises}`)}
+      ${createDashboardMetric("Goals", `${counts.goals}`)}
+      ${createDashboardMetric("Achievements", `${counts.achievements}`)}
+    </div>
+    ${warnings.length > 0 ? `<ul class="backup-warning-list">${warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")}</ul>` : '<p class="workout-status">ไฟล์ backup พร้อมนำเข้า</p>'}
+  `;
+}
+
+function renderBackupPreviewMessage(message, isError = false) {
+  const preview = getElement("backupImportPreview");
+  if (preview) {
+    preview.innerHTML = `<p class="${isError ? "backup-error" : "empty-state"}">${escapeHtml(message)}</p>`;
+  }
+}
+
+function toggleImportButtons(enabled) {
+  const mergeButton = getElement("mergeImportButton");
+  const replaceButton = getElement("replaceImportButton");
+
+  if (mergeButton) mergeButton.disabled = !enabled;
+  if (replaceButton) replaceButton.disabled = !enabled;
+}
+
+function importPendingBackup(mode) {
+  if (!pendingBackupImport) {
+    updateBackupStatus("กรุณาเลือกไฟล์ backup ก่อนนำเข้า");
+    return;
+  }
+
+  if (mode === "replace" && !window.confirm("การแทนที่ข้อมูลจะลบข้อมูล FitCalc Thai ปัจจุบันและใช้ข้อมูลจากไฟล์สำรองแทน ต้องการดำเนินการต่อหรือไม่?")) {
+    return;
+  }
+
+  const result = mode === "replace"
+    ? replaceBackupData(pendingBackupImport.data)
+    : mergeBackupData(pendingBackupImport.data);
+
+  updateBackupStatus(`นำเข้าข้อมูลเรียบร้อยแล้ว | Mode: ${mode === "replace" ? "Replace" : "Merge"} | ${result.keysImported} keys | เพิ่ม ${result.added} | อัปเดต ${result.updated} | ข้าม ${result.skipped}`);
+  renderBackupImportResult(result, mode);
+  pendingBackupImport = null;
+  toggleImportButtons(false);
+  const fileInput = getElement("importBackupFile");
+  if (fileInput) fileInput.value = "";
+  refreshAfterBackupChange();
+  trackAnalyticsEvent("backup_imported", {
+    mode,
+    keys_imported: result.keysImported,
+    records_added: result.added,
+    records_updated: result.updated,
+    records_skipped: result.skipped,
+  });
+}
+
+function replaceBackupData(data) {
+  const result = createImportResult();
+
+  Object.entries(data).forEach(([key, value]) => {
+    if (!key.startsWith("fitcalc-")) {
+      result.skipped += 1;
+      return;
+    }
+
+    writeFitCalcStorageValue(key, value);
+    result.keysImported += 1;
+    result.updated += countBackupValueRecords(value);
+  });
+
+  return result;
+}
+
+function writeFitCalcStorageValue(key, value) {
+  if (key === LAST_BACKUP_EXPORT_KEY && typeof value === "string") {
+    localStorage.setItem(key, value);
+    return;
+  }
+
+  if (key === WEEKLY_WORKOUT_GOAL_KEY && (typeof value === "number" || typeof value === "string")) {
+    localStorage.setItem(key, String(value));
+    return;
+  }
+
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function mergeBackupData(data) {
+  const result = createImportResult();
+
+  Object.entries(data).forEach(([key, importedValue]) => {
+    if (!key.startsWith("fitcalc-")) {
+      result.skipped += 1;
+      return;
+    }
+
+    const existingValue = readDashboardValue(key);
+    const mergeResult = mergeStorageValueByKey(key, existingValue, importedValue);
+
+    if (mergeResult.shouldWrite) {
+      writeFitCalcStorageValue(key, mergeResult.value);
+      result.keysImported += 1;
+    }
+
+    result.added += mergeResult.added;
+    result.updated += mergeResult.updated;
+    result.skipped += mergeResult.skipped;
+    result.warnings.push(...mergeResult.warnings);
+  });
+
+  return result;
+}
+
+function mergeStorageValueByKey(key, existingValue, importedValue) {
+  if (key === WEIGHT_HISTORY_KEY) return mergeRecordsByDate(existingValue, importedValue, normalizeDashboardWeightEntry, sortWeightHistory);
+  if (key === BODY_MEASUREMENT_KEY) return mergeRecordsByDate(existingValue, importedValue, normalizeBodyMeasurementRecord, sortBodyMeasurements);
+  if (key === WORKOUT_HISTORY_KEY) return mergeWorkoutBackupRecords(existingValue, importedValue);
+  if (key === WORKOUT_TEMPLATE_KEY) return mergeWorkoutTemplateBackup(existingValue, importedValue);
+  if (key === CUSTOM_EXERCISE_KEY) return mergeCustomExerciseBackup(existingValue, importedValue);
+  if (key === GOALS_KEY) return mergeGoalBackup(existingValue, importedValue);
+  if (key === ACHIEVEMENTS_KEY) return mergeAchievementBackup(existingValue, importedValue);
+  if (key === WEEKLY_WORKOUT_GOAL_KEY || key === LAST_BACKUP_EXPORT_KEY) {
+    return existingValue === null || existingValue === undefined
+      ? { value: importedValue, shouldWrite: true, added: importedValue ? 1 : 0, updated: 0, skipped: 0, warnings: [] }
+      : { value: existingValue, shouldWrite: false, added: 0, updated: 0, skipped: importedValue ? 1 : 0, warnings: [] };
+  }
+
+  return mergeUnknownFitCalcValue(existingValue, importedValue);
+}
+
+function mergeRecordsByDate(existingValue, importedValue, normalizer, sorter) {
+  const existingRecords = Array.isArray(existingValue) ? existingValue.map(normalizer).filter(Boolean) : [];
+  const importedRecords = Array.isArray(importedValue) ? importedValue.map(normalizer).filter(Boolean) : [];
+  const recordsByDate = new Map(existingRecords.map((record) => [record.date, record]));
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  importedRecords.forEach((record) => {
+    const existing = recordsByDate.get(record.date);
+
+    if (!existing) {
+      recordsByDate.set(record.date, record);
+      added += 1;
+      return;
+    }
+
+    if (isImportedRecordNewer(existing, record)) {
+      recordsByDate.set(record.date, { ...existing, ...record });
+      updated += 1;
+    } else {
+      skipped += 1;
+    }
+  });
+
+  return { value: sorter([...recordsByDate.values()]), shouldWrite: added + updated > 0, added, updated, skipped, warnings: [] };
+}
+
+function mergeWorkoutBackupRecords(existingValue, importedValue) {
+  const existingRecords = Array.isArray(existingValue) ? existingValue.map(normalizeDashboardWorkoutEntry).filter(Boolean) : [];
+  const importedRecords = Array.isArray(importedValue) ? importedValue.map(normalizeDashboardWorkoutEntry).filter(Boolean) : [];
+  const recordsByKey = new Map(existingRecords.map((record) => [getWorkoutMergeKey(record), record]));
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  importedRecords.forEach((record) => {
+    const key = getWorkoutMergeKey(record);
+    const existing = recordsByKey.get(key);
+
+    if (!existing) {
+      recordsByKey.set(key, record);
+      added += 1;
+    } else if (isImportedRecordNewer(existing, record)) {
+      recordsByKey.set(key, { ...existing, ...record });
+      updated += 1;
+    } else {
+      skipped += 1;
+    }
+  });
+
+  return { value: sortWorkoutHistory([...recordsByKey.values()]), shouldWrite: added + updated > 0, added, updated, skipped, warnings: [] };
+}
+
+function mergeWorkoutTemplateBackup(existingValue, importedValue) {
+  const existing = normalizeWorkoutTemplateStore(existingValue || {});
+  const imported = normalizeWorkoutTemplateStore(importedValue || {});
+  const templatesById = new Map(existing.customTemplates.map((template) => [template.id, template]));
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  imported.customTemplates.forEach((template) => {
+    const current = templatesById.get(template.id);
+
+    if (!current) {
+      templatesById.set(template.id, template);
+      added += 1;
+    } else if (isImportedRecordNewer(current, template)) {
+      templatesById.set(template.id, { ...current, ...template });
+      updated += 1;
+    } else {
+      skipped += 1;
+    }
+  });
+
+  const favoriteTemplateIds = [...new Set([...existing.favoriteTemplateIds, ...imported.favoriteTemplateIds])];
+  return {
+    value: { customTemplates: [...templatesById.values()], favoriteTemplateIds },
+    shouldWrite: added + updated > 0 || favoriteTemplateIds.length !== existing.favoriteTemplateIds.length,
+    added,
+    updated,
+    skipped,
+    warnings: [],
+  };
+}
+
+function mergeCustomExerciseBackup(existingValue, importedValue) {
+  const existing = normalizeCustomExercises(Array.isArray(existingValue) ? existingValue : []);
+  const imported = normalizeCustomExercises(Array.isArray(importedValue) ? importedValue : []);
+  const recordsByKey = new Map(existing.map((exercise) => [exercise.id || normalizeTextKey(exercise.name), exercise]));
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  imported.forEach((exercise) => {
+    const key = exercise.id || normalizeTextKey(exercise.name);
+    const nameKey = normalizeTextKey(exercise.name);
+    const existingByName = [...recordsByKey.values()].find((item) => normalizeTextKey(item.name) === nameKey);
+    const current = recordsByKey.get(key) || existingByName;
+
+    if (!current) {
+      recordsByKey.set(key, exercise);
+      added += 1;
+    } else if (isImportedRecordNewer(current, exercise)) {
+      recordsByKey.set(current.id || key, { ...current, ...exercise });
+      updated += 1;
+    } else {
+      skipped += 1;
+    }
+  });
+
+  return { value: [...recordsByKey.values()], shouldWrite: added + updated > 0, added, updated, skipped, warnings: [] };
+}
+
+function mergeGoalBackup(existingValue, importedValue) {
+  const existing = Array.isArray(existingValue) ? existingValue.map(normalizeGoalRecord).filter(Boolean) : [];
+  const imported = Array.isArray(importedValue) ? importedValue.map(normalizeGoalRecord).filter(Boolean) : [];
+  const goalsById = new Map(existing.map((goal) => [goal.id, goal]));
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  imported.forEach((goal) => {
+    const current = goalsById.get(goal.id);
+
+    if (!current) {
+      goalsById.set(goal.id, goal);
+      added += 1;
+    } else if (isImportedRecordNewer(current, goal)) {
+      goalsById.set(goal.id, { ...current, ...goal });
+      updated += 1;
+    } else {
+      skipped += 1;
+    }
+  });
+
+  return { value: sortGoals([...goalsById.values()]), shouldWrite: added + updated > 0, added, updated, skipped, warnings: [] };
+}
+
+function mergeAchievementBackup(existingValue, importedValue) {
+  const existing = normalizeAchievementBackup(existingValue);
+  const imported = normalizeAchievementBackup(importedValue);
+  const unlocked = { ...existing.unlocked };
+  let added = 0;
+  let updated = 0;
+
+  Object.values(imported.unlocked).forEach((achievement) => {
+    const current = unlocked[achievement.id];
+
+    if (!current) {
+      unlocked[achievement.id] = achievement;
+      added += 1;
+    } else if (new Date(achievement.unlockedAt).getTime() < new Date(current.unlockedAt).getTime()) {
+      unlocked[achievement.id] = achievement;
+      updated += 1;
+    }
+  });
+
+  return {
+    value: {
+      unlocked,
+      bestWorkoutStreak: Math.max(existing.bestWorkoutStreak, imported.bestWorkoutStreak),
+      bestWeightStreak: Math.max(existing.bestWeightStreak, imported.bestWeightStreak),
+      lastUpdated: new Date().toISOString(),
+    },
+    shouldWrite: added + updated > 0 || imported.bestWorkoutStreak > existing.bestWorkoutStreak || imported.bestWeightStreak > existing.bestWeightStreak,
+    added,
+    updated,
+    skipped: Math.max(Object.keys(imported.unlocked).length - added - updated, 0),
+    warnings: [],
+  };
+}
+
+function mergeUnknownFitCalcValue(existingValue, importedValue) {
+  if (existingValue === null || existingValue === undefined) {
+    return { value: importedValue, shouldWrite: true, added: countBackupValueRecords(importedValue), updated: 0, skipped: 0, warnings: [] };
+  }
+
+  return { value: existingValue, shouldWrite: false, added: 0, updated: 0, skipped: countBackupValueRecords(importedValue), warnings: [`ข้าม key ที่ไม่รู้จักเพราะมีข้อมูลเดิมอยู่แล้ว`] };
+}
+
+function normalizeAchievementBackup(value) {
+  const state = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const unlocked = {};
+
+  Object.values(state.unlocked || {}).forEach((item) => {
+    const id = String(item?.id || "").trim();
+    const date = item?.unlockedAt ? new Date(item.unlockedAt) : null;
+
+    if (id && date && Number.isFinite(date.getTime())) {
+      unlocked[id] = { id, unlockedAt: date.toISOString() };
+    }
+  });
+
+  return {
+    unlocked,
+    bestWorkoutStreak: Math.max(parseInt(state.bestWorkoutStreak, 10) || 0, 0),
+    bestWeightStreak: Math.max(parseInt(state.bestWeightStreak, 10) || 0, 0),
+  };
+}
+
+function isImportedRecordNewer(existing, imported) {
+  const existingTime = getRecordUpdatedTime(existing);
+  const importedTime = getRecordUpdatedTime(imported);
+  return importedTime > existingTime;
+}
+
+function getRecordUpdatedTime(record) {
+  const dateText = String(record?.updatedAt || record?.createdAt || record?.date || "").slice(0, 10);
+  return getDateTime(dateText);
+}
+
+function getWorkoutMergeKey(workout) {
+  return workout.id || `${workout.date}-${normalizeTextKey(workout.name)}`;
+}
+
+function normalizeTextKey(value) {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, "-");
+}
+
+function createImportResult() {
+  return { keysImported: 0, added: 0, updated: 0, skipped: 0, warnings: [] };
+}
+
+function renderBackupImportResult(result, mode) {
+  const preview = getElement("backupImportPreview");
+
+  if (!preview) {
+    return;
+  }
+
+  preview.innerHTML = `
+    <div class="backup-result">
+      <h3>นำเข้าข้อมูลเรียบร้อยแล้ว</h3>
+      <div class="backup-preview-grid">
+        ${createDashboardMetric("Mode", mode === "replace" ? "Replace" : "Merge")}
+        ${createDashboardMetric("Keys imported", `${result.keysImported}`)}
+        ${createDashboardMetric("Added", `${result.added}`)}
+        ${createDashboardMetric("Updated", `${result.updated}`)}
+        ${createDashboardMetric("Skipped", `${result.skipped}`)}
+      </div>
+      ${result.warnings.length > 0 ? `<ul class="backup-warning-list">${result.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")}</ul>` : ""}
+    </div>
+  `;
+}
+
+function getBackupSummary() {
+  const backup = createBackupSummaryFromStorage();
+  const lastExportRaw = localStorage.getItem(LAST_BACKUP_EXPORT_KEY);
+  const lastExportDate = parseDisplayDate(String(lastExportRaw || "").slice(0, 10));
+
+  return {
+    ...backup,
+    lastExportDate,
+    lastExportText: lastExportDate ? formatBackupDateTime(lastExportRaw) : "ยังไม่เคย export",
+    statusText: backup.totalKeys > 0 ? "พร้อมสำรองข้อมูล" : "ยังไม่มีข้อมูล FitCalc",
+  };
+}
+
+function createBackupSummaryFromStorage() {
+  const data = {};
+  const keys = getFitCalcStorageKeys().filter((key) => localStorage.getItem(key) !== null);
+
+  keys.forEach((key) => {
+    data[key] = readStorageValueForBackup(key);
+  });
+
+  return {
+    totalKeys: keys.length,
+    totalRecords: countBackupRecords(data),
+  };
+}
+
+function renderBackupSectionSummary() {
+  const grid = getElement("backupSummaryGrid");
+
+  if (!grid) {
+    return;
+  }
+
+  const summary = getBackupSummary();
+
+  grid.innerHTML = `
+    ${createDashboardMetric("Backup status", summary.statusText)}
+    ${createDashboardMetric("FitCalc keys", `${summary.totalKeys} keys`)}
+    ${createDashboardMetric("Total data items", `${summary.totalRecords} records`)}
+    ${createDashboardMetric("Last export", summary.lastExportText)}
+  `;
+}
+
+function countBackupRecords(data) {
+  return Object.values(data || {}).reduce((total, value) => total + countBackupValueRecords(value), 0);
+}
+
+function countBackupValueRecords(value) {
+  if (Array.isArray(value)) return value.length;
+  if (value && typeof value === "object") {
+    if (value.__raw) return 1;
+    if (Array.isArray(value.customTemplates)) return value.customTemplates.length;
+    if (value.unlocked && typeof value.unlocked === "object") return Object.keys(value.unlocked).length;
+    return Object.keys(value).length > 0 ? 1 : 0;
+  }
+  return value ? 1 : 0;
+}
+
+function getBackupPreviewCounts(data) {
+  const templates = data[WORKOUT_TEMPLATE_KEY];
+  const achievements = data[ACHIEVEMENTS_KEY];
+
+  return {
+    weightRecords: Array.isArray(data[WEIGHT_HISTORY_KEY]) ? data[WEIGHT_HISTORY_KEY].length : 0,
+    measurementRecords: Array.isArray(data[BODY_MEASUREMENT_KEY]) ? data[BODY_MEASUREMENT_KEY].length : 0,
+    workoutRecords: Array.isArray(data[WORKOUT_HISTORY_KEY]) ? data[WORKOUT_HISTORY_KEY].length : 0,
+    templates: templates?.customTemplates?.length || 0,
+    customExercises: Array.isArray(data[CUSTOM_EXERCISE_KEY]) ? data[CUSTOM_EXERCISE_KEY].length : 0,
+    goals: Array.isArray(data[GOALS_KEY]) ? data[GOALS_KEY].length : 0,
+    achievements: achievements?.unlocked ? Object.keys(achievements.unlocked).length : 0,
+  };
+}
+
+function formatBackupFileTimestamp(date) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}-${pad(date.getHours())}-${pad(date.getMinutes())}`;
+}
+
+function formatBackupDateTime(value) {
+  const date = new Date(value);
+
+  if (!Number.isFinite(date.getTime())) {
+    return "ยังไม่เคย export";
+  }
+
+  return `${formatThaiDate(date.toISOString().slice(0, 10))} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+function updateBackupStatus(message) {
+  const status = getElement("backupStatusMessage");
+
+  if (status) {
+    status.textContent = message;
+  }
+}
+
+function refreshAfterBackupChange() {
+  initializeHomeDashboard();
+  renderWeightHistory();
+  renderBodyMeasurements();
+  renderGoals();
+  renderBackupSectionSummary();
 }
 
 function getTodayDisplayDate() {
