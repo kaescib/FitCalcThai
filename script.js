@@ -10,6 +10,7 @@ const THAI_LOCALE = "th-TH";
 const WEIGHT_HISTORY_KEY = "fitcalc-weight-history";
 const BODY_MEASUREMENT_KEY = "fitcalc-body-measurements";
 const GOALS_KEY = "fitcalc-goals";
+const ACHIEVEMENTS_KEY = "fitcalc-achievements";
 const WORKOUT_HISTORY_KEY = "fitcalc-workout-history";
 const WEEKLY_WORKOUT_GOAL_KEY = "fitcalc-weekly-workout-goal";
 const WORKOUT_TEMPLATE_KEY = "fitcalc-workout-templates";
@@ -119,6 +120,32 @@ const BUILT_IN_WORKOUT_TEMPLATES = [
     exercises: ["Squat", "Bench Press", "Barbell Row", "Overhead Press", "Plank"],
   },
 ];
+const ACHIEVEMENT_DEFINITIONS = [
+  createAchievementDefinition("first-workout", "Workout", "workoutCount", 1, "First Workout", "บันทึก Workout แรก", "บันทึก Workout ครั้งแรกเพื่อเริ่มต้นเส้นทางฟิตเนส", "🏁"),
+  createAchievementDefinition("three-workouts", "Workout", "workoutCount", 3, "3 Workouts", "บันทึก Workout ครบ 3 ครั้ง", "สร้างจังหวะการออกกำลังกายให้เริ่มต่อเนื่อง", "💪"),
+  createAchievementDefinition("ten-workouts", "Workout", "workoutCount", 10, "10 Workouts", "บันทึก Workout ครบ 10 ครั้ง", "เริ่มเห็นภาพรวมการฝึกของตัวเองชัดขึ้น", "🔥"),
+  createAchievementDefinition("twenty-five-workouts", "Workout", "workoutCount", 25, "25 Workouts", "บันทึก Workout ครบ 25 ครั้ง", "ความสม่ำเสมอเริ่มกลายเป็นนิสัย", "🏋️"),
+  createAchievementDefinition("fifty-workouts", "Workout", "workoutCount", 50, "50 Workouts", "บันทึก Workout ครบ 50 ครั้ง", "ฐานข้อมูลการฝึกของคุณแน่นขึ้นมาก", "🏆"),
+  createAchievementDefinition("hundred-workouts", "Workout", "workoutCount", 100, "100 Workouts", "บันทึก Workout ครบ 100 ครั้ง", "ระดับจริงจังกับระบบติดตามการฝึก", "👑"),
+  createAchievementDefinition("three-day-workout-streak", "Workout", "workoutStreak", 3, "3-Day Workout Streak", "Workout ต่อเนื่อง 3 วัน", "รักษาวินัยการซ้อมต่อเนื่อง 3 วัน", "⚡"),
+  createAchievementDefinition("seven-day-workout-streak", "Workout", "workoutStreak", 7, "7-Day Workout Streak", "Workout ต่อเนื่อง 7 วัน", "หนึ่งสัปดาห์เต็มของความสม่ำเสมอ", "🌟"),
+  createAchievementDefinition("fourteen-day-workout-streak", "Workout", "workoutStreak", 14, "14-Day Workout Streak", "Workout ต่อเนื่อง 14 วัน", "สองสัปดาห์ที่น่าภูมิใจ", "🚀"),
+  createAchievementDefinition("thirty-day-workout-streak", "Workout", "workoutStreak", 30, "30-Day Workout Streak", "Workout ต่อเนื่อง 30 วัน", "หนึ่งเดือนของความต่อเนื่อง", "🥇"),
+  createAchievementDefinition("first-weight-record", "Weight", "weightCount", 1, "First Weight Record", "บันทึกน้ำหนักครั้งแรก", "เริ่มติดตามน้ำหนักอย่างเป็นระบบ", "⚖️"),
+  createAchievementDefinition("seven-weight-records", "Weight", "weightCount", 7, "7 Weight Records", "บันทึกน้ำหนักครบ 7 ครั้ง", "มีข้อมูลพอเห็นแนวโน้มเบื้องต้น", "📈"),
+  createAchievementDefinition("thirty-weight-records", "Weight", "weightCount", 30, "30 Weight Records", "บันทึกน้ำหนักครบ 30 ครั้ง", "สร้างประวัติน้ำหนักที่ใช้วิเคราะห์ได้ดี", "📊"),
+  createAchievementDefinition("seven-day-weight-streak", "Weight", "weightStreak", 7, "7-Day Weight Logging Streak", "บันทึกน้ำหนักต่อเนื่อง 7 วัน", "เช็กน้ำหนักสม่ำเสมอครบหนึ่งสัปดาห์", "🗓️"),
+  createAchievementDefinition("first-body-measurement", "Measurements", "measurementCount", 1, "First Body Measurement", "บันทึกสัดส่วนครั้งแรก", "เริ่มติดตามรูปร่างนอกเหนือจากน้ำหนัก", "📏"),
+  createAchievementDefinition("five-body-measurements", "Measurements", "measurementCount", 5, "5 Body Measurement Records", "บันทึกสัดส่วนครบ 5 ครั้ง", "มีข้อมูลสัดส่วนให้เทียบความเปลี่ยนแปลง", "🧭"),
+  createAchievementDefinition("ten-body-measurements", "Measurements", "measurementCount", 10, "10 Body Measurement Records", "บันทึกสัดส่วนครบ 10 ครั้ง", "ติดตามรูปร่างได้ต่อเนื่องขึ้น", "✨"),
+  createAchievementDefinition("first-goal-created", "Goals", "goalsCreated", 1, "First Goal Created", "สร้างเป้าหมายแรก", "เปลี่ยนความตั้งใจให้เป็นเป้าหมายที่ติดตามได้", "🎯"),
+  createAchievementDefinition("first-goal-completed", "Goals", "goalsCompleted", 1, "First Goal Completed", "ทำเป้าหมายแรกสำเร็จ", "ปิดเป้าหมายแรกได้สำเร็จ", "✅"),
+  createAchievementDefinition("three-goals-completed", "Goals", "goalsCompleted", 3, "3 Goals Completed", "ทำเป้าหมายสำเร็จ 3 รายการ", "เก็บชัยชนะเล็ก ๆ ได้ต่อเนื่อง", "🏅"),
+  createAchievementDefinition("five-goals-completed", "Goals", "goalsCompleted", 5, "5 Goals Completed", "ทำเป้าหมายสำเร็จ 5 รายการ", "พิสูจน์ระบบเป้าหมายของคุณแล้ว", "🌈"),
+  createAchievementDefinition("first-custom-template", "Templates", "customTemplates", 1, "First Custom Workout Template", "สร้าง Workout Template แรก", "ทำเทมเพลตส่วนตัวเพื่อบันทึกเร็วขึ้น", "🧩"),
+  createAchievementDefinition("first-custom-exercise", "Templates", "customExercises", 1, "First Custom Exercise", "สร้างท่าออกกำลังกายเองครั้งแรก", "เพิ่มท่าที่เหมาะกับการฝึกของคุณ", "🛠️"),
+  createAchievementDefinition("five-custom-exercises", "Templates", "customExercises", 5, "5 Custom Exercises", "สร้างท่าออกกำลังกายเองครบ 5 ท่า", "ฐานข้อมูลท่าส่วนตัวเริ่มเป็นของคุณจริง ๆ", "📚"),
+];
 let weightProgressChart = null;
 
 initializeTheme();
@@ -126,6 +153,7 @@ initializeNavbarDropdowns();
 initializeSmoothAnchorScrolling();
 bindCalculatorForms();
 initializeHomeDashboard();
+initializeAchievementSection();
 initializeWeightTracker();
 initializeBodyMeasurements();
 initializeGoalTracking();
@@ -143,7 +171,9 @@ function initializeHomeDashboard() {
   renderDashboardWorkoutSummary(dashboardData);
   renderDashboardWeeklyGoal(dashboardData);
   renderDashboardLibrarySummary(dashboardData);
+  renderDashboardAchievementSummary(dashboardData);
   renderDashboardRecentActivity(dashboardData);
+  renderAchievementSection(dashboardData);
 }
 
 function getHomeDashboardData() {
@@ -157,7 +187,7 @@ function getHomeDashboardData() {
   const weeklyGoal = Number(weeklyGoalRaw);
   const hasWeeklyGoal = weeklyGoalRaw !== null && Number.isInteger(weeklyGoal) && weeklyGoal >= 1 && weeklyGoal <= 7;
 
-  return {
+  const dashboardData = {
     weightHistory,
     bodyMeasurements,
     goals,
@@ -166,6 +196,9 @@ function getHomeDashboardData() {
     customExercises,
     weeklyGoal: hasWeeklyGoal ? weeklyGoal : null,
   };
+
+  dashboardData.achievements = evaluateAchievements(dashboardData);
+  return dashboardData;
 }
 
 function readDashboardValue(storageKey) {
@@ -237,6 +270,7 @@ function renderDashboardSummaryCards(data) {
   const workoutSummary = getDashboardWorkoutSummary(data.workoutHistory);
   const weeklyGoal = getDashboardWeeklyGoalSummary(data.workoutHistory, data.weeklyGoal);
   const goalSummary = getDashboardGoalSummary(data.goals);
+  const achievementSummary = data.achievements.summary;
   const librarySummary = getDashboardLibrarySummary(data.templateStore, data.customExercises);
 
   summaryCards.innerHTML = [
@@ -250,6 +284,7 @@ function renderDashboardSummaryCards(data) {
     createDashboardSummaryCard("Workout ล่าสุด", workoutSummary.lastWorkoutText, workoutSummary.lastWorkoutDateText),
     createDashboardSummaryCard("Templates ทั้งหมด", `${librarySummary.totalTemplates} รายการ`, `${librarySummary.favoriteTemplates} favorite`),
     createDashboardSummaryCard("Exercises ทั้งหมด", `${librarySummary.totalExercises} ท่า`, `${librarySummary.customExercises} custom`),
+    createDashboardSummaryCard("Achievements", `${achievementSummary.unlockedCount} ปลดล็อก`, `Streak ${achievementSummary.currentWorkoutStreak} วัน`),
   ].join("");
 }
 
@@ -357,6 +392,25 @@ function renderDashboardLibrarySummary(data) {
       ${createDashboardMetric("Custom Templates", `${summary.customTemplates} รายการ`)}
       ${createDashboardMetric("Exercises ทั้งหมด", `${summary.totalExercises} ท่า`)}
       ${createDashboardMetric("Custom Exercises", `${summary.customExercises} ท่า`)}
+    </div>
+  `;
+}
+
+function renderDashboardAchievementSummary(data) {
+  const panel = getElement("dashboardAchievementSummary");
+
+  if (!panel) {
+    return;
+  }
+
+  const summary = data.achievements.summary;
+
+  panel.innerHTML = `
+    <div class="dashboard-mini-grid">
+      ${createDashboardMetric("Workout Streak", `${summary.currentWorkoutStreak} วัน`)}
+      ${createDashboardMetric("Best Streak", `${summary.bestWorkoutStreak} วัน`)}
+      ${createDashboardMetric("ปลดล็อกแล้ว", `${summary.unlockedCount} / ${summary.totalAchievements}`)}
+      ${createDashboardMetric("ล่าสุด", summary.latestUnlockedTitle)}
     </div>
   `;
 }
@@ -606,6 +660,19 @@ function getDashboardRecentActivities(data) {
       activities.push({
         type: "Exercise",
         title: exercise.name,
+        date,
+        time: getDateTime(date),
+      });
+    }
+  });
+
+  data.achievements.unlockedList.forEach((achievement) => {
+    const date = parseDisplayDate(String(achievement.unlockedAt || "").slice(0, 10));
+
+    if (date) {
+      activities.push({
+        type: "Achievement",
+        title: `ปลดล็อก: ${achievement.title}`,
         date,
         time: getDateTime(date),
       });
@@ -2179,6 +2246,282 @@ function formatGoalNumber(value) {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
+}
+
+function createAchievementDefinition(id, category, metricKey, target, title, thaiTitle, description, icon) {
+  return { id, category, metricKey, target, title, thaiTitle, description, icon };
+}
+
+function initializeAchievementSection() {
+  const filter = getElement("achievementFilter");
+
+  if (!filter) {
+    return;
+  }
+
+  filter.addEventListener("change", () => {
+    renderAchievementSection(getHomeDashboardData());
+  });
+  renderAchievementSection(getHomeDashboardData());
+}
+
+function evaluateAchievements(data) {
+  const currentState = getAchievementState();
+  const metrics = getAchievementMetrics(data, currentState);
+  const unlocked = { ...currentState.unlocked };
+  const now = new Date().toISOString();
+
+  ACHIEVEMENT_DEFINITIONS.forEach((achievement) => {
+    if (!unlocked[achievement.id] && metrics[achievement.metricKey] >= achievement.target) {
+      unlocked[achievement.id] = {
+        id: achievement.id,
+        unlockedAt: now,
+      };
+    }
+  });
+
+  const nextState = {
+    unlocked,
+    bestWorkoutStreak: Math.max(currentState.bestWorkoutStreak, metrics.workoutStreak),
+    bestWeightStreak: Math.max(currentState.bestWeightStreak, metrics.weightStreak),
+    lastUpdated: now,
+  };
+
+  saveAchievementState(nextState);
+
+  return buildAchievementViewModel(nextState, metrics);
+}
+
+function getAchievementState() {
+  const fallbackState = {
+    unlocked: {},
+    bestWorkoutStreak: 0,
+    bestWeightStreak: 0,
+    lastUpdated: "",
+  };
+  const savedState = readDashboardValue(ACHIEVEMENTS_KEY);
+
+  if (!savedState || typeof savedState !== "object" || Array.isArray(savedState)) {
+    return fallbackState;
+  }
+
+  const unlocked = {};
+  Object.values(savedState.unlocked || {}).forEach((item) => {
+    const id = String(item?.id || "").trim();
+    const unlockedDate = item?.unlockedAt ? new Date(item.unlockedAt) : null;
+    const unlockedAt = unlockedDate && Number.isFinite(unlockedDate.getTime()) ? unlockedDate.toISOString() : "";
+
+    if (id && ACHIEVEMENT_DEFINITIONS.some((achievement) => achievement.id === id) && unlockedAt) {
+      unlocked[id] = { id, unlockedAt };
+    }
+  });
+
+  return {
+    unlocked,
+    bestWorkoutStreak: Math.max(parseInt(savedState.bestWorkoutStreak, 10) || 0, 0),
+    bestWeightStreak: Math.max(parseInt(savedState.bestWeightStreak, 10) || 0, 0),
+    lastUpdated: savedState.lastUpdated || "",
+  };
+}
+
+function saveAchievementState(state) {
+  localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify({
+    unlocked: state.unlocked,
+    bestWorkoutStreak: state.bestWorkoutStreak,
+    bestWeightStreak: state.bestWeightStreak,
+    lastUpdated: state.lastUpdated,
+  }));
+}
+
+function getAchievementMetrics(data, state) {
+  const workoutStreak = calculateDailyStreak(data.workoutHistory.map((workout) => workout.date));
+  const weightStreak = calculateDailyStreak(data.weightHistory.map((entry) => entry.date));
+  const measurementStreak = calculateDailyStreak(data.bodyMeasurements.map((record) => record.date));
+  const completedGoals = data.goals.filter((goal) => goal.status === "Completed").length;
+
+  return {
+    workoutCount: data.workoutHistory.length,
+    workoutStreak: workoutStreak.current,
+    bestWorkoutStreak: Math.max(state.bestWorkoutStreak, workoutStreak.best),
+    lastWorkoutDate: workoutStreak.lastDate,
+    weightCount: data.weightHistory.length,
+    weightStreak: weightStreak.current,
+    bestWeightStreak: Math.max(state.bestWeightStreak, weightStreak.best),
+    lastWeightDate: weightStreak.lastDate,
+    measurementCount: data.bodyMeasurements.length,
+    measurementStreak: measurementStreak.current,
+    latestMeasurementDate: measurementStreak.lastDate,
+    goalsCreated: data.goals.length,
+    goalsCompleted: completedGoals,
+    customTemplates: data.templateStore.customTemplates.length,
+    customExercises: data.customExercises.length,
+  };
+}
+
+function buildAchievementViewModel(state, metrics) {
+  const cards = ACHIEVEMENT_DEFINITIONS.map((achievement) => {
+    const unlockedState = state.unlocked[achievement.id] || null;
+    const current = Math.max(metrics[achievement.metricKey] || 0, 0);
+    const progressPercent = Math.min(Math.round((current / achievement.target) * 100), 100);
+
+    return {
+      ...achievement,
+      unlocked: Boolean(unlockedState),
+      unlockedAt: unlockedState?.unlockedAt || "",
+      current: Math.min(current, achievement.target),
+      progressText: `${Math.min(current, achievement.target)} / ${achievement.target}`,
+      progressPercent,
+    };
+  });
+  const unlockedList = cards
+    .filter((achievement) => achievement.unlocked)
+    .sort((first, second) => new Date(second.unlockedAt).getTime() - new Date(first.unlockedAt).getTime());
+  const latestUnlocked = unlockedList[0] || null;
+
+  return {
+    cards,
+    unlockedList,
+    metrics,
+    summary: {
+      currentWorkoutStreak: metrics.workoutStreak,
+      bestWorkoutStreak: Math.max(state.bestWorkoutStreak, metrics.bestWorkoutStreak),
+      currentWeightStreak: metrics.weightStreak,
+      bestWeightStreak: Math.max(state.bestWeightStreak, metrics.bestWeightStreak),
+      measurementStreak: metrics.measurementStreak,
+      measurementRecords: metrics.measurementCount,
+      latestMeasurementDateText: metrics.latestMeasurementDate ? formatThaiDate(metrics.latestMeasurementDate) : "ยังไม่มีข้อมูล",
+      lastWorkoutDateText: metrics.lastWorkoutDate ? formatThaiDate(metrics.lastWorkoutDate) : "ยังไม่มีข้อมูล",
+      unlockedCount: unlockedList.length,
+      totalAchievements: ACHIEVEMENT_DEFINITIONS.length,
+      latestUnlockedTitle: latestUnlocked ? latestUnlocked.thaiTitle : "ยังไม่มี Achievement",
+    },
+  };
+}
+
+function calculateDailyStreak(dateValues) {
+  const uniqueDates = [...new Set(dateValues.map(parseDisplayDate).filter(Boolean))]
+    .sort((first, second) => getDateTime(second) - getDateTime(first));
+
+  if (uniqueDates.length === 0) {
+    return { current: 0, best: 0, lastDate: "" };
+  }
+
+  const oneDay = 24 * 60 * 60 * 1000;
+  const todayTime = getDateTime(getTodayDateValue());
+  const latestTime = getDateTime(uniqueDates[0]);
+  const isActive = todayTime - latestTime <= oneDay;
+  let current = isActive ? 1 : 0;
+
+  if (isActive) {
+    for (let index = 1; index < uniqueDates.length; index += 1) {
+      const previousTime = getDateTime(uniqueDates[index - 1]);
+      const currentTime = getDateTime(uniqueDates[index]);
+
+      if (previousTime - currentTime === oneDay) {
+        current += 1;
+      } else {
+        break;
+      }
+    }
+  }
+
+  let best = 1;
+  let running = 1;
+
+  for (let index = 1; index < uniqueDates.length; index += 1) {
+    const previousTime = getDateTime(uniqueDates[index - 1]);
+    const currentTime = getDateTime(uniqueDates[index]);
+
+    if (previousTime - currentTime === oneDay) {
+      running += 1;
+    } else {
+      best = Math.max(best, running);
+      running = 1;
+    }
+  }
+
+  return {
+    current,
+    best: Math.max(best, running),
+    lastDate: uniqueDates[0],
+  };
+}
+
+function renderAchievementSection(data) {
+  const section = getElement("achievementsSection");
+  const summaryGrid = getElement("achievementSummaryGrid");
+  const cardList = getElement("achievementCardList");
+  const emptyState = getElement("achievementEmptyState");
+
+  if (!section || !summaryGrid || !cardList || !emptyState || !data?.achievements) {
+    return;
+  }
+
+  const achievements = data.achievements;
+  const summary = achievements.summary;
+  const hasUserData = data.workoutHistory.length > 0 ||
+    data.weightHistory.length > 0 ||
+    data.bodyMeasurements.length > 0 ||
+    data.goals.length > 0 ||
+    data.templateStore.customTemplates.length > 0 ||
+    data.customExercises.length > 0;
+
+  summaryGrid.innerHTML = `
+    ${createDashboardMetric("Workout Streak", `${summary.currentWorkoutStreak} วัน`)}
+    ${createDashboardMetric("Best Workout Streak", `${summary.bestWorkoutStreak} วัน`)}
+    ${createDashboardMetric("Weight Logging Streak", `${summary.currentWeightStreak} วัน`)}
+    ${createDashboardMetric("Measurement Streak", `${summary.measurementStreak} วัน`)}
+    ${createDashboardMetric("Measurement Records", `${summary.measurementRecords} รายการ`)}
+    ${createDashboardMetric("Latest Measurement", summary.latestMeasurementDateText)}
+    ${createDashboardMetric("Achievements", `${summary.unlockedCount} / ${summary.totalAchievements}`)}
+    ${createDashboardMetric("Last Workout", summary.lastWorkoutDateText)}
+  `;
+  emptyState.classList.toggle("is-hidden", hasUserData);
+  cardList.innerHTML = filterAchievementCards(achievements.cards).map(createAchievementCard).join("");
+}
+
+function filterAchievementCards(cards) {
+  const filterValue = getElement("achievementFilter")?.value || "all";
+
+  if (filterValue === "unlocked") {
+    return cards.filter((achievement) => achievement.unlocked);
+  }
+
+  if (filterValue === "locked") {
+    return cards.filter((achievement) => !achievement.unlocked);
+  }
+
+  if (filterValue !== "all") {
+    return cards.filter((achievement) => achievement.category === filterValue);
+  }
+
+  return cards;
+}
+
+function createAchievementCard(achievement) {
+  const statusText = achievement.unlocked ? "ปลดล็อกแล้ว" : "ยังไม่ปลดล็อก";
+  const unlockDate = achievement.unlockedAt ? formatThaiDate(achievement.unlockedAt.slice(0, 10)) : "";
+
+  return `
+    <article class="achievement-card ${achievement.unlocked ? "is-unlocked" : "is-locked"}">
+      <div class="achievement-card-header">
+        <span class="achievement-icon" aria-hidden="true">${achievement.icon}</span>
+        <div>
+          <span>${escapeHtml(achievement.category)}</span>
+          <h3>${escapeHtml(achievement.thaiTitle)}</h3>
+        </div>
+        <strong>${statusText}</strong>
+      </div>
+      <p>${escapeHtml(achievement.description)}</p>
+      <div class="dashboard-progress-bar" aria-label="Achievement progress ${achievement.progressPercent}%">
+        <span style="width: ${achievement.progressPercent}%"></span>
+      </div>
+      <div class="achievement-card-footer">
+        <span>${escapeHtml(achievement.progressText)}</span>
+        <span>${achievement.unlocked ? `ปลดล็อก ${unlockDate}` : "ทำต่ออีกนิด"}</span>
+      </div>
+    </article>
+  `;
 }
 
 function getTodayDisplayDate() {

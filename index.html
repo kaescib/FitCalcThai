@@ -144,6 +144,14 @@
           </div>
           <div id="dashboardLibrarySummary" aria-live="polite"></div>
         </section>
+
+        <section class="dashboard-panel">
+          <div class="dashboard-panel-header">
+            <h3>Achievements</h3>
+            <a class="guide-link" href="#achievementsSection">ดู Achievements</a>
+          </div>
+          <div id="dashboardAchievementSummary" aria-live="polite"></div>
+        </section>
       </div>
 
       <section class="dashboard-panel dashboard-recent-panel">
@@ -152,6 +160,48 @@
         </div>
         <div id="dashboardRecentActivity" aria-live="polite"></div>
       </section>
+    </section>
+
+    <section class="card tracker-card anchor-section" id="achievementsSection">
+      <div class="card-header">
+        <span class="tool-icon">ACH</span>
+        <div>
+          <h2>Achievements & Streaks</h2>
+          <p>สะสมความสำเร็จและติดตามความสม่ำเสมอในการดูแลสุขภาพ</p>
+        </div>
+      </div>
+
+      <div class="achievement-summary-grid" id="achievementSummaryGrid" aria-live="polite"></div>
+
+      <div class="achievement-empty-state is-hidden" id="achievementEmptyState">
+        <div>
+          <h3>เริ่มปลดล็อก Achievement แรกของคุณ</h3>
+          <p>เริ่มบันทึก Workout น้ำหนัก สัดส่วน หรือเป้าหมาย เพื่อสะสมความสำเร็จและดู streak ของคุณ</p>
+        </div>
+        <div class="dashboard-quick-actions">
+          <a class="calculator-link" href="workout-tracker.html#workoutTrackerSection">บันทึก Workout</a>
+          <a class="guide-link" href="#weightTrackerForm">บันทึกน้ำหนัก</a>
+          <a class="guide-link" href="#goalTrackingSection">ตั้งเป้าหมาย</a>
+        </div>
+      </div>
+
+      <div class="achievement-toolbar">
+        <label>
+          Filter
+          <select id="achievementFilter">
+            <option value="all">All</option>
+            <option value="unlocked">Unlocked</option>
+            <option value="locked">Locked</option>
+            <option value="Workout">Workout</option>
+            <option value="Weight">Weight</option>
+            <option value="Measurements">Measurements</option>
+            <option value="Goals">Goals</option>
+            <option value="Templates">Templates</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="achievement-card-list" id="achievementCardList" aria-live="polite"></div>
     </section>
 
     <section class="card tracker-card anchor-section" id="goalTrackingSection">
