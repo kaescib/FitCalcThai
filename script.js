@@ -12,6 +12,8 @@ const BODY_MEASUREMENT_KEY = "fitcalc-body-measurements";
 const GOALS_KEY = "fitcalc-goals";
 const ACHIEVEMENTS_KEY = "fitcalc-achievements";
 const LAST_BACKUP_EXPORT_KEY = "fitcalc-last-backup-export";
+const USER_PROFILE_KEY = "fitcalc-user-profile";
+const APP_SETTINGS_KEY = "fitcalc-app-settings";
 const WORKOUT_HISTORY_KEY = "fitcalc-workout-history";
 const WEEKLY_WORKOUT_GOAL_KEY = "fitcalc-weekly-workout-goal";
 const WORKOUT_TEMPLATE_KEY = "fitcalc-workout-templates";
@@ -26,6 +28,8 @@ const FITCALC_KNOWN_STORAGE_KEYS = [
   GOALS_KEY,
   ACHIEVEMENTS_KEY,
   LAST_BACKUP_EXPORT_KEY,
+  USER_PROFILE_KEY,
+  APP_SETTINGS_KEY,
 ];
 const WORKOUT_NAME_OPTIONS = [
   "Push Day",
@@ -168,6 +172,7 @@ bindCalculatorForms();
 initializeHomeDashboard();
 initializeAchievementSection();
 initializeDataBackupSection();
+initializeProfileAndSettings();
 initializeWeightTracker();
 initializeBodyMeasurements();
 initializeGoalTracking();
@@ -181,6 +186,7 @@ function initializeHomeDashboard() {
   const dashboardData = getHomeDashboardData();
   renderDashboardBeginnerPanel(dashboardData);
   renderDashboardSummaryCards(dashboardData);
+  renderDashboardProfileSummary(dashboardData);
   renderDashboardWeightSummary(dashboardData);
   renderDashboardWorkoutSummary(dashboardData);
   renderDashboardWeeklyGoal(dashboardData);
@@ -198,6 +204,8 @@ function getHomeDashboardData() {
   const workoutHistory = sortWorkoutHistory(readDashboardArray(WORKOUT_HISTORY_KEY).map(normalizeDashboardWorkoutEntry).filter(Boolean));
   const templateStore = normalizeWorkoutTemplateStore(readDashboardValue(WORKOUT_TEMPLATE_KEY) || {});
   const customExercises = normalizeCustomExercises(readDashboardArray(CUSTOM_EXERCISE_KEY));
+  const userProfile = getUserProfile();
+  const appSettings = getAppSettings();
   const weeklyGoalRaw = localStorage.getItem(WEEKLY_WORKOUT_GOAL_KEY);
   const weeklyGoal = Number(weeklyGoalRaw);
   const hasWeeklyGoal = weeklyGoalRaw !== null && Number.isInteger(weeklyGoal) && weeklyGoal >= 1 && weeklyGoal <= 7;
@@ -210,6 +218,8 @@ function getHomeDashboardData() {
     workoutHistory,
     templateStore,
     customExercises,
+    userProfile,
+    appSettings,
     weeklyGoal: hasWeeklyGoal ? weeklyGoal : null,
     backupSummary,
   };
@@ -289,6 +299,7 @@ function renderDashboardSummaryCards(data) {
   const goalSummary = getDashboardGoalSummary(data.goals);
   const achievementSummary = data.achievements.summary;
   const backupSummary = data.backupSummary;
+  const profileSummary = getProfileSummary(data.userProfile);
   const librarySummary = getDashboardLibrarySummary(data.templateStore, data.customExercises);
 
   summaryCards.innerHTML = [
@@ -305,6 +316,7 @@ function renderDashboardSummaryCards(data) {
     createDashboardSummaryCard("Achievements", `${achievementSummary.unlockedCount} ปลดล็อก`, `Streak ${achievementSummary.currentWorkoutStreak} วัน`),
   ].join("");
   summaryCards.innerHTML += createDashboardSummaryCard("Backup", `${backupSummary.totalKeys} keys`, backupSummary.lastExportText);
+  summaryCards.innerHTML += createDashboardSummaryCard("Profile", `${profileSummary.completionPercent}% complete`, profileSummary.mainGoalText);
 }
 
 function createDashboardSummaryCard(label, value, detail) {
@@ -704,6 +716,30 @@ function getDashboardRecentActivities(data) {
     }
   });
 
+  if (data.userProfile?.updatedAt) {
+    const date = parseDisplayDate(String(data.userProfile.updatedAt).slice(0, 10));
+    if (date) {
+      activities.push({
+        type: "Profile",
+        title: "อัปเดตโปรไฟล์",
+        date,
+        time: getDateTime(date),
+      });
+    }
+  }
+
+  if (data.appSettings?.updatedAt) {
+    const date = parseDisplayDate(String(data.appSettings.updatedAt).slice(0, 10));
+    if (date) {
+      activities.push({
+        type: "Settings",
+        title: "อัปเดตการตั้งค่า",
+        date,
+        time: getDateTime(date),
+      });
+    }
+  }
+
   data.achievements.unlockedList.forEach((achievement) => {
     const date = parseDisplayDate(String(achievement.unlockedAt || "").slice(0, 10));
 
@@ -907,7 +943,9 @@ function keepDropdownInViewport(dropdown) {
 
 function initializeTheme() {
   const savedTheme = localStorage.getItem("fitcalc-theme");
-  const shouldUseDarkMode = savedTheme === "dark";
+  const settings = getAppSettings();
+  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches || false;
+  const shouldUseDarkMode = settings.theme === "Dark" || (settings.theme === "System" ? prefersDark || savedTheme === "dark" : savedTheme === "dark");
 
   document.body.classList.toggle("dark", shouldUseDarkMode);
   updateThemeButton(shouldUseDarkMode);
@@ -919,6 +957,7 @@ function initializeTheme() {
   themeToggle.addEventListener("click", () => {
     const isDarkMode = document.body.classList.toggle("dark");
     localStorage.setItem("fitcalc-theme", isDarkMode ? "dark" : "light");
+    syncSettingsThemeFromToggle(isDarkMode);
     updateThemeButton(isDarkMode);
     if (getElement("weightProgressChart")) {
       renderWeightProgressChart(getWeightHistory());
@@ -1882,6 +1921,7 @@ function initializeGoalTracking() {
   goalList.addEventListener("click", handleGoalListClick);
   getElement("cancelGoalEditButton")?.addEventListener("click", resetGoalForm);
   updateGoalUnitFromType();
+  applyGoalDefaults();
   renderGoals();
 }
 
@@ -2218,6 +2258,7 @@ function resetGoalForm() {
   getElement("goalStartDate").value = getTodayDateValue();
   getElement("goalStatus").value = "Active";
   updateGoalUnitFromType();
+  applyGoalDefaults();
   updateGoalStatus("พร้อมบันทึกเป้าหมายใหม่");
 }
 
@@ -2227,6 +2268,19 @@ function updateGoalUnitFromType() {
 
   if (unit) {
     unit.value = getDefaultGoalUnit(type);
+  }
+
+  const target = getElement("goalTargetValue");
+  const settings = getAppSettings();
+  const profile = getUserProfile();
+
+  if (target && !target.value) {
+    if (type === "weight" && profile?.targetWeight) {
+      target.value = profile.targetWeight;
+    }
+    if (type === "weeklyWorkout" && settings.defaultWorkoutGoalPerWeek) {
+      target.value = settings.defaultWorkoutGoalPerWeek;
+    }
   }
 }
 
@@ -2571,6 +2625,449 @@ function createAchievementCard(achievement) {
   `;
 }
 
+function initializeProfileAndSettings() {
+  const profileForm = getElement("userProfileForm");
+  const settingsForm = getElement("appSettingsForm");
+
+  if (profileForm) {
+    profileForm.addEventListener("submit", handleProfileSubmit);
+    getElement("clearProfileButton")?.addEventListener("click", clearUserProfile);
+    populateProfileForm();
+    renderProfileSectionSummary();
+  }
+
+  if (settingsForm) {
+    settingsForm.addEventListener("submit", handleSettingsSubmit);
+    populateSettingsForm();
+  }
+
+  autoFillCalculatorDefaults();
+}
+
+function getUserProfile() {
+  return normalizeUserProfile(readDashboardValue(USER_PROFILE_KEY));
+}
+
+function normalizeUserProfile(rawProfile) {
+  if (!rawProfile || typeof rawProfile !== "object" || Array.isArray(rawProfile)) {
+    return null;
+  }
+
+  const profile = {
+    displayName: String(rawProfile.displayName || "").trim(),
+    gender: ["male", "female", "other"].includes(rawProfile.gender) ? rawProfile.gender : "",
+    birthYear: normalizeOptionalInteger(rawProfile.birthYear),
+    age: normalizeOptionalInteger(rawProfile.age),
+    height: normalizeOptionalPositiveNumber(rawProfile.height),
+    currentWeight: normalizeOptionalPositiveNumber(rawProfile.currentWeight),
+    targetWeight: normalizeOptionalPositiveNumber(rawProfile.targetWeight),
+    mainGoal: String(rawProfile.mainGoal || "").trim(),
+    activityLevel: String(rawProfile.activityLevel || "").trim(),
+    trainingDaysPerWeek: normalizeOptionalInteger(rawProfile.trainingDaysPerWeek),
+    notes: String(rawProfile.notes || "").trim(),
+    createdAt: rawProfile.createdAt || new Date().toISOString(),
+    updatedAt: rawProfile.updatedAt || rawProfile.createdAt || new Date().toISOString(),
+  };
+
+  if (profile.birthYear !== null && !isRealisticBirthYear(profile.birthYear)) profile.birthYear = null;
+  if (profile.age !== null && !isRealisticAge(profile.age)) profile.age = null;
+  if (profile.trainingDaysPerWeek !== null && (profile.trainingDaysPerWeek < 1 || profile.trainingDaysPerWeek > 7)) profile.trainingDaysPerWeek = null;
+
+  return profile;
+}
+
+function getAppSettings() {
+  return normalizeAppSettings(readDashboardValue(APP_SETTINGS_KEY));
+}
+
+function normalizeAppSettings(rawSettings) {
+  const settings = rawSettings && typeof rawSettings === "object" && !Array.isArray(rawSettings) ? rawSettings : {};
+  const workoutGoal = normalizeOptionalInteger(settings.defaultWorkoutGoalPerWeek);
+
+  return {
+    theme: ["System", "Dark", "Light"].includes(settings.theme) ? settings.theme : "System",
+    unit: "Metric",
+    dateDisplay: "DD/MM/YYYY",
+    dashboardMode: ["Show all sections", "Compact summary"].includes(settings.dashboardMode) ? settings.dashboardMode : "Show all sections",
+    defaultWorkoutGoalPerWeek: workoutGoal !== null && workoutGoal >= 1 && workoutGoal <= 7 ? workoutGoal : null,
+    defaultGoalType: ["weight", "waist", "weeklyWorkout", "bodyMeasurement"].includes(settings.defaultGoalType) ? settings.defaultGoalType : "weight",
+    motivationalMessages: settings.motivationalMessages !== false,
+    updatedAt: settings.updatedAt || "",
+  };
+}
+
+function handleProfileSubmit(event) {
+  event.preventDefault();
+  const profile = collectProfileForm();
+
+  if (!profile) {
+    updateProfileStatus("กรุณาตรวจสอบข้อมูลโปรไฟล์อีกครั้ง");
+    return;
+  }
+
+  localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+  updateProfileStatus("บันทึกโปรไฟล์เรียบร้อยแล้ว");
+  renderProfileSectionSummary();
+  initializeHomeDashboard();
+  autoFillCalculatorDefaults();
+  trackAnalyticsEvent("profile_saved", { has_display_name: Boolean(profile.displayName) });
+}
+
+function collectProfileForm() {
+  const existingProfile = getUserProfile();
+  const now = new Date().toISOString();
+  const heightText = getElement("profileHeight").value.trim();
+  const currentWeightText = getElement("profileCurrentWeight").value.trim();
+  const targetWeightText = getElement("profileTargetWeight").value.trim();
+  const birthYearText = getElement("profileBirthYear").value.trim();
+  const ageText = getElement("profileAge").value.trim();
+  const trainingDaysText = getElement("profileTrainingDays").value.trim();
+
+  if (
+    (heightText && normalizeOptionalPositiveNumber(heightText) === null) ||
+    (currentWeightText && normalizeOptionalPositiveNumber(currentWeightText) === null) ||
+    (targetWeightText && normalizeOptionalPositiveNumber(targetWeightText) === null) ||
+    (birthYearText && normalizeOptionalInteger(birthYearText) === null) ||
+    (ageText && normalizeOptionalInteger(ageText) === null) ||
+    (trainingDaysText && normalizeOptionalInteger(trainingDaysText) === null)
+  ) {
+    return null;
+  }
+
+  const profile = {
+    displayName: getElement("profileDisplayName").value.trim(),
+    gender: getElement("profileGender").value,
+    birthYear: normalizeOptionalInteger(birthYearText),
+    age: normalizeOptionalInteger(ageText),
+    height: normalizeOptionalPositiveNumber(heightText),
+    currentWeight: normalizeOptionalPositiveNumber(currentWeightText),
+    targetWeight: normalizeOptionalPositiveNumber(targetWeightText),
+    mainGoal: getElement("profileMainGoal").value,
+    activityLevel: getElement("profileActivityLevel").value,
+    trainingDaysPerWeek: normalizeOptionalInteger(trainingDaysText),
+    notes: getElement("profileNotes").value.trim(),
+    createdAt: existingProfile?.createdAt || now,
+    updatedAt: now,
+  };
+
+  if (profile.birthYear !== null && !isRealisticBirthYear(profile.birthYear)) return null;
+  if (profile.age !== null && !isRealisticAge(profile.age)) return null;
+  if (profile.trainingDaysPerWeek !== null && (profile.trainingDaysPerWeek < 1 || profile.trainingDaysPerWeek > 7)) return null;
+
+  return profile;
+}
+
+function populateProfileForm() {
+  const profile = getUserProfile();
+
+  if (!profile) {
+    updateProfileStatus("ยังไม่ได้ตั้งค่าโปรไฟล์");
+    return;
+  }
+
+  setElementValue("profileDisplayName", profile.displayName);
+  setElementValue("profileGender", profile.gender);
+  setElementValue("profileBirthYear", profile.birthYear);
+  setElementValue("profileAge", profile.age);
+  setElementValue("profileHeight", profile.height);
+  setElementValue("profileCurrentWeight", profile.currentWeight);
+  setElementValue("profileTargetWeight", profile.targetWeight);
+  setElementValue("profileMainGoal", profile.mainGoal);
+  setElementValue("profileActivityLevel", profile.activityLevel);
+  setElementValue("profileTrainingDays", profile.trainingDaysPerWeek);
+  setElementValue("profileNotes", profile.notes);
+  updateProfileStatus("โหลดโปรไฟล์ที่บันทึกไว้แล้ว");
+}
+
+function clearUserProfile() {
+  if (!window.confirm("ลบโปรไฟล์ที่บันทึกไว้หรือไม่? ข้อมูลน้ำหนัก Workout Goals และ Backup จะไม่ถูกลบ")) {
+    return;
+  }
+
+  localStorage.removeItem(USER_PROFILE_KEY);
+  getElement("userProfileForm")?.reset();
+  updateProfileStatus("ลบโปรไฟล์เรียบร้อยแล้ว");
+  renderProfileSectionSummary();
+  initializeHomeDashboard();
+}
+
+function handleSettingsSubmit(event) {
+  event.preventDefault();
+  const settings = collectSettingsForm();
+
+  if (!settings) {
+    updateSettingsStatus("กรุณาตรวจสอบการตั้งค่าอีกครั้ง");
+    return;
+  }
+
+  localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(settings));
+  applyThemePreference(settings.theme);
+  updateSettingsStatus("บันทึกการตั้งค่าเรียบร้อยแล้ว");
+  initializeHomeDashboard();
+  applyGoalDefaults();
+  trackAnalyticsEvent("settings_saved", { theme: settings.theme });
+}
+
+function collectSettingsForm() {
+  const workoutGoalText = getElement("settingsWorkoutGoal").value.trim();
+  const workoutGoal = normalizeOptionalInteger(workoutGoalText);
+
+  if ((workoutGoalText && workoutGoal === null) || (workoutGoal !== null && (workoutGoal < 1 || workoutGoal > 7))) {
+    return null;
+  }
+
+  return {
+    theme: getElement("settingsTheme").value,
+    unit: "Metric",
+    dateDisplay: "DD/MM/YYYY",
+    dashboardMode: getElement("settingsDashboardMode").value,
+    defaultWorkoutGoalPerWeek: workoutGoal,
+    defaultGoalType: getElement("settingsDefaultGoalType").value,
+    motivationalMessages: getElement("settingsMotivation").checked,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function populateSettingsForm() {
+  const settings = getAppSettings();
+
+  setElementValue("settingsTheme", settings.theme);
+  setElementValue("settingsUnit", settings.unit);
+  setElementValue("settingsDateDisplay", settings.dateDisplay);
+  setElementValue("settingsDashboardMode", settings.dashboardMode);
+  setElementValue("settingsWorkoutGoal", settings.defaultWorkoutGoalPerWeek);
+  setElementValue("settingsDefaultGoalType", settings.defaultGoalType);
+  const motivation = getElement("settingsMotivation");
+  if (motivation) motivation.checked = settings.motivationalMessages;
+}
+
+function renderDashboardProfileSummary(data) {
+  const panel = getElement("dashboardProfileSummary");
+
+  if (!panel) {
+    return;
+  }
+
+  const summary = getProfileSummary(data.userProfile);
+
+  if (!data.userProfile) {
+    panel.innerHTML = `
+      <p class="empty-state">ยังไม่ได้ตั้งค่าโปรไฟล์</p>
+      <div class="dashboard-quick-actions">
+        <a class="calculator-link" href="#userProfileSection">สร้างโปรไฟล์</a>
+      </div>
+    `;
+    return;
+  }
+
+  panel.innerHTML = `
+    <div class="dashboard-goal-widget">
+      <strong>${escapeHtml(summary.greeting)}</strong>
+      <span>${escapeHtml(summary.mainGoalText)}</span>
+      <div class="dashboard-progress-bar" aria-label="Profile completion ${summary.completionPercent}%">
+        <span style="width: ${summary.completionPercent}%"></span>
+      </div>
+      <p>${summary.completionPercent}% complete</p>
+    </div>
+    <div class="dashboard-mini-grid">
+      ${createDashboardMetric("Height", summary.heightText)}
+      ${createDashboardMetric("Target Weight", summary.targetWeightText)}
+      ${createDashboardMetric("Training Days", summary.trainingDaysText)}
+      ${createDashboardMetric("Activity", summary.activityText)}
+    </div>
+  `;
+}
+
+function renderProfileSectionSummary() {
+  const grid = getElement("profileSummaryGrid");
+
+  if (!grid) {
+    return;
+  }
+
+  const profile = getUserProfile();
+  const summary = getProfileSummary(profile);
+
+  grid.innerHTML = `
+    ${createDashboardMetric("Greeting", summary.greeting)}
+    ${createDashboardMetric("Main Goal", summary.mainGoalText)}
+    ${createDashboardMetric("Height", summary.heightText)}
+    ${createDashboardMetric("Current Weight", summary.currentWeightText)}
+    ${createDashboardMetric("Target Weight", summary.targetWeightText)}
+    ${createDashboardMetric("Training Days", summary.trainingDaysText)}
+    ${createDashboardMetric("Completion", `${summary.completionPercent}%`)}
+    ${createDashboardMetric("Updated", summary.updatedText)}
+  `;
+}
+
+function getProfileSummary(profile) {
+  if (!profile) {
+    return {
+      greeting: "สวัสดีครับ",
+      mainGoalText: "ยังไม่ได้ตั้งเป้าหมายหลัก",
+      heightText: "ยังไม่มีข้อมูล",
+      currentWeightText: "ยังไม่มีข้อมูล",
+      targetWeightText: "ยังไม่มีข้อมูล",
+      trainingDaysText: "ยังไม่มีข้อมูล",
+      activityText: "ยังไม่มีข้อมูล",
+      updatedText: "ยังไม่มีข้อมูล",
+      completionPercent: 0,
+    };
+  }
+
+  return {
+    greeting: profile.displayName ? `สวัสดี, ${profile.displayName}` : "สวัสดีครับ",
+    mainGoalText: profile.mainGoal || "ยังไม่ได้ตั้งเป้าหมายหลัก",
+    heightText: profile.height ? `${formatMeasurementValue(profile.height)} cm` : "ยังไม่มีข้อมูล",
+    currentWeightText: profile.currentWeight ? `${formatWeight(profile.currentWeight)} kg` : "ยังไม่มีข้อมูล",
+    targetWeightText: profile.targetWeight ? `${formatWeight(profile.targetWeight)} kg` : "ยังไม่มีข้อมูล",
+    trainingDaysText: profile.trainingDaysPerWeek ? `${profile.trainingDaysPerWeek} วัน/สัปดาห์` : "ยังไม่มีข้อมูล",
+    activityText: profile.activityLevel || "ยังไม่มีข้อมูล",
+    updatedText: profile.updatedAt ? formatBackupDateTime(profile.updatedAt) : "ยังไม่มีข้อมูล",
+    completionPercent: calculateProfileCompletion(profile),
+  };
+}
+
+function calculateProfileCompletion(profile) {
+  const fields = ["displayName", "gender", "birthYear", "age", "height", "currentWeight", "targetWeight", "mainGoal", "activityLevel", "trainingDaysPerWeek"];
+  const completedFields = fields.filter((field) => profile[field] !== null && profile[field] !== "").length;
+  return Math.round((completedFields / fields.length) * 100);
+}
+
+function autoFillCalculatorDefaults() {
+  const profile = getUserProfile();
+  const latestWeight = getLatestWeightForDefaults();
+  const defaultWeight = latestWeight || profile?.currentWeight || "";
+  const defaultAge = getProfileAge(profile);
+
+  fillInputIfEmpty("bmiWeight", defaultWeight);
+  fillInputIfEmpty("bmiHeight", profile?.height || "");
+  fillInputIfEmpty("tdeeWeight", defaultWeight);
+  fillInputIfEmpty("tdeeHeight", profile?.height || "");
+  fillInputIfEmpty("tdeeAge", defaultAge || "");
+  fillInputIfEmpty("proteinWeight", defaultWeight);
+  fillInputIfEmpty("macroWeight", defaultWeight);
+
+  const tdeeGender = getElement("tdeeGender");
+  if (tdeeGender && profile?.gender && ["male", "female"].includes(profile.gender) && !tdeeGender.dataset.userChanged) {
+    tdeeGender.value = profile.gender;
+  }
+}
+
+function getLatestWeightForDefaults() {
+  const weights = sortWeightHistory(readDashboardArray(WEIGHT_HISTORY_KEY).map(normalizeDashboardWeightEntry).filter(Boolean));
+  return weights[0]?.weightKg || null;
+}
+
+function getProfileAge(profile) {
+  if (!profile) return null;
+  if (profile.birthYear) return new Date().getFullYear() - profile.birthYear;
+  return profile.age;
+}
+
+function applyGoalDefaults() {
+  const goalForm = getElement("goalForm");
+
+  if (!goalForm || getElement("goalEditingId")?.value) {
+    return;
+  }
+
+  const settings = getAppSettings();
+  const profile = getUserProfile();
+  const goalType = getElement("goalType");
+  const target = getElement("goalTargetValue");
+
+  if (goalType && !goalType.value) {
+    goalType.value = settings.defaultGoalType;
+  }
+
+  updateGoalUnitFromType();
+
+  if (target && !target.value) {
+    if (goalType?.value === "weight" && profile?.targetWeight) {
+      target.value = profile.targetWeight;
+    }
+    if (goalType?.value === "weeklyWorkout" && settings.defaultWorkoutGoalPerWeek) {
+      target.value = settings.defaultWorkoutGoalPerWeek;
+    }
+  }
+}
+
+function applyThemePreference(theme) {
+  const normalizedTheme = ["System", "Dark", "Light"].includes(theme) ? theme : "System";
+  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches || false;
+  const shouldUseDarkMode = normalizedTheme === "Dark" || (normalizedTheme === "System" && prefersDark);
+
+  document.body.classList.toggle("dark", shouldUseDarkMode);
+  if (normalizedTheme === "System") {
+    localStorage.removeItem("fitcalc-theme");
+  } else {
+    localStorage.setItem("fitcalc-theme", shouldUseDarkMode ? "dark" : "light");
+  }
+  updateThemeButton(shouldUseDarkMode);
+  if (getElement("weightProgressChart")) {
+    renderWeightProgressChart(getWeightHistory());
+  }
+}
+
+function syncSettingsThemeFromToggle(isDarkMode) {
+  const settings = readDashboardValue(APP_SETTINGS_KEY);
+
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+    return;
+  }
+
+  localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify({
+    ...normalizeAppSettings(settings),
+    theme: isDarkMode ? "Dark" : "Light",
+    updatedAt: new Date().toISOString(),
+  }));
+  populateSettingsForm();
+}
+
+function normalizeOptionalPositiveNumber(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const numberValue = parseFloat(value);
+  return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : null;
+}
+
+function normalizeOptionalInteger(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const numberValue = Number(value);
+  return Number.isInteger(numberValue) ? numberValue : null;
+}
+
+function isRealisticAge(age) {
+  return Number.isInteger(age) && age >= 10 && age <= 100;
+}
+
+function isRealisticBirthYear(year) {
+  const currentYear = new Date().getFullYear();
+  return Number.isInteger(year) && year >= currentYear - 100 && year <= currentYear - 10;
+}
+
+function setElementValue(id, value) {
+  const element = getElement(id);
+  if (element) element.value = value ?? "";
+}
+
+function fillInputIfEmpty(id, value) {
+  const input = getElement(id);
+  if (input && !input.value && value !== null && value !== undefined && value !== "") {
+    input.value = value;
+  }
+}
+
+function updateProfileStatus(message) {
+  const status = getElement("profileStatusMessage");
+  if (status) status.textContent = message;
+}
+
+function updateSettingsStatus(message) {
+  const status = getElement("settingsStatusMessage");
+  if (status) status.textContent = message;
+}
+
 function initializeDataBackupSection() {
   if (!getElement("dataBackupSection")) {
     return;
@@ -2608,6 +3105,14 @@ function getSafeEmptyStorageValue(key) {
 
   if (key === ACHIEVEMENTS_KEY) {
     return { unlocked: {}, bestWorkoutStreak: 0, bestWeightStreak: 0, lastUpdated: "" };
+  }
+
+  if (key === USER_PROFILE_KEY) {
+    return {};
+  }
+
+  if (key === APP_SETTINGS_KEY) {
+    return normalizeAppSettings({});
   }
 
   if (key === WEEKLY_WORKOUT_GOAL_KEY) {
@@ -2802,6 +3307,8 @@ function renderBackupImportPreview(backup) {
       ${createDashboardMetric("Custom exercises", `${counts.customExercises}`)}
       ${createDashboardMetric("Goals", `${counts.goals}`)}
       ${createDashboardMetric("Achievements", `${counts.achievements}`)}
+      ${createDashboardMetric("Profile", counts.profile ? "มีข้อมูล" : "ไม่มีข้อมูล")}
+      ${createDashboardMetric("Settings", counts.settings ? "มีข้อมูล" : "ไม่มีข้อมูล")}
     </div>
     ${warnings.length > 0 ? `<ul class="backup-warning-list">${warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")}</ul>` : '<p class="workout-status">ไฟล์ backup พร้อมนำเข้า</p>'}
   `;
@@ -2917,6 +3424,8 @@ function mergeStorageValueByKey(key, existingValue, importedValue) {
   if (key === CUSTOM_EXERCISE_KEY) return mergeCustomExerciseBackup(existingValue, importedValue);
   if (key === GOALS_KEY) return mergeGoalBackup(existingValue, importedValue);
   if (key === ACHIEVEMENTS_KEY) return mergeAchievementBackup(existingValue, importedValue);
+  if (key === USER_PROFILE_KEY) return mergeSingleObjectByUpdatedAt(existingValue, importedValue, normalizeUserProfile);
+  if (key === APP_SETTINGS_KEY) return mergeSingleObjectByUpdatedAt(existingValue, importedValue, normalizeAppSettings);
   if (key === WEEKLY_WORKOUT_GOAL_KEY || key === LAST_BACKUP_EXPORT_KEY) {
     return existingValue === null || existingValue === undefined
       ? { value: importedValue, shouldWrite: true, added: importedValue ? 1 : 0, updated: 0, skipped: 0, warnings: [] }
@@ -3064,6 +3573,25 @@ function mergeGoalBackup(existingValue, importedValue) {
   });
 
   return { value: sortGoals([...goalsById.values()]), shouldWrite: added + updated > 0, added, updated, skipped, warnings: [] };
+}
+
+function mergeSingleObjectByUpdatedAt(existingValue, importedValue, normalizer) {
+  const existing = normalizer(existingValue);
+  const imported = normalizer(importedValue);
+
+  if (!imported) {
+    return { value: existingValue, shouldWrite: false, added: 0, updated: 0, skipped: 1, warnings: [] };
+  }
+
+  if (!existing) {
+    return { value: imported, shouldWrite: true, added: 1, updated: 0, skipped: 0, warnings: [] };
+  }
+
+  if (isImportedRecordNewer(existing, imported)) {
+    return { value: imported, shouldWrite: true, added: 0, updated: 1, skipped: 0, warnings: [] };
+  }
+
+  return { value: existing, shouldWrite: false, added: 0, updated: 0, skipped: 1, warnings: [] };
 }
 
 function mergeAchievementBackup(existingValue, importedValue) {
@@ -3244,6 +3772,8 @@ function getBackupPreviewCounts(data) {
     customExercises: Array.isArray(data[CUSTOM_EXERCISE_KEY]) ? data[CUSTOM_EXERCISE_KEY].length : 0,
     goals: Array.isArray(data[GOALS_KEY]) ? data[GOALS_KEY].length : 0,
     achievements: achievements?.unlocked ? Object.keys(achievements.unlocked).length : 0,
+    profile: Boolean(data[USER_PROFILE_KEY] && typeof data[USER_PROFILE_KEY] === "object" && !Array.isArray(data[USER_PROFILE_KEY]) && Object.keys(data[USER_PROFILE_KEY]).length > 0),
+    settings: Boolean(data[APP_SETTINGS_KEY] && typeof data[APP_SETTINGS_KEY] === "object" && !Array.isArray(data[APP_SETTINGS_KEY]) && Object.keys(data[APP_SETTINGS_KEY]).length > 0),
   };
 }
 

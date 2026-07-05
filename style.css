@@ -775,6 +775,51 @@ button[type="submit"]:hover {
   font-weight: 800;
 }
 
+.profile-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.profile-form fieldset,
+.settings-form fieldset {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+  padding: 16px;
+}
+
+.profile-form legend,
+.settings-form legend {
+  color: var(--primary);
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.profile-actions button {
+  min-height: 44px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+}
+
+.checkbox-label input {
+  width: 20px;
+  height: 20px;
+}
+
 .site-footer {
   padding: 28px 0 40px;
   color: var(--muted);
@@ -953,6 +998,7 @@ button[type="submit"]:hover {
   .goal-progress-grid,
   .achievement-summary-grid,
   .achievement-card-list,
+  .profile-summary-grid,
   .backup-summary-grid,
   .backup-preview-grid {
     grid-template-columns: 1fr;
@@ -964,6 +1010,7 @@ button[type="submit"]:hover {
   .goal-form-actions,
   .goal-card-actions,
   .backup-actions,
+  .profile-actions,
   .achievement-empty-state,
   .achievement-card-header,
   .achievement-card-footer {
@@ -976,6 +1023,7 @@ button[type="submit"]:hover {
   .goal-form-actions .secondary-button,
   .goal-card-actions button,
   .backup-actions button,
+  .profile-actions button,
   .achievement-empty-state a,
   .achievement-toolbar label {
     width: 100%;
@@ -2055,6 +2103,7 @@ button[type="submit"]:hover {
   .dashboard-mini-grid,
   .achievement-summary-grid,
   .achievement-card-list,
+  .profile-summary-grid,
   .backup-summary-grid,
   .backup-preview-grid {
     grid-template-columns: 1fr;
@@ -2069,11 +2118,16 @@ button[type="submit"]:hover {
   .dashboard-quick-actions a,
   .dashboard-link-group a,
   .backup-actions button,
+  .profile-actions button,
   .achievement-empty-state a {
     width: 100%;
   }
 
   .backup-actions {
+    flex-direction: column;
+  }
+
+  .profile-actions {
     flex-direction: column;
   }
 

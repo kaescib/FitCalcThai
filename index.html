@@ -117,6 +117,14 @@
 
         <section class="dashboard-panel">
           <div class="dashboard-panel-header">
+            <h3>User Profile</h3>
+            <a class="guide-link" href="#userProfileSection">แก้ไขโปรไฟล์</a>
+          </div>
+          <div id="dashboardProfileSummary" aria-live="polite"></div>
+        </section>
+
+        <section class="dashboard-panel">
+          <div class="dashboard-panel-header">
             <h3>Workout Summary</h3>
             <a class="guide-link" href="workout-tracker.html#workoutTrackerSection">บันทึก Workout</a>
           </div>
@@ -168,6 +176,175 @@
         </div>
         <div id="dashboardRecentActivity" aria-live="polite"></div>
       </section>
+    </section>
+
+    <section class="card tracker-card anchor-section" id="userProfileSection">
+      <div class="card-header">
+        <span class="tool-icon">USER</span>
+        <div>
+          <h2>User Profile</h2>
+          <p>บันทึกข้อมูลพื้นฐานเพื่อให้ FitCalc Thai ช่วยสรุปและเติมค่าต่าง ๆ ได้แม่นยำขึ้น</p>
+        </div>
+      </div>
+
+      <div class="profile-summary-grid" id="profileSummaryGrid" aria-live="polite"></div>
+      <p class="workout-status" id="profileStatusMessage" aria-live="polite">ยังไม่ได้ตั้งค่าโปรไฟล์</p>
+
+      <form class="calculator-form profile-form" id="userProfileForm">
+        <fieldset>
+          <legend>Basic Info</legend>
+          <div class="two-column">
+            <label>
+              Display Name
+              <input type="text" id="profileDisplayName" autocomplete="name" placeholder="เช่น แกะ">
+            </label>
+            <label>
+              Gender
+              <select id="profileGender">
+                <option value="">ไม่ระบุ</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other / ไม่ระบุ</option>
+              </select>
+            </label>
+            <label>
+              Birth Year
+              <input type="number" id="profileBirthYear" min="1926" max="2026" step="1" inputmode="numeric" placeholder="เช่น 1983">
+            </label>
+            <label>
+              Age
+              <input type="number" id="profileAge" min="10" max="100" step="1" inputmode="numeric" placeholder="ใช้เมื่อไม่กรอกปีเกิด">
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Body Info</legend>
+          <div class="two-column">
+            <label>
+              Height cm
+              <input type="number" id="profileHeight" min="1" step="0.1" inputmode="decimal" placeholder="เช่น 173">
+            </label>
+            <label>
+              Current Weight kg
+              <input type="number" id="profileCurrentWeight" min="1" step="0.1" inputmode="decimal" placeholder="เช่น 65">
+            </label>
+            <label>
+              Target Weight kg
+              <input type="number" id="profileTargetWeight" min="1" step="0.1" inputmode="decimal" placeholder="เช่น 70">
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Fitness Goal</legend>
+          <div class="two-column">
+            <label>
+              Main Fitness Goal
+              <select id="profileMainGoal">
+                <option value="">เลือกเป้าหมายหลัก</option>
+                <option value="เพิ่มกล้าม">เพิ่มกล้าม</option>
+                <option value="ลดไขมัน">ลดไขมัน</option>
+                <option value="รักษารูปร่าง">รักษารูปร่าง</option>
+                <option value="เพิ่มน้ำหนัก">เพิ่มน้ำหนัก</option>
+                <option value="สุขภาพทั่วไป">สุขภาพทั่วไป</option>
+              </select>
+            </label>
+            <label>
+              Activity Level
+              <select id="profileActivityLevel">
+                <option value="">เลือกระดับกิจกรรม</option>
+                <option value="น้อย">น้อย</option>
+                <option value="ปานกลาง">ปานกลาง</option>
+                <option value="สูง">สูง</option>
+              </select>
+            </label>
+            <label>
+              Training Days Per Week
+              <input type="number" id="profileTrainingDays" min="1" max="7" step="1" inputmode="numeric" placeholder="1-7">
+            </label>
+          </div>
+          <label>
+            Notes
+            <textarea id="profileNotes" rows="3" placeholder="บันทึกเป้าหมายหรือข้อควรจำส่วนตัว"></textarea>
+          </label>
+        </fieldset>
+
+        <div class="profile-actions">
+          <button type="submit">Save Profile</button>
+          <button class="danger-button" type="button" id="clearProfileButton">Clear Profile</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card tracker-card anchor-section" id="appSettingsSection">
+      <div class="card-header">
+        <span class="tool-icon">SET</span>
+        <div>
+          <h2>App Settings</h2>
+          <p>ตั้งค่าการแสดงผลและค่าเริ่มต้นของ FitCalc Thai</p>
+        </div>
+      </div>
+
+      <form class="calculator-form settings-form" id="appSettingsForm">
+        <fieldset>
+          <legend>App Preferences</legend>
+          <div class="two-column">
+            <label>
+              Default Theme
+              <select id="settingsTheme">
+                <option value="System">System / Auto</option>
+                <option value="Dark">Dark</option>
+                <option value="Light">Light</option>
+              </select>
+            </label>
+            <label>
+              Default Unit
+              <select id="settingsUnit">
+                <option value="Metric">Metric</option>
+              </select>
+            </label>
+            <label>
+              Date Display
+              <select id="settingsDateDisplay">
+                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+              </select>
+            </label>
+            <label>
+              Dashboard Preference
+              <select id="settingsDashboardMode">
+                <option value="Show all sections">Show all sections</option>
+                <option value="Compact summary">Compact summary</option>
+              </select>
+            </label>
+            <label>
+              Default Workout Goal Per Week
+              <input type="number" id="settingsWorkoutGoal" min="1" max="7" step="1" inputmode="numeric" placeholder="1-7">
+            </label>
+            <label>
+              Default Goal Type
+              <select id="settingsDefaultGoalType">
+                <option value="weight">Weight</option>
+                <option value="waist">Waist</option>
+                <option value="weeklyWorkout">Weekly Workout</option>
+                <option value="bodyMeasurement">Body Measurement</option>
+              </select>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="settingsMotivation" checked>
+              Enable Motivational Messages
+            </label>
+          </div>
+        </fieldset>
+
+        <p class="workout-status">ค่าเริ่มต้นนี้ใช้ช่วยเติมฟอร์มเท่านั้น ไม่ได้เปลี่ยนเป้าหมายเดิมอัตโนมัติ</p>
+
+        <div class="profile-actions">
+          <button type="submit">Save Settings</button>
+        </div>
+      </form>
+
+      <p class="workout-status" id="settingsStatusMessage" aria-live="polite"></p>
     </section>
 
     <section class="card tracker-card anchor-section" id="achievementsSection">
