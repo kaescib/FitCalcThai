@@ -14,6 +14,9 @@ const ACHIEVEMENTS_KEY = "fitcalc-achievements";
 const LAST_BACKUP_EXPORT_KEY = "fitcalc-last-backup-export";
 const USER_PROFILE_KEY = "fitcalc-user-profile";
 const APP_SETTINGS_KEY = "fitcalc-app-settings";
+const NUTRITION_LOG_KEY = "fitcalc-nutrition-log";
+const WATER_LOG_KEY = "fitcalc-water-log";
+const NUTRITION_SETTINGS_KEY = "fitcalc-nutrition-settings";
 const WORKOUT_HISTORY_KEY = "fitcalc-workout-history";
 const WEEKLY_WORKOUT_GOAL_KEY = "fitcalc-weekly-workout-goal";
 const WORKOUT_TEMPLATE_KEY = "fitcalc-workout-templates";
@@ -30,6 +33,9 @@ const FITCALC_KNOWN_STORAGE_KEYS = [
   LAST_BACKUP_EXPORT_KEY,
   USER_PROFILE_KEY,
   APP_SETTINGS_KEY,
+  NUTRITION_LOG_KEY,
+  WATER_LOG_KEY,
+  NUTRITION_SETTINGS_KEY,
 ];
 const WORKOUT_NAME_OPTIONS = [
   "Push Day",
@@ -173,6 +179,7 @@ initializeHomeDashboard();
 initializeAchievementSection();
 initializeDataBackupSection();
 initializeProfileAndSettings();
+initializeNutritionTracking();
 initializeWeightTracker();
 initializeBodyMeasurements();
 initializeGoalTracking();
@@ -188,6 +195,7 @@ function initializeHomeDashboard() {
   renderDashboardSummaryCards(dashboardData);
   renderDashboardProfileSummary(dashboardData);
   renderDashboardWeightSummary(dashboardData);
+  renderDashboardNutritionSummary(dashboardData);
   renderDashboardWorkoutSummary(dashboardData);
   renderDashboardWeeklyGoal(dashboardData);
   renderDashboardLibrarySummary(dashboardData);
@@ -206,6 +214,9 @@ function getHomeDashboardData() {
   const customExercises = normalizeCustomExercises(readDashboardArray(CUSTOM_EXERCISE_KEY));
   const userProfile = getUserProfile();
   const appSettings = getAppSettings();
+  const nutritionLog = getNutritionLog();
+  const waterLog = getWaterLog();
+  const nutritionSettings = getNutritionSettings();
   const weeklyGoalRaw = localStorage.getItem(WEEKLY_WORKOUT_GOAL_KEY);
   const weeklyGoal = Number(weeklyGoalRaw);
   const hasWeeklyGoal = weeklyGoalRaw !== null && Number.isInteger(weeklyGoal) && weeklyGoal >= 1 && weeklyGoal <= 7;
@@ -220,6 +231,9 @@ function getHomeDashboardData() {
     customExercises,
     userProfile,
     appSettings,
+    nutritionLog,
+    waterLog,
+    nutritionSettings,
     weeklyGoal: hasWeeklyGoal ? weeklyGoal : null,
     backupSummary,
   };
@@ -317,6 +331,8 @@ function renderDashboardSummaryCards(data) {
   ].join("");
   summaryCards.innerHTML += createDashboardSummaryCard("Backup", `${backupSummary.totalKeys} keys`, backupSummary.lastExportText);
   summaryCards.innerHTML += createDashboardSummaryCard("Profile", `${profileSummary.completionPercent}% complete`, profileSummary.mainGoalText);
+  const todayNutrition = calculateNutritionTotals(data.nutritionLog.filter((meal) => meal.date === getTodayDateValue()));
+  summaryCards.innerHTML += createDashboardSummaryCard("Nutrition", `${formatNutritionNumber(todayNutrition.calories)} kcal`, `${formatNutritionNumber(todayNutrition.protein)} g protein`);
 }
 
 function createDashboardSummaryCard(label, value, detail) {
@@ -714,6 +730,28 @@ function getDashboardRecentActivities(data) {
         time: getDateTime(date),
       });
     }
+  });
+
+  data.nutritionLog.forEach((meal) => {
+    const date = parseDisplayDate(String(meal.createdAt || meal.date).slice(0, 10)) || meal.date;
+    activities.push({
+      type: "Nutrition",
+      title: `บันทึกอาหาร: ${meal.foodName}`,
+      date,
+      time: getDateTime(date),
+    });
+  });
+
+  data.waterLog.forEach((record) => {
+    record.entries.forEach((entry) => {
+      const date = parseDisplayDate(String(entry.createdAt || record.date).slice(0, 10)) || record.date;
+      activities.push({
+        type: "Water",
+        title: `บันทึกน้ำดื่ม: ${formatNutritionNumber(entry.amount)} ml`,
+        date,
+        time: getDateTime(date),
+      });
+    });
   });
 
   if (data.userProfile?.updatedAt) {
@@ -3068,6 +3106,566 @@ function updateSettingsStatus(message) {
   if (status) status.textContent = message;
 }
 
+function updateNutritionStatus(message) {
+  const status = getElement("nutritionStatusMessage");
+  if (status) status.textContent = message;
+}
+
+function initializeNutritionTracking() {
+  if (!getElement("nutritionTrackingSection")) {
+    return;
+  }
+
+  window.fitcalcHandleMealSubmit = handleMealSubmit;
+  window.fitcalcHandleWaterSubmit = handleWaterSubmit;
+  window.fitcalcHandleNutritionSettingsSubmit = handleNutritionSettingsSubmit;
+  window.fitcalcHandleWaterQuickAdd = (amount) => addWaterEntry(parseFloat(amount));
+  const today = getTodayDateValue();
+  setElementValue("nutritionSelectedDate", today);
+  setElementValue("mealDate", today);
+  setElementValue("waterDate", today);
+  getElement("nutritionSelectedDate")?.addEventListener("change", handleNutritionDateChange);
+  getElement("nutritionSettingsForm")?.addEventListener("submit", handleNutritionSettingsSubmit);
+  getElement("mealEntryForm")?.addEventListener("submit", handleMealSubmit);
+  getElement("cancelMealEditButton")?.addEventListener("click", resetMealForm);
+  getElement("mealHistoryList")?.addEventListener("click", handleMealHistoryClick);
+  getElement("waterEntryForm")?.addEventListener("submit", handleWaterSubmit);
+  getElement("waterQuickActions")?.addEventListener("click", handleWaterQuickActionClick);
+  getElement("waterHistoryList")?.addEventListener("click", handleWaterHistoryClick);
+  populateNutritionSettingsForm();
+  renderNutritionTracking();
+}
+
+function getNutritionLog() {
+  return sortNutritionLog(readDashboardArray(NUTRITION_LOG_KEY).map(normalizeNutritionMeal).filter(Boolean));
+}
+
+function saveNutritionLog(log) {
+  localStorage.setItem(NUTRITION_LOG_KEY, JSON.stringify(sortNutritionLog(log.map(normalizeNutritionMeal).filter(Boolean))));
+}
+
+function getWaterLog() {
+  return sortWaterLog(readDashboardArray(WATER_LOG_KEY).map(normalizeWaterDay).filter(Boolean));
+}
+
+function saveWaterLog(log) {
+  localStorage.setItem(WATER_LOG_KEY, JSON.stringify(sortWaterLog(log.map(normalizeWaterDay).filter(Boolean))));
+}
+
+function getNutritionSettings() {
+  return normalizeNutritionSettings(readDashboardValue(NUTRITION_SETTINGS_KEY));
+}
+
+function normalizeNutritionSettings(rawSettings) {
+  const settings = rawSettings && typeof rawSettings === "object" && !Array.isArray(rawSettings) ? rawSettings : {};
+
+  return {
+    calorieTarget: normalizeOptionalPositiveNumber(settings.calorieTarget),
+    proteinTarget: normalizeOptionalPositiveNumber(settings.proteinTarget),
+    carbsTarget: normalizeOptionalPositiveNumber(settings.carbsTarget),
+    fatTarget: normalizeOptionalPositiveNumber(settings.fatTarget),
+    waterTarget: normalizeOptionalPositiveNumber(settings.waterTarget),
+    updatedAt: settings.updatedAt || "",
+  };
+}
+
+function normalizeNutritionMeal(meal) {
+  const date = parseDisplayDate(meal?.date);
+  const foodName = String(meal?.foodName || "").trim();
+  const calories = normalizeOptionalMacroValue(meal?.calories);
+  const protein = normalizeOptionalMacroValue(meal?.protein);
+  const carbs = normalizeOptionalMacroValue(meal?.carbs);
+  const fat = normalizeOptionalMacroValue(meal?.fat);
+
+  if (!date || !foodName || !hasAnyNutritionValue({ calories, protein, carbs, fat })) {
+    return null;
+  }
+
+  return {
+    id: meal.id || createNutritionId("meal", date),
+    date,
+    mealType: getValidMealType(meal.mealType),
+    foodName,
+    amount: String(meal.amount || "").trim(),
+    calories,
+    protein,
+    carbs,
+    fat,
+    notes: String(meal.notes || "").trim(),
+    createdAt: meal.createdAt || new Date().toISOString(),
+    updatedAt: meal.updatedAt || meal.createdAt || new Date().toISOString(),
+  };
+}
+
+function normalizeWaterDay(record) {
+  const date = parseDisplayDate(record?.date);
+  const entries = Array.isArray(record?.entries)
+    ? record.entries.map((entry) => {
+      const amount = normalizeOptionalPositiveNumber(entry?.amount);
+      return amount ? {
+        id: entry.id || createNutritionId("water", date || getTodayDateValue()),
+        amount,
+        createdAt: entry.createdAt || new Date().toISOString(),
+      } : null;
+    }).filter(Boolean)
+    : [];
+
+  if (!date) {
+    return null;
+  }
+
+  return {
+    date,
+    entries,
+    updatedAt: record.updatedAt || entries[0]?.createdAt || new Date().toISOString(),
+  };
+}
+
+function handleNutritionDateChange() {
+  const selectedDate = parseDisplayDate(getElement("nutritionSelectedDate").value) || getTodayDateValue();
+  setElementValue("nutritionSelectedDate", selectedDate);
+  setElementValue("mealDate", selectedDate);
+  setElementValue("waterDate", selectedDate);
+  renderNutritionTracking();
+}
+
+function handleNutritionSettingsSubmit(event) {
+  event.preventDefault();
+  event.stopImmediatePropagation?.();
+  const settings = collectNutritionSettingsForm();
+
+  if (!settings) {
+    updateNutritionStatus("กรุณาตรวจสอบเป้าหมายโภชนาการ ต้องเป็นค่ามากกว่า 0 หากกรอก");
+    return;
+  }
+
+  localStorage.setItem(NUTRITION_SETTINGS_KEY, JSON.stringify(settings));
+  updateNutritionStatus("บันทึกเป้าหมายโภชนาการเรียบร้อยแล้ว");
+  renderNutritionTracking();
+  initializeHomeDashboard();
+}
+
+function collectNutritionSettingsForm() {
+  const values = {
+    calorieTarget: getElement("nutritionCalorieTarget").value.trim(),
+    proteinTarget: getElement("nutritionProteinTarget").value.trim(),
+    carbsTarget: getElement("nutritionCarbsTarget").value.trim(),
+    fatTarget: getElement("nutritionFatTarget").value.trim(),
+    waterTarget: getElement("nutritionWaterTarget").value.trim(),
+  };
+
+  if (Object.values(values).some((value) => value && normalizeOptionalPositiveNumber(value) === null)) {
+    return null;
+  }
+
+  return {
+    calorieTarget: normalizeOptionalPositiveNumber(values.calorieTarget),
+    proteinTarget: normalizeOptionalPositiveNumber(values.proteinTarget),
+    carbsTarget: normalizeOptionalPositiveNumber(values.carbsTarget),
+    fatTarget: normalizeOptionalPositiveNumber(values.fatTarget),
+    waterTarget: normalizeOptionalPositiveNumber(values.waterTarget),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function populateNutritionSettingsForm() {
+  const settings = getNutritionSettings();
+  setElementValue("nutritionCalorieTarget", settings.calorieTarget);
+  setElementValue("nutritionProteinTarget", settings.proteinTarget);
+  setElementValue("nutritionCarbsTarget", settings.carbsTarget);
+  setElementValue("nutritionFatTarget", settings.fatTarget);
+  setElementValue("nutritionWaterTarget", settings.waterTarget);
+  renderProteinSuggestion(settings);
+}
+
+function renderProteinSuggestion(settings = getNutritionSettings()) {
+  const note = getElement("nutritionSuggestionText");
+  if (!note) return;
+  const weight = getLatestWeightForDefaults() || getUserProfile()?.currentWeight;
+
+  if (!settings.proteinTarget && weight) {
+    note.textContent = `แนะนำโปรตีนประมาณ ${formatNutritionNumber(weight * 2)} กรัมต่อวัน (2 กรัมต่อน้ำหนักตัว 1 กก.)`;
+  } else {
+    note.textContent = settings.proteinTarget ? "ตั้งเป้าหมายโปรตีนแล้ว" : "ยังไม่มีน้ำหนักสำหรับแนะนำโปรตีน";
+  }
+}
+
+function handleMealSubmit(event) {
+  event.preventDefault();
+  event.stopImmediatePropagation?.();
+  const meal = collectMealForm();
+
+  if (!meal) {
+    updateNutritionStatus("กรุณากรอกชื่ออาหาร และใส่อย่างน้อย 1 ค่าโภชนาการที่ไม่ติดลบ");
+    return;
+  }
+
+  const log = getNutritionLog();
+  const editingId = getElement("mealEditingId").value;
+  const existingIndex = log.findIndex((item) => item.id === editingId);
+
+  if (existingIndex >= 0) {
+    log[existingIndex] = {
+      ...log[existingIndex],
+      ...meal,
+      id: log[existingIndex].id,
+      createdAt: log[existingIndex].createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+  } else {
+    log.push(meal);
+  }
+
+  saveNutritionLog(log);
+  setElementValue("nutritionSelectedDate", meal.date);
+  resetMealForm(meal.date);
+  updateNutritionStatus("บันทึกอาหารเรียบร้อยแล้ว");
+  renderNutritionTracking();
+  initializeHomeDashboard();
+}
+
+function collectMealForm() {
+  const date = parseDisplayDate(getElement("mealDate").value);
+  const foodName = getElement("mealFoodName").value.trim();
+  const values = {
+    calories: getElement("mealCalories").value.trim(),
+    protein: getElement("mealProtein").value.trim(),
+    carbs: getElement("mealCarbs").value.trim(),
+    fat: getElement("mealFat").value.trim(),
+  };
+  const macros = {
+    calories: normalizeOptionalMacroValue(values.calories),
+    protein: normalizeOptionalMacroValue(values.protein),
+    carbs: normalizeOptionalMacroValue(values.carbs),
+    fat: normalizeOptionalMacroValue(values.fat),
+  };
+
+  if (!date || !foodName || Object.values(values).some((value) => value && normalizeOptionalMacroValue(value) === null) || !hasAnyNutritionValue(macros)) {
+    return null;
+  }
+
+  return {
+    id: createNutritionId("meal", date),
+    date,
+    mealType: getValidMealType(getElement("mealType").value),
+    foodName,
+    amount: getElement("mealAmount").value.trim(),
+    ...macros,
+    notes: getElement("mealNotes").value.trim(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function resetMealForm(date = getElement("nutritionSelectedDate")?.value || getTodayDateValue()) {
+  getElement("mealEntryForm")?.reset();
+  setElementValue("mealEditingId", "");
+  setElementValue("mealDate", parseDisplayDate(date) || getTodayDateValue());
+}
+
+function handleMealHistoryClick(event) {
+  const button = event.target.closest("[data-meal-action]");
+  if (!button) return;
+  const meal = getNutritionLog().find((item) => item.id === button.dataset.mealId);
+  if (!meal) return;
+
+  if (button.dataset.mealAction === "edit") {
+    loadMealIntoForm(meal);
+  }
+
+  if (button.dataset.mealAction === "delete") {
+    deleteMeal(meal);
+  }
+}
+
+function loadMealIntoForm(meal) {
+  setElementValue("mealEditingId", meal.id);
+  setElementValue("mealDate", meal.date);
+  setElementValue("mealType", meal.mealType);
+  setElementValue("mealFoodName", meal.foodName);
+  setElementValue("mealAmount", meal.amount);
+  setElementValue("mealCalories", meal.calories);
+  setElementValue("mealProtein", meal.protein);
+  setElementValue("mealCarbs", meal.carbs);
+  setElementValue("mealFat", meal.fat);
+  setElementValue("mealNotes", meal.notes);
+  updateNutritionStatus("กำลังแก้ไขรายการอาหาร");
+  getElement("mealEntryForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function deleteMeal(meal) {
+  if (!window.confirm(`ลบรายการอาหาร: ${meal.foodName}?`)) return;
+  saveNutritionLog(getNutritionLog().filter((item) => item.id !== meal.id));
+  updateNutritionStatus("ลบรายการอาหารเรียบร้อยแล้ว");
+  renderNutritionTracking();
+  initializeHomeDashboard();
+}
+
+function handleWaterSubmit(event) {
+  event.preventDefault();
+  event.stopImmediatePropagation?.();
+  const amount = normalizeOptionalPositiveNumber(getElement("waterAmount").value);
+
+  if (!amount) {
+    updateNutritionStatus("กรุณากรอกปริมาณน้ำที่มากกว่า 0 ml");
+    return;
+  }
+
+  addWaterEntry(amount);
+  setElementValue("waterAmount", "");
+}
+
+function handleWaterQuickActionClick(event) {
+  const button = event.target.closest("[data-water-amount]");
+  if (!button) return;
+
+  event.preventDefault();
+  addWaterEntry(parseFloat(button.dataset.waterAmount));
+}
+
+function addWaterEntry(amount) {
+  const date = parseDisplayDate(getElement("waterDate")?.value || getElement("nutritionSelectedDate")?.value) || getTodayDateValue();
+  const waterAmount = normalizeOptionalPositiveNumber(amount);
+
+  if (!waterAmount) {
+    updateNutritionStatus("กรุณากรอกปริมาณน้ำที่มากกว่า 0 ml");
+    return;
+  }
+
+  const log = getWaterLog();
+  const existing = log.find((record) => record.date === date);
+  const entry = {
+    id: createNutritionId("water", date),
+    amount: waterAmount,
+    createdAt: new Date().toISOString(),
+  };
+
+  if (existing) {
+    existing.entries.push(entry);
+    existing.updatedAt = entry.createdAt;
+  } else {
+    log.push({ date, entries: [entry], updatedAt: entry.createdAt });
+  }
+
+  saveWaterLog(log);
+  setElementValue("nutritionSelectedDate", date);
+  setElementValue("waterDate", date);
+  updateNutritionStatus(`บันทึกน้ำดื่ม ${formatNutritionNumber(waterAmount)} ml แล้ว`);
+  renderNutritionTracking();
+  initializeHomeDashboard();
+}
+
+function handleWaterHistoryClick(event) {
+  const button = event.target.closest("[data-water-action='delete']");
+  if (!button) return;
+  const date = button.dataset.waterDate;
+  const entryId = button.dataset.waterId;
+  const log = getWaterLog();
+  const day = log.find((record) => record.date === date);
+  if (!day) return;
+
+  day.entries = day.entries.filter((entry) => entry.id !== entryId);
+  day.updatedAt = new Date().toISOString();
+  saveWaterLog(log.filter((record) => record.entries.length > 0));
+  updateNutritionStatus("ลบรายการน้ำดื่มเรียบร้อยแล้ว");
+  renderNutritionTracking();
+  initializeHomeDashboard();
+}
+
+function renderNutritionTracking() {
+  const selectedDate = parseDisplayDate(getElement("nutritionSelectedDate")?.value) || getTodayDateValue();
+  const meals = getNutritionLog().filter((meal) => meal.date === selectedDate);
+  const waterDay = getWaterLog().find((record) => record.date === selectedDate) || { date: selectedDate, entries: [] };
+  const settings = getNutritionSettings();
+  const totals = calculateNutritionTotals(meals);
+  const waterTotal = calculateWaterTotal(waterDay);
+
+  setElementValue("nutritionSelectedDate", selectedDate);
+  setElementValue("mealDate", selectedDate);
+  setElementValue("waterDate", selectedDate);
+  renderProteinSuggestion(settings);
+  renderNutritionSummary(totals, settings, meals.length, waterTotal);
+  renderMealHistory(meals);
+  renderWaterPanel(waterDay, settings);
+}
+
+function renderNutritionSummary(totals, settings, mealCount, waterTotal) {
+  const summary = getElement("nutritionDailySummary");
+  if (!summary) return;
+
+  summary.innerHTML = `
+    ${createNutritionProgressCard("Calories", totals.calories, settings.calorieTarget, "kcal")}
+    ${createNutritionProgressCard("Protein", totals.protein, settings.proteinTarget, "g")}
+    ${createNutritionProgressCard("Carbs", totals.carbs, settings.carbsTarget, "g")}
+    ${createNutritionProgressCard("Fat", totals.fat, settings.fatTarget, "g")}
+    ${createNutritionProgressCard("Water", waterTotal, settings.waterTarget, "ml")}
+    ${createDashboardMetric("Meals", `${mealCount} รายการ`)}
+  `;
+
+  const status = mealCount === 0
+    ? "ยังไม่มีข้อมูลอาหารวันนี้"
+    : getNutritionStatusText(settings.calorieTarget ? totals.calories / settings.calorieTarget : 0, mealCount);
+  updateNutritionStatus(status);
+}
+
+function createNutritionProgressCard(label, value, target, unit) {
+  const percent = target ? Math.min(Math.round((value / target) * 100), 160) : 0;
+  const barPercent = Math.min(percent, 100);
+  const detail = target ? `${formatNutritionNumber(value)} / ${formatNutritionNumber(target)} ${unit}` : `${formatNutritionNumber(value)} ${unit}`;
+
+  return `
+    <article class="nutrition-progress-card">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(detail)}</strong>
+      ${target ? `<div class="dashboard-progress-bar" aria-label="${escapeHtml(label)} progress ${percent}%"><span style="width: ${barPercent}%"></span></div><p>${percent}%</p>` : '<p>ยังไม่ได้ตั้งเป้าหมายโภชนาการ</p>'}
+    </article>
+  `;
+}
+
+function renderMealHistory(meals) {
+  const list = getElement("mealHistoryList");
+  const summary = getElement("mealHistorySummary");
+  if (!list || !summary) return;
+
+  summary.textContent = meals.length > 0 ? `${meals.length} รายการ` : "ยังไม่มีข้อมูลอาหารวันนี้";
+  list.innerHTML = meals.length > 0
+    ? meals.map(createMealHistoryCard).join("")
+    : '<p class="empty-state">ยังไม่มีข้อมูลอาหารวันนี้</p>';
+}
+
+function createMealHistoryCard(meal) {
+  return `
+    <article class="meal-card">
+      <div class="meal-card-header">
+        <div>
+          <span>${escapeHtml(meal.mealType)}</span>
+          <h3>${escapeHtml(meal.foodName)}</h3>
+          ${meal.amount ? `<p>${escapeHtml(meal.amount)}</p>` : ""}
+        </div>
+        <strong>${formatNutritionNumber(meal.calories)} kcal</strong>
+      </div>
+      <div class="nutrition-mini-grid">
+        ${createDashboardMetric("Protein", `${formatNutritionNumber(meal.protein)} g`)}
+        ${createDashboardMetric("Carbs", `${formatNutritionNumber(meal.carbs)} g`)}
+        ${createDashboardMetric("Fat", `${formatNutritionNumber(meal.fat)} g`)}
+      </div>
+      ${meal.notes ? `<p>${escapeHtml(meal.notes)}</p>` : ""}
+      <div class="nutrition-actions">
+        <button class="secondary-button compact-button" type="button" data-meal-action="edit" data-meal-id="${escapeHtml(meal.id)}">แก้ไข</button>
+        <button class="danger-button compact-button" type="button" data-meal-action="delete" data-meal-id="${escapeHtml(meal.id)}">ลบ</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderWaterPanel(waterDay, settings) {
+  const total = calculateWaterTotal(waterDay);
+  const summary = getElement("waterSummaryText");
+  const progress = getElement("waterProgressBar");
+  const list = getElement("waterHistoryList");
+  const target = settings.waterTarget;
+  const percent = target ? Math.min(Math.round((total / target) * 100), 160) : 0;
+
+  if (summary) {
+    summary.textContent = waterDay.entries.length > 0
+      ? `${formatNutritionNumber(total)}${target ? ` / ${formatNutritionNumber(target)}` : ""} ml`
+      : "ยังไม่มีข้อมูลน้ำดื่มวันนี้";
+  }
+
+  if (progress) {
+    progress.style.width = `${Math.min(percent, 100)}%`;
+  }
+
+  if (list) {
+    list.innerHTML = waterDay.entries.length > 0
+      ? waterDay.entries.map((entry) => `
+        <div class="water-entry">
+          <strong>${formatNutritionNumber(entry.amount)} ml</strong>
+          <button class="danger-button compact-button" type="button" data-water-action="delete" data-water-date="${escapeHtml(waterDay.date)}" data-water-id="${escapeHtml(entry.id)}">ลบ</button>
+        </div>
+      `).join("")
+      : '<p class="empty-state">ยังไม่มีข้อมูลน้ำดื่มวันนี้</p>';
+  }
+}
+
+function renderDashboardNutritionSummary(data) {
+  const panel = getElement("dashboardNutritionSummary");
+  if (!panel) return;
+  const today = getTodayDateValue();
+  const meals = data.nutritionLog.filter((meal) => meal.date === today);
+  const waterDay = data.waterLog.find((record) => record.date === today) || { entries: [] };
+  const totals = calculateNutritionTotals(meals);
+  const waterTotal = calculateWaterTotal(waterDay);
+  const targetStatus = data.nutritionSettings.calorieTarget
+    ? getNutritionStatusText(totals.calories / data.nutritionSettings.calorieTarget, meals.length)
+    : "ยังไม่ได้ตั้งเป้าหมายโภชนาการ";
+
+  panel.innerHTML = `
+    <div class="dashboard-mini-grid">
+      ${createDashboardMetric("Calories วันนี้", `${formatNutritionNumber(totals.calories)} kcal`)}
+      ${createDashboardMetric("Protein วันนี้", `${formatNutritionNumber(totals.protein)} g`)}
+      ${createDashboardMetric("Water วันนี้", `${formatNutritionNumber(waterTotal)} ml`)}
+      ${createDashboardMetric("Status", targetStatus)}
+    </div>
+  `;
+}
+
+function calculateNutritionTotals(meals) {
+  return meals.reduce((totals, meal) => ({
+    calories: totals.calories + meal.calories,
+    protein: totals.protein + meal.protein,
+    carbs: totals.carbs + meal.carbs,
+    fat: totals.fat + meal.fat,
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+}
+
+function calculateWaterTotal(waterDay) {
+  return (waterDay.entries || []).reduce((total, entry) => total + entry.amount, 0);
+}
+
+function getNutritionStatusText(ratio, mealCount) {
+  if (mealCount === 0) return "ยังไม่มีข้อมูลอาหารวันนี้";
+  if (!Number.isFinite(ratio) || ratio <= 0) return "เริ่มบันทึกแล้ว";
+  if (ratio >= 1.15) return "เกินเป้าหมาย";
+  if (ratio >= 1) return "ถึงเป้าหมายแล้ว";
+  if (ratio >= 0.75) return "ใกล้ถึงเป้าหมาย";
+  return "เริ่มบันทึกแล้ว";
+}
+
+function sortNutritionLog(log) {
+  return log.sort((first, second) => getDateTime(second.date) - getDateTime(first.date) || getRecordUpdatedTime(second) - getRecordUpdatedTime(first));
+}
+
+function sortWaterLog(log) {
+  return log.sort((first, second) => getDateTime(second.date) - getDateTime(first.date));
+}
+
+function normalizeOptionalMacroValue(value) {
+  if (value === "" || value === null || value === undefined) return 0;
+  const numberValue = parseFloat(value);
+  return Number.isFinite(numberValue) && numberValue >= 0 ? numberValue : null;
+}
+
+function hasAnyNutritionValue(values) {
+  return ["calories", "protein", "carbs", "fat"].some((key) => Number.isFinite(values[key]) && values[key] > 0);
+}
+
+function getValidMealType(mealType) {
+  const mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack", "Pre-workout", "Post-workout", "Other"];
+  return mealTypes.includes(mealType) ? mealType : "Other";
+}
+
+function formatNutritionNumber(value) {
+  return Number(value || 0).toLocaleString(THAI_LOCALE, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  });
+}
+
+function createNutritionId(prefix, date) {
+  return `${prefix}-${date}-${Math.random().toString(16).slice(2)}`;
+}
+
 function initializeDataBackupSection() {
   if (!getElement("dataBackupSection")) {
     return;
@@ -3095,7 +3693,7 @@ function getFitCalcStorageKeys() {
 }
 
 function getSafeEmptyStorageValue(key) {
-  if ([WEIGHT_HISTORY_KEY, BODY_MEASUREMENT_KEY, WORKOUT_HISTORY_KEY, CUSTOM_EXERCISE_KEY, GOALS_KEY].includes(key)) {
+  if ([WEIGHT_HISTORY_KEY, BODY_MEASUREMENT_KEY, WORKOUT_HISTORY_KEY, CUSTOM_EXERCISE_KEY, GOALS_KEY, NUTRITION_LOG_KEY, WATER_LOG_KEY].includes(key)) {
     return [];
   }
 
@@ -3113,6 +3711,10 @@ function getSafeEmptyStorageValue(key) {
 
   if (key === APP_SETTINGS_KEY) {
     return normalizeAppSettings({});
+  }
+
+  if (key === NUTRITION_SETTINGS_KEY) {
+    return normalizeNutritionSettings({});
   }
 
   if (key === WEEKLY_WORKOUT_GOAL_KEY) {
@@ -3309,6 +3911,8 @@ function renderBackupImportPreview(backup) {
       ${createDashboardMetric("Achievements", `${counts.achievements}`)}
       ${createDashboardMetric("Profile", counts.profile ? "มีข้อมูล" : "ไม่มีข้อมูล")}
       ${createDashboardMetric("Settings", counts.settings ? "มีข้อมูล" : "ไม่มีข้อมูล")}
+      ${createDashboardMetric("Nutrition meals", `${counts.nutritionMeals}`)}
+      ${createDashboardMetric("Water days", `${counts.waterDays}`)}
     </div>
     ${warnings.length > 0 ? `<ul class="backup-warning-list">${warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")}</ul>` : '<p class="workout-status">ไฟล์ backup พร้อมนำเข้า</p>'}
   `;
@@ -3426,6 +4030,9 @@ function mergeStorageValueByKey(key, existingValue, importedValue) {
   if (key === ACHIEVEMENTS_KEY) return mergeAchievementBackup(existingValue, importedValue);
   if (key === USER_PROFILE_KEY) return mergeSingleObjectByUpdatedAt(existingValue, importedValue, normalizeUserProfile);
   if (key === APP_SETTINGS_KEY) return mergeSingleObjectByUpdatedAt(existingValue, importedValue, normalizeAppSettings);
+  if (key === NUTRITION_LOG_KEY) return mergeNutritionBackup(existingValue, importedValue);
+  if (key === WATER_LOG_KEY) return mergeWaterBackup(existingValue, importedValue);
+  if (key === NUTRITION_SETTINGS_KEY) return mergeSingleObjectByUpdatedAt(existingValue, importedValue, normalizeNutritionSettings);
   if (key === WEEKLY_WORKOUT_GOAL_KEY || key === LAST_BACKUP_EXPORT_KEY) {
     return existingValue === null || existingValue === undefined
       ? { value: importedValue, shouldWrite: true, added: importedValue ? 1 : 0, updated: 0, skipped: 0, warnings: [] }
@@ -3575,6 +4182,68 @@ function mergeGoalBackup(existingValue, importedValue) {
   return { value: sortGoals([...goalsById.values()]), shouldWrite: added + updated > 0, added, updated, skipped, warnings: [] };
 }
 
+function mergeNutritionBackup(existingValue, importedValue) {
+  const existing = Array.isArray(existingValue) ? existingValue.map(normalizeNutritionMeal).filter(Boolean) : [];
+  const imported = Array.isArray(importedValue) ? importedValue.map(normalizeNutritionMeal).filter(Boolean) : [];
+  const mealsById = new Map(existing.map((meal) => [meal.id, meal]));
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  imported.forEach((meal) => {
+    const current = mealsById.get(meal.id);
+
+    if (!current) {
+      mealsById.set(meal.id, meal);
+      added += 1;
+    } else if (isImportedRecordNewer(current, meal)) {
+      mealsById.set(meal.id, { ...current, ...meal });
+      updated += 1;
+    } else {
+      skipped += 1;
+    }
+  });
+
+  return { value: sortNutritionLog([...mealsById.values()]), shouldWrite: added + updated > 0, added, updated, skipped, warnings: [] };
+}
+
+function mergeWaterBackup(existingValue, importedValue) {
+  const existing = Array.isArray(existingValue) ? existingValue.map(normalizeWaterDay).filter(Boolean) : [];
+  const imported = Array.isArray(importedValue) ? importedValue.map(normalizeWaterDay).filter(Boolean) : [];
+  const daysByDate = new Map(existing.map((day) => [day.date, day]));
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  imported.forEach((day) => {
+    const current = daysByDate.get(day.date);
+
+    if (!current) {
+      daysByDate.set(day.date, day);
+      added += day.entries.length;
+      return;
+    }
+
+    const entriesById = new Map(current.entries.map((entry) => [entry.id, entry]));
+    day.entries.forEach((entry) => {
+      if (!entriesById.has(entry.id)) {
+        entriesById.set(entry.id, entry);
+        added += 1;
+      } else {
+        skipped += 1;
+      }
+    });
+    daysByDate.set(day.date, {
+      date: day.date,
+      entries: [...entriesById.values()],
+      updatedAt: isImportedRecordNewer(current, day) ? day.updatedAt : current.updatedAt,
+    });
+    updated += 1;
+  });
+
+  return { value: sortWaterLog([...daysByDate.values()]), shouldWrite: added + updated > 0, added, updated, skipped, warnings: [] };
+}
+
 function mergeSingleObjectByUpdatedAt(existingValue, importedValue, normalizer) {
   const existing = normalizer(existingValue);
   const imported = normalizer(importedValue);
@@ -3663,7 +4332,14 @@ function isImportedRecordNewer(existing, imported) {
 }
 
 function getRecordUpdatedTime(record) {
-  const dateText = String(record?.updatedAt || record?.createdAt || record?.date || "").slice(0, 10);
+  const timestamp = record?.updatedAt || record?.createdAt;
+  const timestampDate = timestamp ? new Date(timestamp) : null;
+
+  if (timestampDate && Number.isFinite(timestampDate.getTime())) {
+    return timestampDate.getTime();
+  }
+
+  const dateText = String(record?.date || "").slice(0, 10);
   return getDateTime(dateText);
 }
 
@@ -3774,6 +4450,8 @@ function getBackupPreviewCounts(data) {
     achievements: achievements?.unlocked ? Object.keys(achievements.unlocked).length : 0,
     profile: Boolean(data[USER_PROFILE_KEY] && typeof data[USER_PROFILE_KEY] === "object" && !Array.isArray(data[USER_PROFILE_KEY]) && Object.keys(data[USER_PROFILE_KEY]).length > 0),
     settings: Boolean(data[APP_SETTINGS_KEY] && typeof data[APP_SETTINGS_KEY] === "object" && !Array.isArray(data[APP_SETTINGS_KEY]) && Object.keys(data[APP_SETTINGS_KEY]).length > 0),
+    nutritionMeals: Array.isArray(data[NUTRITION_LOG_KEY]) ? data[NUTRITION_LOG_KEY].length : 0,
+    waterDays: Array.isArray(data[WATER_LOG_KEY]) ? data[WATER_LOG_KEY].length : 0,
   };
 }
 
@@ -3805,6 +4483,7 @@ function refreshAfterBackupChange() {
   renderWeightHistory();
   renderBodyMeasurements();
   renderGoals();
+  renderNutritionTracking();
   renderBackupSectionSummary();
 }
 

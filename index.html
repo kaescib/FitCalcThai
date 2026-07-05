@@ -125,6 +125,14 @@
 
         <section class="dashboard-panel">
           <div class="dashboard-panel-header">
+            <h3>Nutrition</h3>
+            <a class="guide-link" href="#nutritionTrackingSection">บันทึกอาหาร</a>
+          </div>
+          <div id="dashboardNutritionSummary" aria-live="polite"></div>
+        </section>
+
+        <section class="dashboard-panel">
+          <div class="dashboard-panel-header">
             <h3>Workout Summary</h3>
             <a class="guide-link" href="workout-tracker.html#workoutTrackerSection">บันทึก Workout</a>
           </div>
@@ -345,6 +353,149 @@
       </form>
 
       <p class="workout-status" id="settingsStatusMessage" aria-live="polite"></p>
+    </section>
+
+    <section class="card tracker-card anchor-section" id="nutritionTrackingSection">
+      <div class="card-header">
+        <span class="tool-icon">FOOD</span>
+        <div>
+          <h2>Nutrition Tracking</h2>
+          <p>บันทึกอาหาร แคลอรี โปรตีน และสารอาหารหลักในแต่ละวัน</p>
+        </div>
+      </div>
+
+      <label class="nutrition-date-picker">
+        เลือกวันที่
+        <input type="date" id="nutritionSelectedDate" lang="en-GB">
+      </label>
+
+      <div class="nutrition-summary-grid" id="nutritionDailySummary" aria-live="polite"></div>
+      <p class="workout-status" id="nutritionStatusMessage" aria-live="polite"></p>
+
+      <form class="calculator-form nutrition-settings-form" id="nutritionSettingsForm">
+        <fieldset>
+          <legend>Daily Targets</legend>
+          <div class="two-column">
+            <label>
+              Calories Target
+              <input type="number" id="nutritionCalorieTarget" min="1" step="1" inputmode="numeric" placeholder="เช่น 2400">
+            </label>
+            <label>
+              Protein Target g
+              <input type="number" id="nutritionProteinTarget" min="1" step="0.1" inputmode="decimal" placeholder="เช่น 130">
+            </label>
+            <label>
+              Carbs Target g
+              <input type="number" id="nutritionCarbsTarget" min="1" step="0.1" inputmode="decimal" placeholder="เช่น 300">
+            </label>
+            <label>
+              Fat Target g
+              <input type="number" id="nutritionFatTarget" min="1" step="0.1" inputmode="decimal" placeholder="เช่น 70">
+            </label>
+            <label>
+              Water Target ml
+              <input type="number" id="nutritionWaterTarget" min="1" step="1" inputmode="numeric" placeholder="เช่น 2500">
+            </label>
+          </div>
+          <p class="workout-status" id="nutritionSuggestionText"></p>
+          <button type="submit">Save Nutrition Targets</button>
+        </fieldset>
+      </form>
+
+      <form class="calculator-form meal-form" id="mealEntryForm">
+        <input type="hidden" id="mealEditingId">
+        <fieldset>
+          <legend>Meal Entry</legend>
+          <div class="two-column">
+            <label>
+              Date
+              <input type="date" id="mealDate" lang="en-GB" required>
+            </label>
+            <label>
+              Meal Type
+              <select id="mealType">
+                <option value="Breakfast">Breakfast</option>
+                <option value="Lunch">Lunch</option>
+                <option value="Dinner">Dinner</option>
+                <option value="Snack">Snack</option>
+                <option value="Pre-workout">Pre-workout</option>
+                <option value="Post-workout">Post-workout</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label>
+              Food Name
+              <input type="text" id="mealFoodName" autocomplete="off" placeholder="เช่น อกไก่ + ข้าว" required>
+            </label>
+            <label>
+              Amount / Serving
+              <input type="text" id="mealAmount" autocomplete="off" placeholder="เช่น 1 กล่อง">
+            </label>
+            <label>
+              Calories kcal
+              <input type="number" id="mealCalories" min="0" step="0.1" inputmode="decimal">
+            </label>
+            <label>
+              Protein g
+              <input type="number" id="mealProtein" min="0" step="0.1" inputmode="decimal">
+            </label>
+            <label>
+              Carbs g
+              <input type="number" id="mealCarbs" min="0" step="0.1" inputmode="decimal">
+            </label>
+            <label>
+              Fat g
+              <input type="number" id="mealFat" min="0" step="0.1" inputmode="decimal">
+            </label>
+          </div>
+          <label>
+            Notes
+            <textarea id="mealNotes" rows="3" placeholder="บันทึกเพิ่มเติม"></textarea>
+          </label>
+          <div class="nutrition-actions">
+            <button type="submit" id="saveMealButton">Save Meal</button>
+            <button class="secondary-button" type="button" id="cancelMealEditButton">Cancel Edit</button>
+          </div>
+        </fieldset>
+      </form>
+
+      <section class="nutrition-panel">
+        <div class="dashboard-panel-header">
+          <h3>Meal History</h3>
+          <span id="mealHistorySummary">ยังไม่มีข้อมูลอาหารวันนี้</span>
+        </div>
+        <div class="meal-history-list" id="mealHistoryList" aria-live="polite"></div>
+      </section>
+
+      <section class="nutrition-panel water-panel">
+        <div class="dashboard-panel-header">
+          <h3>Water Tracking</h3>
+          <span id="waterSummaryText">ยังไม่มีข้อมูลน้ำดื่มวันนี้</span>
+        </div>
+        <div class="dashboard-progress-bar" aria-label="Water progress">
+          <span id="waterProgressBar" style="width: 0%"></span>
+        </div>
+        <div class="water-quick-actions" id="waterQuickActions">
+          <button type="button" data-water-amount="250">+250 ml</button>
+          <button type="button" data-water-amount="500">+500 ml</button>
+          <button type="button" data-water-amount="750">+750 ml</button>
+          <button type="button" data-water-amount="1000">+1000 ml</button>
+        </div>
+        <form class="calculator-form water-form" id="waterEntryForm">
+          <div class="two-column">
+            <label>
+              Date
+              <input type="date" id="waterDate" lang="en-GB" required>
+            </label>
+            <label>
+              Custom amount ml
+              <input type="number" id="waterAmount" min="1" step="0.1" inputmode="decimal" placeholder="เช่น 500">
+            </label>
+          </div>
+          <button type="submit" id="saveWaterButton">Save/Add Water</button>
+        </form>
+        <div class="water-history-list" id="waterHistoryList" aria-live="polite"></div>
+      </section>
     </section>
 
     <section class="card tracker-card anchor-section" id="achievementsSection">
@@ -877,6 +1028,6 @@
   </footer>
 
   <script src="chart.umd.js" defer></script>
-  <script src="script.js" defer></script>
+  <script src="script.js?v=sprint14f" defer></script>
 </body>
 </html>

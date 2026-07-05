@@ -820,6 +820,121 @@ button[type="submit"]:hover {
   height: 20px;
 }
 
+.nutrition-date-picker {
+  display: grid;
+  gap: 8px;
+  max-width: 280px;
+}
+
+#nutritionTrackingSection {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+}
+
+#nutritionTrackingSection .card-header {
+  margin-bottom: 0;
+}
+
+#nutritionTrackingSection .calculator-form,
+#nutritionTrackingSection .nutrition-panel {
+  margin: 0;
+}
+
+#nutritionTrackingSection .nutrition-settings-form fieldset,
+#nutritionTrackingSection .meal-form fieldset {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+  padding: 20px;
+}
+
+#nutritionTrackingSection .nutrition-settings-form legend,
+#nutritionTrackingSection .meal-form legend {
+  color: var(--primary);
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+.nutrition-summary-grid,
+.nutrition-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.nutrition-progress-card,
+.nutrition-panel,
+.meal-card,
+.water-entry {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+  padding: 16px;
+}
+
+.nutrition-progress-card {
+  display: grid;
+  gap: 10px;
+}
+
+.nutrition-progress-card span,
+.meal-card span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.nutrition-progress-card strong {
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+}
+
+.meal-history-list,
+.water-history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.meal-card {
+  display: grid;
+  gap: 12px;
+}
+
+.meal-card-header,
+.nutrition-actions,
+.water-quick-actions,
+.water-entry {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.meal-card-header h3 {
+  margin: 2px 0 0;
+}
+
+.nutrition-actions,
+.water-quick-actions {
+  flex-wrap: wrap;
+}
+
+#mealEntryForm .nutrition-actions {
+  margin-top: 14px;
+}
+
+.nutrition-actions button,
+.water-quick-actions button,
+.water-form button {
+  min-height: 44px;
+}
+
+.water-panel {
+  display: grid;
+  gap: 14px;
+}
+
 .site-footer {
   padding: 28px 0 40px;
   color: var(--muted);
@@ -985,6 +1100,20 @@ button[type="submit"]:hover {
     grid-template-columns: 1fr;
   }
 
+  #nutritionTrackingSection {
+    gap: 16px;
+    padding: 16px;
+  }
+
+  #nutritionTrackingSection .nutrition-settings-form fieldset,
+  #nutritionTrackingSection .meal-form fieldset,
+  #nutritionTrackingSection .nutrition-panel,
+  #nutritionTrackingSection .nutrition-progress-card,
+  #nutritionTrackingSection .meal-card,
+  #nutritionTrackingSection .water-entry {
+    padding: 16px;
+  }
+
   .tracker-actions,
   .history-item {
     align-items: stretch;
@@ -999,6 +1128,8 @@ button[type="submit"]:hover {
   .achievement-summary-grid,
   .achievement-card-list,
   .profile-summary-grid,
+  .nutrition-summary-grid,
+  .nutrition-mini-grid,
   .backup-summary-grid,
   .backup-preview-grid {
     grid-template-columns: 1fr;
@@ -1011,6 +1142,10 @@ button[type="submit"]:hover {
   .goal-card-actions,
   .backup-actions,
   .profile-actions,
+  .nutrition-actions,
+  .water-quick-actions,
+  .meal-card-header,
+  .water-entry,
   .achievement-empty-state,
   .achievement-card-header,
   .achievement-card-footer {
@@ -1024,6 +1159,9 @@ button[type="submit"]:hover {
   .goal-card-actions button,
   .backup-actions button,
   .profile-actions button,
+  .nutrition-actions button,
+  .water-quick-actions button,
+  .water-form button,
   .achievement-empty-state a,
   .achievement-toolbar label {
     width: 100%;
@@ -2092,6 +2230,20 @@ button[type="submit"]:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  #nutritionTrackingSection {
+    gap: 16px;
+    padding: 16px;
+  }
+
+  #nutritionTrackingSection .nutrition-settings-form fieldset,
+  #nutritionTrackingSection .meal-form fieldset,
+  #nutritionTrackingSection .nutrition-panel,
+  #nutritionTrackingSection .nutrition-progress-card,
+  #nutritionTrackingSection .meal-card,
+  #nutritionTrackingSection .water-entry {
+    padding: 16px;
+  }
+
   .dashboard-v2-header,
   .beginner-panel,
   .dashboard-panel-header {
@@ -2104,6 +2256,8 @@ button[type="submit"]:hover {
   .achievement-summary-grid,
   .achievement-card-list,
   .profile-summary-grid,
+  .nutrition-summary-grid,
+  .nutrition-mini-grid,
   .backup-summary-grid,
   .backup-preview-grid {
     grid-template-columns: 1fr;
@@ -2119,6 +2273,9 @@ button[type="submit"]:hover {
   .dashboard-link-group a,
   .backup-actions button,
   .profile-actions button,
+  .nutrition-actions button,
+  .water-quick-actions button,
+  .water-form button,
   .achievement-empty-state a {
     width: 100%;
   }
@@ -2128,6 +2285,13 @@ button[type="submit"]:hover {
   }
 
   .profile-actions {
+    flex-direction: column;
+  }
+
+  .nutrition-actions,
+  .water-quick-actions,
+  .meal-card-header,
+  .water-entry {
     flex-direction: column;
   }
 
