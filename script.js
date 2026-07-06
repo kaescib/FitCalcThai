@@ -184,6 +184,7 @@ initializeWeightTracker();
 initializeBodyMeasurements();
 initializeGoalTracking();
 initializeWorkoutTracker();
+initializeDashboardCompactSections();
 
 function initializeHomeDashboard() {
   if (!getElement("dashboardSummaryCards")) {
@@ -192,6 +193,8 @@ function initializeHomeDashboard() {
 
   const dashboardData = getHomeDashboardData();
   renderDashboardBeginnerPanel(dashboardData);
+  renderDashboardAppHeader(dashboardData);
+  renderDashboardTodayFocus(dashboardData);
   renderDashboardSummaryCards(dashboardData);
   renderDashboardProfileSummary(dashboardData);
   renderDashboardWeightSummary(dashboardData);
@@ -203,6 +206,9 @@ function initializeHomeDashboard() {
   renderDashboardBackupSummary(dashboardData);
   renderDashboardRecentActivity(dashboardData);
   renderAchievementSection(dashboardData);
+  renderDashboardQuickActions();
+  renderDashboardDetailSummaries(dashboardData);
+  syncDashboardCompactMode(dashboardData);
 }
 
 function getHomeDashboardData() {
@@ -304,6 +310,101 @@ function renderDashboardBeginnerPanel(data) {
   panel.classList.toggle("is-hidden", hasAnyData);
 }
 
+function renderDashboardAppHeader(data) {
+  const header = getElement("dashboardAppHeader");
+  if (!header) return;
+
+  const profileSummary = getProfileSummary(data.userProfile);
+  const todayDate = formatThaiDate(getTodayDateValue());
+  const todayWater = calculateWaterTotal(data.waterLog.find((record) => record.date === getTodayDateValue()) || { entries: [] });
+  const activeGoals = getDashboardGoalSummary(data.goals).activeGoals;
+  const workoutStreak = data.achievements?.summary?.currentWorkoutStreak || 0;
+  const motivation = activeGoals > 0
+    ? "วันนี้โฟกัสให้ชัด แล้วขยับเข้าใกล้เป้าหมายอีกนิด"
+    : "เริ่มจากบันทึกเล็ก ๆ วันนี้ แล้วให้ข้อมูลช่วยนำทาง";
+
+  header.innerHTML = `
+    <div class="app-home-copy">
+      <span class="app-home-kicker">FitCalc Thai</span>
+      <h2>${escapeHtml(profileSummary.greeting)}</h2>
+      <p>${escapeHtml(motivation)}</p>
+    </div>
+    <div class="app-home-meta">
+      <time>${escapeHtml(todayDate)}</time>
+      <div class="app-status-chips" aria-label="สถานะวันนี้">
+        <span class="app-status-chip">Streak ${escapeHtml(sanitizeDashboardValue(workoutStreak))} วัน</span>
+        <span class="app-status-chip">น้ำ ${escapeHtml(formatNutritionNumber(todayWater))} ml</span>
+        <span class="app-status-chip">${activeGoals > 0 ? `${activeGoals} goal active` : "ยังไม่มี goal"}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderDashboardTodayFocus(data) {
+  const card = getElement("dashboardTodayFocus");
+  if (!card) return;
+
+  const today = getTodayDateValue();
+  const todayNutrition = calculateNutritionTotals(data.nutritionLog.filter((meal) => meal.date === today));
+  const todayWater = calculateWaterTotal(data.waterLog.find((record) => record.date === today) || { entries: [] });
+  const workoutSummary = getDashboardWorkoutSummary(data.workoutHistory);
+  const weeklyGoal = getDashboardWeeklyGoalSummary(data.workoutHistory, data.weeklyGoal);
+  const goalSummary = getDashboardGoalSummary(data.goals);
+  const calorieTarget = data.nutritionSettings?.calorieTarget || 0;
+  const proteinTarget = data.nutritionSettings?.proteinTarget || 0;
+  const waterTarget = data.nutritionSettings?.waterTarget || 0;
+  const activeGoalText = goalSummary.activeGoals > 0 ? goalSummary.closestGoalText : "ยังไม่มีเป้าหมายที่กำลังทำ";
+
+  card.innerHTML = `
+    <div class="today-focus-header">
+      <div>
+        <span class="app-home-kicker">วันนี้</span>
+        <h3>Today Focus</h3>
+      </div>
+      <span class="today-focus-pill">${escapeHtml(weeklyGoal.statusText)}</span>
+    </div>
+    <div class="today-focus-grid">
+      ${createTodayFocusMetric("Calories", `${formatNutritionNumber(todayNutrition.calories)} kcal`, getSafePercent(todayNutrition.calories, calorieTarget))}
+      ${createTodayFocusMetric("Protein", `${formatNutritionNumber(todayNutrition.protein)} g`, getSafePercent(todayNutrition.protein, proteinTarget))}
+      ${createTodayFocusMetric("Water", `${formatNutritionNumber(todayWater)} ml`, getSafePercent(todayWater, waterTarget))}
+      ${createTodayFocusMetric("Workout", `${workoutSummary.thisWeek} ครั้ง`, weeklyGoal.percent)}
+    </div>
+    <div class="today-focus-goal">
+      <span>Active Goal</span>
+      <strong>${escapeHtml(sanitizeDashboardValue(activeGoalText))}</strong>
+      <div class="dashboard-progress-bar" aria-label="ความคืบหน้าเป้าหมายรายสัปดาห์">
+        <span style="width: ${Math.min(Math.max(weeklyGoal.percent, 0), 100)}%"></span>
+      </div>
+      <small>${escapeHtml(weeklyGoal.progressText)}</small>
+    </div>
+  `;
+}
+
+function createTodayFocusMetric(label, value, percent) {
+  const safePercent = Math.min(Math.max(Number(percent) || 0, 0), 100);
+
+  return `
+    <div class="today-focus-metric">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(sanitizeDashboardValue(value))}</strong>
+      <div class="today-focus-progress" aria-hidden="true">
+        <span style="width: ${safePercent}%"></span>
+      </div>
+    </div>
+  `;
+}
+
+function getSafePercent(currentValue, targetValue) {
+  const current = Number(currentValue) || 0;
+  const target = Number(targetValue) || 0;
+
+  if (target <= 0) {
+    return current > 0 ? 100 : 0;
+  }
+
+  return Math.min(Math.round((current / target) * 100), 100);
+}
+
 function renderDashboardSummaryCards(data) {
   const summaryCards = getElement("dashboardSummaryCards");
   const weightSummary = getDashboardWeightSummary(data.weightHistory);
@@ -315,6 +416,38 @@ function renderDashboardSummaryCards(data) {
   const backupSummary = data.backupSummary;
   const profileSummary = getProfileSummary(data.userProfile);
   const librarySummary = getDashboardLibrarySummary(data.templateStore, data.customExercises);
+  const todayNutrition = calculateNutritionTotals(data.nutritionLog.filter((meal) => meal.date === getTodayDateValue()));
+  const todayWater = calculateWaterTotal(data.waterLog.find((record) => record.date === getTodayDateValue()) || { entries: [] });
+
+  if (!summaryCards) return;
+
+  summaryCards.innerHTML = [
+    createDashboardSummaryGroup("Today", [
+      ["น้ำหนักล่าสุด", weightSummary.latestText],
+      ["Calories วันนี้", `${formatNutritionNumber(todayNutrition.calories)} kcal`],
+      ["น้ำวันนี้", `${formatNutritionNumber(todayWater)} ml`],
+      ["Workout สัปดาห์นี้", `${workoutSummary.thisWeek} ครั้ง`],
+    ]),
+    createDashboardSummaryGroup("Progress", [
+      ["เป้าหมายที่ทำอยู่", `${goalSummary.activeGoals}`],
+      ["ใกล้สำเร็จ", goalSummary.closestGoalText],
+      ["เอวล่าสุด", measurementSummary.latestWaistText],
+      ["Streak", `${achievementSummary.currentWorkoutStreak} วัน`],
+    ]),
+    createDashboardSummaryGroup("Training", [
+      ["Workout ล่าสุด", workoutSummary.lastWorkoutText],
+      ["เป้าหมายสัปดาห์", weeklyGoal.progressText],
+      ["Favorite templates", `${librarySummary.favoriteTemplates}`],
+      ["Exercises", `${librarySummary.totalExercises} ท่า`],
+    ]),
+    createDashboardSummaryGroup("Personal", [
+      ["Profile", `${profileSummary.completionPercent}% complete`],
+      ["Achievements", `${achievementSummary.unlockedCount} / ${achievementSummary.totalAchievements}`],
+      ["Backup ล่าสุด", backupSummary.lastExportText],
+      ["กิจกรรมล่าสุด", `${getDashboardRecentActivities(data).length} รายการ`],
+    ]),
+  ].join("");
+  return;
 
   summaryCards.innerHTML = [
     createDashboardSummaryCard("น้ำหนักล่าสุด", weightSummary.latestText, weightSummary.latestSubtext),
@@ -331,8 +464,8 @@ function renderDashboardSummaryCards(data) {
   ].join("");
   summaryCards.innerHTML += createDashboardSummaryCard("Backup", `${backupSummary.totalKeys} keys`, backupSummary.lastExportText);
   summaryCards.innerHTML += createDashboardSummaryCard("Profile", `${profileSummary.completionPercent}% complete`, profileSummary.mainGoalText);
-  const todayNutrition = calculateNutritionTotals(data.nutritionLog.filter((meal) => meal.date === getTodayDateValue()));
-  summaryCards.innerHTML += createDashboardSummaryCard("Nutrition", `${formatNutritionNumber(todayNutrition.calories)} kcal`, `${formatNutritionNumber(todayNutrition.protein)} g protein`);
+  const unusedLegacyTodayNutrition = calculateNutritionTotals(data.nutritionLog.filter((meal) => meal.date === getTodayDateValue()));
+  summaryCards.innerHTML += createDashboardSummaryCard("Nutrition", `${formatNutritionNumber(unusedLegacyTodayNutrition.calories)} kcal`, `${formatNutritionNumber(unusedLegacyTodayNutrition.protein)} g protein`);
 }
 
 function createDashboardSummaryCard(label, value, detail) {
@@ -343,6 +476,27 @@ function createDashboardSummaryCard(label, value, detail) {
       <p>${escapeHtml(detail)}</p>
     </article>
   `;
+}
+
+function createDashboardSummaryGroup(title, items) {
+  return `
+    <article class="dashboard-summary-card dashboard-summary-group">
+      <span>${escapeHtml(title)}</span>
+      <div class="dashboard-summary-metrics">
+        ${items.map(([label, value]) => `
+          <div>
+            <small>${escapeHtml(label)}</small>
+            <strong>${escapeHtml(sanitizeDashboardValue(value))}</strong>
+          </div>
+        `).join("")}
+      </div>
+    </article>
+  `;
+}
+
+function sanitizeDashboardValue(value) {
+  const text = String(value ?? "").trim();
+  return /undefined|null|NaN|Infinity|Invalid Date/i.test(text) || text === "" ? "ยังไม่มีข้อมูล" : text;
 }
 
 function renderDashboardWeightSummary(data) {
@@ -510,6 +664,202 @@ function createDashboardMetric(label, value) {
       <strong>${escapeHtml(value)}</strong>
     </div>
   `;
+}
+
+function renderDashboardQuickActions() {
+  const grid = getElement("dashboardQuickActionGrid");
+  if (!grid) return;
+
+  const appActions = [
+    { icon: "⚖️", label: "บันทึกน้ำหนัก", href: "#weightTrackerForm" },
+    { icon: "🏋️", label: "บันทึก Workout", href: "workout-tracker.html#workoutTrackerSection" },
+    { icon: "🧮", label: "เครื่องคำนวณ", href: "calculators.html" },
+    { icon: "🍽️", label: "บันทึกอาหาร", href: "#nutritionTrackingSection" },
+    { icon: "💧", label: "ดื่มน้ำ", href: "#nutritionTrackingSection" },
+    { icon: "🎯", label: "ตั้งเป้าหมาย", href: "#goalTrackingSection" },
+    { icon: "💾", label: "สำรองข้อมูล", href: "#dataBackupSection" },
+  ];
+
+  grid.innerHTML = appActions.map(({ icon, label, href }) => `
+    <a class="dashboard-command-button" href="${escapeHtml(href)}">
+      <span class="dashboard-command-icon" aria-hidden="true">${escapeHtml(icon)}</span>
+      <strong>${escapeHtml(label)}</strong>
+    </a>
+  `).join("");
+  return;
+
+  const actions = [
+    ["บันทึกน้ำหนัก", "#weightTrackerForm"],
+    ["บันทึกสัดส่วน", "#bodyMeasurementsSection"],
+    ["บันทึก Workout", "workout-tracker.html#workoutTrackerSection"],
+    ["บันทึกอาหาร", "#nutritionTrackingSection"],
+    ["ดื่มน้ำ", "#nutritionTrackingSection"],
+    ["ตั้งเป้าหมาย", "#goalTrackingSection"],
+    ["ดู Achievements", "#achievementsSection"],
+    ["สำรองข้อมูล", "#dataBackupSection"],
+    ["แก้ไขโปรไฟล์", "#userProfileSection"],
+  ];
+
+  grid.innerHTML = actions.map(([label, href]) => `
+    <a class="dashboard-command-button" href="${escapeHtml(href)}">${escapeHtml(label)}</a>
+  `).join("");
+}
+
+function initializeDashboardCompactSections() {
+  const sections = getDashboardCollapsibleSections();
+  if (sections.length === 0) return;
+
+  sections.forEach(({ section }) => prepareDashboardCollapsibleSection(section));
+  document.addEventListener("click", handleDashboardToggleClick);
+  syncDashboardCompactMode(getHomeDashboardData());
+}
+
+function getDashboardCollapsibleSections() {
+  return [
+    { id: "userProfileSection", key: "profile" },
+    { id: "appSettingsSection", key: "settings" },
+    { id: "nutritionTrackingSection", key: "nutrition" },
+    { id: "achievementsSection", key: "achievements" },
+    { id: "dataBackupSection", key: "backup" },
+    { id: "goalTrackingSection", key: "goals" },
+    { section: getElement("weightTrackerForm")?.closest(".card"), key: "weight" },
+    { id: "bodyMeasurementsSection", key: "measurements" },
+  ]
+    .map((item) => ({ ...item, section: item.section || getElement(item.id) }))
+    .filter((item) => item.section);
+}
+
+function prepareDashboardCollapsibleSection(section) {
+  if (section.dataset.dashboardCollapsible === "true") return;
+
+  const header = section.querySelector(":scope > .card-header");
+  if (!header) return;
+  if (!section.id) section.id = "weightTrackerSection";
+
+  const content = document.createElement("div");
+  content.className = "dashboard-collapsible-content";
+  content.id = `${section.id || "dashboard-section"}Content`;
+
+  Array.from(section.children)
+    .filter((child) => child !== header)
+    .forEach((child) => content.appendChild(child));
+
+  const controls = document.createElement("div");
+  controls.className = "dashboard-section-controls";
+  controls.innerHTML = `
+    <span class="dashboard-section-summary" aria-live="polite"></span>
+    <button class="secondary-button compact-button dashboard-section-toggle" type="button" aria-expanded="true" aria-controls="${escapeHtml(content.id)}">ซ่อนรายละเอียด</button>
+  `;
+
+  header.appendChild(controls);
+  controls.innerHTML = `
+    <span class="dashboard-section-summary" aria-live="polite"></span>
+    <button class="secondary-button compact-button dashboard-section-toggle" type="button" aria-expanded="true" aria-controls="${escapeHtml(content.id)}">
+      <span class="dashboard-toggle-text">ซ่อนรายละเอียด</span>
+      <span class="dashboard-toggle-chevron" aria-hidden="true">⌄</span>
+    </button>
+  `;
+  section.appendChild(content);
+  section.classList.add("dashboard-collapsible-section", "app-section-card");
+  section.dataset.dashboardCollapsible = "true";
+}
+
+function handleDashboardToggleClick(event) {
+  const button = event.target.closest(".dashboard-section-toggle");
+  if (!button) return;
+
+  const section = button.closest(".dashboard-collapsible-section");
+  if (!section) return;
+
+  section.dataset.userToggled = "true";
+  setDashboardSectionCollapsed(section, !section.classList.contains("is-collapsed"));
+}
+
+function expandDashboardSectionForTarget(target) {
+  const section = target.closest?.(".dashboard-collapsible-section") || target.closest?.(".card");
+  if (section?.classList?.contains("dashboard-collapsible-section")) {
+    setDashboardSectionCollapsed(section, false);
+  }
+}
+
+function syncDashboardCompactMode(data) {
+  const sections = getDashboardCollapsibleSections();
+  if (sections.length === 0) return;
+
+  const shouldCollapse = shouldUseCompactDashboardMode();
+  sections.forEach(({ section, key }) => {
+    updateDashboardSectionHeaderSummary(section, key, data);
+    if (section.dataset.userToggled !== "true") {
+      setDashboardSectionCollapsed(section, shouldCollapse);
+    }
+  });
+}
+
+function renderDashboardDetailSummaries(data) {
+  getDashboardCollapsibleSections().forEach(({ section, key }) => {
+    updateDashboardSectionHeaderSummary(section, key, data);
+  });
+}
+
+function shouldUseCompactDashboardMode() {
+  const rawSettings = readDashboardValue(APP_SETTINGS_KEY);
+  return !rawSettings || rawSettings.dashboardMode !== "Show all sections";
+}
+
+function setDashboardSectionCollapsed(section, isCollapsed) {
+  const button = section.querySelector(".dashboard-section-toggle");
+  section.classList.toggle("is-collapsed", isCollapsed);
+
+  if (button) {
+    const text = button.querySelector(".dashboard-toggle-text");
+    const chevron = button.querySelector(".dashboard-toggle-chevron");
+    const label = isCollapsed ? "เปิดรายละเอียด" : "ซ่อนรายละเอียด";
+
+    if (text) {
+      text.textContent = label;
+    } else {
+      button.textContent = label;
+    }
+
+    if (chevron) {
+      chevron.textContent = isCollapsed ? "›" : "⌄";
+    }
+
+    button.setAttribute("aria-expanded", String(!isCollapsed));
+    return;
+    button.textContent = isCollapsed ? "เปิดรายละเอียด" : "ซ่อนรายละเอียด";
+    button.setAttribute("aria-expanded", String(!isCollapsed));
+  }
+}
+
+function updateDashboardSectionHeaderSummary(section, key, data) {
+  const summary = section.querySelector(".dashboard-section-summary");
+  if (!summary) return;
+  summary.textContent = getDashboardSectionSummaryText(key, data);
+}
+
+function getDashboardSectionSummaryText(key, data) {
+  const weightSummary = getDashboardWeightSummary(data.weightHistory);
+  const measurementSummary = getDashboardMeasurementSummary(data.bodyMeasurements);
+  const workoutSummary = getDashboardWorkoutSummary(data.workoutHistory);
+  const goalSummary = getDashboardGoalSummary(data.goals);
+  const profileSummary = getProfileSummary(data.userProfile);
+  const todayNutrition = calculateNutritionTotals(data.nutritionLog.filter((meal) => meal.date === getTodayDateValue()));
+  const todayWater = calculateWaterTotal(data.waterLog.find((record) => record.date === getTodayDateValue()) || { entries: [] });
+
+  const summaries = {
+    profile: `Profile ${profileSummary.completionPercent}%`,
+    settings: `Dashboard: ${data.appSettings.dashboardMode}`,
+    nutrition: `${formatNutritionNumber(todayNutrition.calories)} kcal | ${formatNutritionNumber(todayWater)} ml`,
+    achievements: `${data.achievements.summary.unlockedCount} / ${data.achievements.summary.totalAchievements} unlocked`,
+    backup: data.backupSummary.lastExportText,
+    goals: `${goalSummary.activeGoals} active | ${goalSummary.completedGoals} done`,
+    weight: weightSummary.latestText,
+    measurements: measurementSummary.latestWaistText,
+    workout: workoutSummary.lastWorkoutText,
+  };
+
+  return sanitizeDashboardValue(summaries[key] || "พร้อมใช้งาน");
 }
 
 function getDashboardWeightSummary(weightHistory) {
@@ -804,6 +1154,26 @@ function getDashboardRecentActivities(data) {
 }
 
 function initializeSmoothAnchorScrolling() {
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented) return;
+    const link = event.target.closest("a[href*='#']");
+    if (!link) return;
+    const targetUrl = new URL(link.href, window.location.href);
+
+    if (targetUrl.pathname !== window.location.pathname || !targetUrl.hash) {
+      return;
+    }
+
+    const target = getScrollTarget(targetUrl.hash);
+
+    if (!target) {
+      return;
+    }
+
+    event.preventDefault();
+    scrollToHashTarget(targetUrl.hash, true);
+  });
+
   document.querySelectorAll('a[href*="#"]').forEach((link) => {
     link.addEventListener("click", (event) => {
       const targetUrl = new URL(link.href, window.location.href);
@@ -848,6 +1218,8 @@ function scrollToHashTarget(hash, shouldUpdateHash) {
   if (!target) {
     return;
   }
+
+  expandDashboardSectionForTarget(target);
 
   const navbarHeight = document.querySelector(".site-nav")?.offsetHeight || 0;
   const topOffset = navbarHeight + 34;

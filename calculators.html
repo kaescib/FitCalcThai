@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitCalc Thai Tools | เครื่องคำนวณสุขภาพและฟิตเนส</title>
+  <meta name="description" content="เครื่องคำนวณ BMI, TDEE, โปรตีน, สารอาหาร และ 1RM สำหรับวางแผนสุขภาพและการออกกำลังกาย">
+  <meta name="keywords" content="FitCalc Thai Tools, เครื่องคำนวณ BMI, TDEE Calculator, Protein Calculator, Macro Calculator, 1RM Calculator">
+  <meta name="author" content="FitCalc Thai">
+  <meta name="theme-color" content="#22c55e">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="FitCalc Thai Tools | เครื่องคำนวณสุขภาพและฟิตเนส">
+  <meta property="og:description" content="รวมเครื่องมือคำนวณ BMI, TDEE, โปรตีน, สารอาหาร และ 1RM สำหรับคนออกกำลังกาย">
+  <meta property="og:site_name" content="FitCalc Thai">
+  <meta property="og:locale" content="th_TH">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XT6JGFNCKM"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+    gtag("config", "G-XT6JGFNCKM");
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="canonical" href="https://kaescib.github.io/FitCalcThai/calculators.html">
+  <meta name="google-site-verification" content="6y9c37ViQs0DbVfomYhz56SrQqQdRK6Nkue2IoiEQuY">
+</head>
+<body>
+  <nav class="site-nav" aria-label="เมนูหลัก">
+    <div class="nav-inner">
+      <a class="nav-brand" href="index.html">FitCalc Thai</a>
+      <div class="nav-links">
+        <a href="index.html">หน้าแรก</a>
+        <details class="nav-dropdown">
+          <summary>เครื่องมือ</summary>
+          <div class="dropdown-menu">
+            <a href="calculators.html">เครื่องคำนวณ</a>
+            <a href="calculators.html#bmiCalculator">BMI Calculator</a>
+            <a href="calculators.html#tdeeCalculator">TDEE Calculator</a>
+            <a href="calculators.html#proteinCalculator">Protein Calculator</a>
+            <a href="calculators.html#macroCalculator">Macro Calculator</a>
+            <a href="calculators.html#oneRmCalculator">1RM Calculator</a>
+            <a href="index.html#weightTrackerForm">Weight Tracker</a>
+            <a href="workout-tracker.html">Workout Tracker</a>
+          </div>
+        </details>
+        <details class="nav-dropdown">
+          <summary>บทความ</summary>
+          <div class="dropdown-menu">
+            <a href="bmi-guide.html">BMI Guide</a>
+            <a href="tdee-guide.html">TDEE Guide</a>
+            <a href="protein-guide.html">Protein Guide</a>
+            <a href="gain-muscle-guide.html">Gain Muscle Guide</a>
+            <a href="lose-fat-guide.html">Lose Fat Guide</a>
+            <a href="progressive-overload-guide.html">Progressive Overload Guide</a>
+          </div>
+        </details>
+        <a href="about.html">เกี่ยวกับ</a>
+        <a href="privacy-policy.html">Privacy</a>
+      </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดมืดและสว่าง">
+        <span id="themeIcon">☾</span>
+        <span id="themeText">Dark</span>
+      </button>
+    </div>
+  </nav>
+
+  <header class="site-header tools-page-header">
+    <div>
+      <p class="eyebrow">FitCalc Thai Tools</p>
+      <h1>เครื่องคำนวณสุขภาพและฟิตเนส</h1>
+      <p class="intro">รวมเครื่องมือคำนวณ BMI, TDEE, โปรตีน, สารอาหาร และ 1RM</p>
+      <div class="hero-actions" aria-label="ลิงก์เครื่องคำนวณ">
+        <a class="calculator-link" href="#bmiCalculator">BMI</a>
+        <a class="guide-link" href="#tdeeCalculator">TDEE</a>
+        <a class="guide-link" href="#proteinCalculator">Protein</a>
+        <a class="guide-link" href="#macroCalculator">Macro</a>
+        <a class="guide-link" href="#oneRmCalculator">1RM</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="tool-grid calculators-page-grid">
+    <section class="card calculator-nav-card">
+      <div class="card-header">
+        <span class="tool-icon">🧮</span>
+        <div>
+          <h2>เลือกเครื่องมือ</h2>
+          <p>แตะเครื่องมือที่ต้องการ หรือเลื่อนลงเพื่อกรอกข้อมูล</p>
+        </div>
+      </div>
+      <div class="calculator-category-grid">
+        <a href="#bmiCalculator">BMI Calculator</a>
+        <a href="#tdeeCalculator">TDEE Calculator</a>
+        <a href="#proteinCalculator">Protein Calculator</a>
+        <a href="#macroCalculator">Macro Calculator</a>
+        <a href="#oneRmCalculator">1RM Calculator</a>
+      </div>
+    </section>
+
+    <section class="card anchor-section" id="bmiCalculator">
+      <div class="card-header">
+        <span class="tool-icon">BMI</span>
+        <div>
+          <h2>BMI Calculator</h2>
+          <p>ประเมินดัชนีมวลกายจากส่วนสูงและน้ำหนัก</p>
+        </div>
+      </div>
+
+      <form class="calculator-form" id="bmiForm">
+        <label>
+          น้ำหนัก (กิโลกรัม)
+          <input type="number" id="bmiWeight" min="1" step="0.1" inputmode="decimal" autocomplete="off" placeholder="เช่น 70" required>
+        </label>
+        <label>
+          ส่วนสูง (เซนติเมตร)
+          <input type="number" id="bmiHeight" min="1" step="0.1" inputmode="decimal" autocomplete="off" placeholder="เช่น 170" required>
+        </label>
+        <button type="submit">คำนวณ BMI</button>
+      </form>
+
+      <div class="result-box" id="bmiResult" aria-live="polite">กรอกข้อมูลเพื่อเริ่มคำนวณ</div>
+    </section>
+
+    <section class="card anchor-section" id="tdeeCalculator">
+      <div class="card-header">
+        <span class="tool-icon">TDEE</span>
+        <div>
+          <h2>TDEE Calculator</h2>
+          <p>คำนวณพลังงานที่ใช้ต่อวันด้วยสูตร Mifflin-St Jeor</p>
+        </div>
+      </div>
+
+      <form class="calculator-form" id="tdeeForm">
+        <div class="two-column">
+          <label>
+            เพศ
+            <select id="tdeeGender">
+              <option value="male">ชาย</option>
+              <option value="female">หญิง</option>
+            </select>
+          </label>
+          <label>
+            อายุ (ปี)
+            <input type="number" id="tdeeAge" min="1" step="1" inputmode="numeric" autocomplete="off" placeholder="เช่น 30" required>
+          </label>
+        </div>
+        <div class="two-column">
+          <label>
+            น้ำหนัก (กก.)
+            <input type="number" id="tdeeWeight" min="1" step="0.1" inputmode="decimal" autocomplete="off" placeholder="เช่น 70" required>
+          </label>
+          <label>
+            ส่วนสูง (ซม.)
+            <input type="number" id="tdeeHeight" min="1" step="0.1" inputmode="decimal" autocomplete="off" placeholder="เช่น 170" required>
+          </label>
+        </div>
+        <label>
+          ระดับกิจกรรม
+          <select id="tdeeActivity">
+            <option value="1.2">นั่งทำงาน ไม่ค่อยออกกำลังกาย</option>
+            <option value="1.375">ออกกำลังกายเบา 1-3 วัน/สัปดาห์</option>
+            <option value="1.55">ออกกำลังกายปานกลาง 3-5 วัน/สัปดาห์</option>
+            <option value="1.725">ออกกำลังกายหนัก 6-7 วัน/สัปดาห์</option>
+            <option value="1.9">ใช้แรงมากหรือซ้อมหนักมาก</option>
+          </select>
+        </label>
+        <button type="submit">คำนวณ TDEE</button>
+      </form>
+
+      <div class="result-box" id="tdeeResult" aria-live="polite">กรอกข้อมูลเพื่อเริ่มคำนวณ</div>
+    </section>
+
+    <section class="card anchor-section" id="proteinCalculator">
+      <div class="card-header">
+        <span class="tool-icon">PRO</span>
+        <div>
+          <h2>Protein Calculator</h2>
+          <p>ประเมินโปรตีนต่อวันตามเป้าหมายการฝึก</p>
+        </div>
+      </div>
+
+      <form class="calculator-form" id="proteinForm">
+        <label>
+          น้ำหนัก (กิโลกรัม)
+          <input type="number" id="proteinWeight" min="1" step="0.1" inputmode="decimal" autocomplete="off" placeholder="เช่น 70" required>
+        </label>
+        <label>
+          เป้าหมาย
+          <select id="proteinGoal">
+            <option value="1.2">สุขภาพทั่วไป</option>
+            <option value="1.6">ลดไขมัน / รักษากล้ามเนื้อ</option>
+            <option value="2">เพิ่มกล้ามเนื้อ</option>
+          </select>
+        </label>
+        <button type="submit">คำนวณโปรตีน</button>
+      </form>
+
+      <div class="result-box" id="proteinResult" aria-live="polite">กรอกข้อมูลเพื่อเริ่มคำนวณ</div>
+    </section>
+
+    <section class="card anchor-section" id="macroCalculator">
+      <div class="card-header">
+        <span class="tool-icon">MAC</span>
+        <div>
+          <h2>เครื่องคำนวณสารอาหาร</h2>
+          <p>คำนวณแคลอรี โปรตีน ไขมัน และคาร์บ จากน้ำหนักตัวและเป้าหมาย</p>
+        </div>
+      </div>
+
+      <form class="calculator-form" id="macroForm">
+        <label>
+          น้ำหนักตัว (กิโลกรัม)
+          <input type="number" id="macroWeight" min="1" step="0.1" inputmode="decimal" autocomplete="off" placeholder="เช่น 70" required>
+        </label>
+        <label>
+          เป้าหมาย
+          <select id="macroGoal">
+            <option value="fatLoss">ลดไขมัน</option>
+            <option value="maintenance">รักษาน้ำหนัก</option>
+            <option value="muscleGain">เพิ่มกล้ามเนื้อ</option>
+          </select>
+        </label>
+        <button type="submit">คำนวณสารอาหาร</button>
+      </form>
+
+      <div class="result-box" id="macroResult" aria-live="polite">กรอกข้อมูลเพื่อเริ่มคำนวณ</div>
+    </section>
+
+    <section class="card anchor-section" id="oneRmCalculator">
+      <div class="card-header">
+        <span class="tool-icon">1RM</span>
+        <div>
+          <h2>1RM Calculator</h2>
+          <p>ประมาณน้ำหนักสูงสุดที่ยกได้ 1 ครั้งด้วยสูตร Epley</p>
+        </div>
+      </div>
+
+      <form class="calculator-form" id="oneRmForm">
+        <label>
+          น้ำหนักที่ยกได้ (กิโลกรัม)
+          <input type="number" id="oneRmWeight" min="1" step="0.5" inputmode="decimal" autocomplete="off" placeholder="เช่น 80" required>
+        </label>
+        <label>
+          จำนวนครั้งที่ยกได้
+          <input type="number" id="oneRmReps" min="1" step="1" inputmode="numeric" autocomplete="off" placeholder="เช่น 8" required>
+        </label>
+        <button type="submit">คำนวณ 1RM</button>
+      </form>
+
+      <div class="result-box" id="oneRmResult" aria-live="polite">กรอกข้อมูลเพื่อเริ่มคำนวณ</div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <strong>FitCalc Thai</strong>
+    <div class="footer-links">
+      <a href="index.html">หน้าแรก</a>
+      <a href="calculators.html">เครื่องคำนวณ</a>
+      <a href="bmi-guide.html">บทความ</a>
+      <a href="about.html">เกี่ยวกับ</a>
+      <a href="privacy-policy.html">Privacy Policy</a>
+    </div>
+    <p>© 2026 FitCalc Thai</p>
+  </footer>
+
+  <script src="script.js?v=sprint15-tools" defer></script>
+</body>
+</html>
