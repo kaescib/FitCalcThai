@@ -182,6 +182,7 @@ initializeAuthPage();
 initializeSmoothAnchorScrolling();
 bindCalculatorForms();
 initializeHomeDashboard();
+initializeInsightsPage();
 initializeAchievementSection();
 initializeDataBackupSection();
 initializeProfileAndSettings();
@@ -219,7 +220,7 @@ function initializeAppShellViews() {
   main.insertBefore(homeView, main.firstChild);
   homeView.appendChild(dashboardCard);
 
-  document.querySelectorAll(".summary-hub-card, .tools-hub-card").forEach((card) => {
+  document.querySelectorAll(".summary-hub-card, .insights-hub-card, .tools-hub-card").forEach((card) => {
     homeView.appendChild(card);
   });
 
@@ -767,6 +768,316 @@ function createSummaryOverviewCard(title, items) {
       </div>
     </article>
   `;
+}
+
+function initializeInsightsPage() {
+  if (!getElement("weeklyInsightsPage")) return;
+
+  const data = getHomeDashboardData();
+  const insights = buildWeeklyInsights(data);
+  renderWeeklyInsights(insights);
+  getElement("copyWeeklyReportButton")?.addEventListener("click", () => copyWeeklyReport(insights));
+}
+
+function buildWeeklyInsights(data) {
+  const weekStart = getStartOfWeek();
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  const startValue = weekStart.toISOString().slice(0, 10);
+  const endValue = weekEnd.toISOString().slice(0, 10);
+  const weekRangeText = `${formatThaiDate(startValue)} - ${formatThaiDate(endValue)}`;
+  const weightSummary = getWeeklyWeightInsight(data.weightHistory, startValue, endValue);
+  const nutritionSummary = getWeeklyNutritionInsight(data.nutritionLog, data.waterLog, data.nutritionSettings, startValue, endValue);
+  const workoutSummary = getWeeklyWorkoutInsight(data.workoutHistory, data.weeklyGoal, startValue, endValue);
+  const goalSummary = getDashboardGoalSummary(data.goals);
+  const recentActivities = getDashboardRecentActivities(data).slice(0, 5);
+  const score = calculateWeeklyInsightScore(weightSummary, nutritionSummary, workoutSummary, goalSummary);
+  const recommendations = createWeeklyRecommendations(weightSummary, nutritionSummary, workoutSummary, goalSummary);
+  const hasAnyData = data.weightHistory.length > 0 ||
+    data.nutritionLog.length > 0 ||
+    data.waterLog.length > 0 ||
+    data.workoutHistory.length > 0 ||
+    data.goals.length > 0;
+
+  return {
+    weekRangeText,
+    weightSummary,
+    nutritionSummary,
+    workoutSummary,
+    goalSummary,
+    recentActivities,
+    score,
+    recommendations,
+    hasAnyData,
+  };
+}
+
+function getWeeklyWeightInsight(weightHistory, startValue, endValue) {
+  const weeklyWeights = weightHistory.filter((entry) => isDateInRange(entry.date, startValue, endValue));
+  const latest = weightHistory[0] || null;
+  const weekLatest = weeklyWeights[0] || null;
+  const weekOldest = weeklyWeights[weeklyWeights.length - 1] || null;
+  const weeklyChange = weekLatest && weekOldest && weekLatest !== weekOldest
+    ? weekLatest.weightKg - weekOldest.weightKg
+    : null;
+
+  return {
+    hasData: Boolean(latest),
+    latestText: latest ? `${formatWeight(latest.weightKg)} kg` : "ยังไม่มีข้อมูล",
+    weeklyChangeText: weeklyChange === null ? "ยังไม่มีข้อมูล" : `${weeklyChange > 0 ? "+" : ""}${formatWeight(weeklyChange)} kg`,
+    recordsThisWeek: weeklyWeights.length,
+  };
+}
+
+function getWeeklyNutritionInsight(nutritionLog, waterLog, settings, startValue, endValue) {
+  const weeklyMeals = nutritionLog.filter((meal) => isDateInRange(meal.date, startValue, endValue));
+  const weeklyWater = waterLog.filter((record) => isDateInRange(record.date, startValue, endValue));
+  const totals = calculateNutritionTotals(weeklyMeals);
+  const waterTotal = weeklyWater.reduce((total, record) => total + calculateWaterTotal(record), 0);
+  const waterAverage = waterTotal / 7;
+  const calorieAverage = totals.calories / 7;
+  const proteinAverage = totals.protein / 7;
+  const waterTarget = Number(settings?.waterTarget) || 0;
+  const calorieTarget = Number(settings?.calorieTarget) || 0;
+  const proteinTarget = Number(settings?.proteinTarget) || 0;
+
+  return {
+    mealsLogged: weeklyMeals.length,
+    waterDays: weeklyWater.filter((record) => calculateWaterTotal(record) > 0).length,
+    waterAverageText: `${formatNutritionNumber(waterAverage)} ml`,
+    calorieAverageText: `${formatNutritionNumber(calorieAverage)} kcal`,
+    proteinAverageText: `${formatNutritionNumber(proteinAverage)} g`,
+    waterProgressPercent: getSafePercent(waterAverage, waterTarget),
+    calorieProgressPercent: getSafePercent(calorieAverage, calorieTarget),
+    proteinProgressPercent: getSafePercent(proteinAverage, proteinTarget),
+    hasNutritionData: weeklyMeals.length > 0 || weeklyWater.length > 0,
+  };
+}
+
+function getWeeklyWorkoutInsight(workoutHistory, weeklyGoal, startValue, endValue) {
+  const weeklyWorkouts = workoutHistory.filter((workout) => isDateInRange(workout.date, startValue, endValue));
+  const target = weeklyGoal || 0;
+  const percent = target > 0 ? Math.min(Math.round((weeklyWorkouts.length / target) * 100), 100) : 0;
+
+  return {
+    count: weeklyWorkouts.length,
+    target,
+    progressText: target > 0 ? `${weeklyWorkouts.length} / ${target} ครั้ง` : `${weeklyWorkouts.length} ครั้ง`,
+    percent,
+    latestText: weeklyWorkouts[0]?.name || "ยังไม่มีข้อมูล",
+  };
+}
+
+function calculateWeeklyInsightScore(weightSummary, nutritionSummary, workoutSummary, goalSummary) {
+  const categories = [];
+
+  if (nutritionSummary.hasNutritionData) {
+    categories.push(Math.round((nutritionSummary.waterProgressPercent + Math.min(nutritionSummary.mealsLogged / 7 * 100, 100)) / 2));
+  }
+
+  if (nutritionSummary.mealsLogged > 0) {
+    categories.push(Math.round((nutritionSummary.calorieProgressPercent + nutritionSummary.proteinProgressPercent) / 2));
+  }
+
+  if (workoutSummary.count > 0 || workoutSummary.target > 0) {
+    categories.push(workoutSummary.target > 0 ? workoutSummary.percent : Math.min(workoutSummary.count * 25, 100));
+  }
+
+  if (weightSummary.hasData || goalSummary.activeGoals > 0) {
+    categories.push(Math.min((weightSummary.recordsThisWeek > 0 ? 50 : 0) + (goalSummary.activeGoals > 0 ? 50 : 0), 100));
+  }
+
+  if (categories.length === 0) {
+    return { hasScore: false, value: 0, text: "ข้อมูลยังไม่พอสำหรับให้คะแนน" };
+  }
+
+  const value = Math.round(categories.reduce((total, item) => total + item, 0) / categories.length);
+  return { hasScore: true, value, text: `${value}/100` };
+}
+
+function createWeeklyRecommendations(weightSummary, nutritionSummary, workoutSummary, goalSummary) {
+  const recommendations = [];
+
+  if (nutritionSummary.waterProgressPercent < 80) {
+    recommendations.push("เพิ่มน้ำอีกเล็กน้อยให้ใกล้เป้าหมายรายวัน");
+  } else if (nutritionSummary.waterDays > 0) {
+    recommendations.push("สัปดาห์นี้บันทึกน้ำได้ดี รักษาจังหวะนี้ต่อไป");
+  }
+
+  if (nutritionSummary.mealsLogged < 4) {
+    recommendations.push("ลองบันทึกอาหารให้ครบวันมากขึ้น เพื่อให้รายงานแม่นขึ้น");
+  } else {
+    recommendations.push("มีข้อมูลอาหารเพียงพอสำหรับดูแนวโน้มมากขึ้นแล้ว");
+  }
+
+  if (workoutSummary.target > 0 && workoutSummary.count < workoutSummary.target) {
+    recommendations.push("เพิ่ม Workout อีกเล็กน้อยเพื่อเข้าใกล้เป้าหมายรายสัปดาห์");
+  } else if (workoutSummary.count > 0) {
+    recommendations.push("สัปดาห์นี้บันทึก Workout ได้ดี ต่อเนื่องต่อไป");
+  }
+
+  if (!weightSummary.hasData || weightSummary.recordsThisWeek === 0) {
+    recommendations.push("ลองบันทึกน้ำหนักสัปดาห์นี้เพื่อดูแนวโน้มชัดขึ้น");
+  }
+
+  if (goalSummary.activeGoals === 0) {
+    recommendations.push("ตั้งเป้าหมายเล็ก ๆ หนึ่งข้อเพื่อให้ Dashboard ติดตามได้");
+  }
+
+  return recommendations.slice(0, 5);
+}
+
+function renderWeeklyInsights(insights) {
+  setTextContent("insightsWeekRange", insights.weekRangeText);
+  renderWeeklyScore(insights);
+  renderWeeklyOverview(insights);
+  renderWeeklyRecommendations(insights.recommendations);
+  renderWeeklySections(insights);
+}
+
+function renderWeeklyScore(insights) {
+  const scoreCard = getElement("weeklyScoreCard");
+  if (!scoreCard) return;
+
+  scoreCard.innerHTML = `
+    <div>
+      <span class="app-home-kicker">Weekly Score</span>
+      <h2>${escapeHtml(insights.score.text)}</h2>
+      <p>${insights.score.hasScore ? "คะแนนความต่อเนื่องแบบง่ายจากข้อมูลที่มี" : "เริ่มบันทึกข้อมูลเพิ่มเพื่อดูคะแนน"}</p>
+    </div>
+    <div class="insight-score-ring" style="--score: ${insights.score.value}%">
+      <strong>${insights.score.hasScore ? insights.score.value : "-"}</strong>
+    </div>
+  `;
+}
+
+function renderWeeklyOverview(insights) {
+  const overview = getElement("weeklyOverviewGrid");
+  if (!overview) return;
+
+  if (!insights.hasAnyData) {
+    overview.innerHTML = '<p class="empty-state weekly-empty-state">ยังไม่มีข้อมูลเพียงพอสำหรับรายงานสัปดาห์นี้</p>';
+    return;
+  }
+
+  overview.innerHTML = [
+    createInsightMetric("น้ำหนักล่าสุด", insights.weightSummary.latestText),
+    createInsightMetric("น้ำหนักเปลี่ยนแปลง", insights.weightSummary.weeklyChangeText),
+    createInsightMetric("น้ำเฉลี่ย/วัน", insights.nutritionSummary.waterAverageText),
+    createInsightMetric("แคลเฉลี่ย/วัน", insights.nutritionSummary.calorieAverageText),
+    createInsightMetric("โปรตีนเฉลี่ย/วัน", insights.nutritionSummary.proteinAverageText),
+    createInsightMetric("Workout", insights.workoutSummary.progressText),
+    createInsightMetric("เป้าหมาย", `${insights.goalSummary.activeGoals} กำลังทำ`),
+  ].join("");
+}
+
+function renderWeeklyRecommendations(recommendations) {
+  const list = getElement("weeklyRecommendationList");
+  if (!list) return;
+
+  const items = recommendations.length > 0 ? recommendations : ["เริ่มบันทึกน้ำหนัก อาหาร น้ำ หรือ Workout เพื่อรับคำแนะนำรายสัปดาห์"];
+  list.innerHTML = items.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+}
+
+function renderWeeklySections(insights) {
+  setInnerHtml("weeklyWeightTrend", [
+    createInsightMetric("ล่าสุด", insights.weightSummary.latestText),
+    createInsightMetric("เปลี่ยนแปลง", insights.weightSummary.weeklyChangeText),
+    createInsightMetric("บันทึกสัปดาห์นี้", `${insights.weightSummary.recordsThisWeek} ครั้ง`),
+  ].join(""));
+
+  setInnerHtml("weeklyNutritionWater", [
+    createInsightMetric("น้ำเฉลี่ย", insights.nutritionSummary.waterAverageText),
+    createInsightMetric("แคลเฉลี่ย", insights.nutritionSummary.calorieAverageText),
+    createInsightMetric("โปรตีนเฉลี่ย", insights.nutritionSummary.proteinAverageText),
+    createInsightMetric("มื้อที่บันทึก", `${insights.nutritionSummary.mealsLogged} รายการ`),
+  ].join(""));
+
+  setInnerHtml("weeklyWorkoutConsistency", [
+    createInsightMetric("Workout", `${insights.workoutSummary.count} ครั้ง`),
+    createInsightMetric("เป้าหมาย", insights.workoutSummary.progressText),
+    createInsightMetric("ล่าสุด", insights.workoutSummary.latestText),
+  ].join(""));
+
+  setInnerHtml("weeklyGoalsProgress", [
+    createInsightMetric("กำลังทำ", `${insights.goalSummary.activeGoals}`),
+    createInsightMetric("สำเร็จแล้ว", `${insights.goalSummary.completedGoals}`),
+    createInsightMetric("ใกล้สำเร็จ", insights.goalSummary.closestGoalText),
+  ].join(""));
+
+  setInnerHtml("weeklyRecentActivity", insights.recentActivities.length > 0
+    ? `<ul class="dashboard-activity-list">${insights.recentActivities.map((activity) => `
+      <li>
+        <span>${escapeHtml(activity.type)} | ${escapeHtml(formatThaiDate(activity.date))}</span>
+        <strong>${escapeHtml(activity.title)}</strong>
+      </li>
+    `).join("")}</ul>`
+    : '<p class="empty-state">ยังไม่มีกิจกรรมล่าสุด</p>');
+}
+
+function createInsightMetric(label, value) {
+  return `
+    <article class="insight-metric-card">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(sanitizeDashboardValue(value))}</strong>
+    </article>
+  `;
+}
+
+function copyWeeklyReport(insights) {
+  const report = createWeeklyReportText(insights);
+  const status = getElement("copyWeeklyReportStatus");
+
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(report)
+      .then(() => {
+        if (status) status.textContent = "คัดลอกรายงานแล้ว";
+      })
+      .catch(() => showWeeklyReportFallback(report));
+    return;
+  }
+
+  showWeeklyReportFallback(report);
+}
+
+function showWeeklyReportFallback(report) {
+  const fallback = getElement("weeklyReportFallback");
+  const status = getElement("copyWeeklyReportStatus");
+  if (!fallback) return;
+
+  fallback.value = report;
+  fallback.classList.remove("is-hidden");
+  fallback.focus();
+  fallback.select();
+  if (status) status.textContent = "คัดลอกด้วยตนเองจากช่องด้านล่าง";
+}
+
+function createWeeklyReportText(insights) {
+  return [
+    `รายงาน FitCalc Thai สัปดาห์นี้ (${insights.weekRangeText})`,
+    `- น้ำหนักล่าสุด: ${sanitizeDashboardValue(insights.weightSummary.latestText)}`,
+    `- น้ำเฉลี่ย: ${sanitizeDashboardValue(insights.nutritionSummary.waterAverageText)}`,
+    `- แคลเฉลี่ย: ${sanitizeDashboardValue(insights.nutritionSummary.calorieAverageText)}`,
+    `- โปรตีนเฉลี่ย: ${sanitizeDashboardValue(insights.nutritionSummary.proteinAverageText)}`,
+    `- Workout: ${sanitizeDashboardValue(insights.workoutSummary.progressText)}`,
+    `- คะแนน: ${sanitizeDashboardValue(insights.score.text)}`,
+    `- ข้อแนะนำ: ${insights.recommendations.join(" | ") || "เริ่มบันทึกข้อมูลเพื่อรับคำแนะนำ"}`,
+  ].join("\n");
+}
+
+function isDateInRange(dateValue, startValue, endValue) {
+  const date = parseDisplayDate(dateValue);
+  return Boolean(date && date >= startValue && date <= endValue);
+}
+
+function setTextContent(id, value) {
+  const element = getElement(id);
+  if (element) element.textContent = sanitizeDashboardValue(value);
+}
+
+function setInnerHtml(id, value) {
+  const element = getElement(id);
+  if (element) element.innerHTML = value;
 }
 
 function sanitizeDashboardValue(value) {

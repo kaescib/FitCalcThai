@@ -1636,10 +1636,146 @@ body.app-shell-ready #homeDashboardView .dashboard-summary-grid {
   white-space: nowrap;
 }
 
+.insights-page-layout {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+
+.insights-top-row,
+.insights-section-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.weekly-score-card,
+.weekly-week-card,
+.weekly-overview-card,
+.weekly-recommendation-card,
+.insights-section-card {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.weekly-score-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, transparent), transparent 50%),
+    var(--surface);
+}
+
+.weekly-score-card h2,
+.weekly-week-card h2,
+.weekly-overview-card h2,
+.weekly-recommendation-card h2,
+.insights-section-card h2 {
+  margin: 0 0 8px;
+}
+
+.weekly-score-card p,
+.weekly-week-card p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.insight-score-ring {
+  display: grid;
+  place-items: center;
+  flex: 0 0 112px;
+  width: 112px;
+  height: 112px;
+  border-radius: 999px;
+  background:
+    conic-gradient(var(--primary) var(--score), color-mix(in srgb, var(--primary) 12%, var(--surface-soft)) 0),
+    var(--surface-soft);
+}
+
+.insight-score-ring strong {
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: 78px;
+  border-radius: inherit;
+  background: var(--surface);
+  color: var(--text);
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+  font-size: 1.7rem;
+}
+
+.insights-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.insights-metric-grid.compact {
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+}
+
+.insight-metric-card {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  padding: 12px;
+}
+
+.insight-metric-card span {
+  display: block;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.insight-metric-card strong {
+  display: block;
+  color: var(--text);
+  font-family: "Kanit", Arial, "Tahoma", sans-serif;
+  font-size: 1.08rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.weekly-recommendation-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.weekly-recommendation-list li {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  padding: 12px;
+  font-weight: 700;
+}
+
+.weekly-report-fallback {
+  width: 100%;
+  margin-top: 12px;
+  resize: vertical;
+}
+
+.weekly-empty-state,
+.insights-wide-card {
+  grid-column: 1 / -1;
+}
+
 .home-calculator-section {
   display: none;
 }
 
+.insights-hub-card,
 .summary-hub-card,
 .tools-hub-card {
   grid-column: 1 / -1;
@@ -1651,6 +1787,7 @@ body.app-shell-ready #homeDashboardView .dashboard-summary-grid {
     var(--surface);
 }
 
+.insights-hub-card,
 .summary-hub-card {
   border-radius: 18px;
   padding: 16px;
@@ -3159,9 +3296,26 @@ body.app-shell-ready #homeDashboardView .dashboard-recent-panel .dashboard-panel
   }
 
   .summary-page-layout,
+  .insights-page-layout,
   .summary-overview-grid {
     grid-template-columns: 1fr;
     width: min(100% - 24px, 1120px);
+  }
+
+  .insights-top-row,
+  .insights-section-grid,
+  .insights-metric-grid,
+  .insights-metric-grid.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .weekly-score-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .insight-score-ring {
+    align-self: center;
   }
 
   .summary-overview-metrics,

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitCalc Thai Insights | รายงานสุขภาพรายสัปดาห์</title>
+  <meta name="description" content="รายงานสุขภาพรายสัปดาห์จาก FitCalc Thai สรุปน้ำหนัก โภชนาการ น้ำดื่ม Workout เป้าหมาย และคำแนะนำจากข้อมูลในเครื่องของคุณ">
+  <meta name="keywords" content="FitCalc Thai Insights, รายงานสุขภาพรายสัปดาห์, weekly report, fitness insights, สรุปสุขภาพ">
+  <meta name="author" content="FitCalc Thai">
+  <meta name="theme-color" content="#22c55e">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="FitCalc Thai Insights | รายงานสุขภาพรายสัปดาห์">
+  <meta property="og:description" content="ดูรายงานสุขภาพรายสัปดาห์จากข้อมูล FitCalc Thai ในเครื่องของคุณ">
+  <meta property="og:site_name" content="FitCalc Thai">
+  <meta property="og:locale" content="th_TH">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XT6JGFNCKM"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+    gtag("config", "G-XT6JGFNCKM");
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="canonical" href="https://kaescib.github.io/FitCalcThai/insights.html">
+  <meta name="google-site-verification" content="6y9c37ViQs0DbVfomYhz56SrQqQdRK6Nkue2IoiEQuY">
+</head>
+<body>
+  <nav class="site-nav" aria-label="เมนูหลัก">
+    <div class="nav-inner">
+      <a class="nav-brand" href="index.html">FitCalc Thai</a>
+      <div class="nav-links">
+        <a href="index.html">หน้าแรก</a>
+        <a href="summary.html">สรุปภาพรวม</a>
+       <a href="insights.html">รายงาน</a>
+        <details class="nav-dropdown">
+          <summary>เครื่องมือ</summary>
+          <div class="dropdown-menu">
+            <a href="calculators.html">เครื่องคำนวณ</a>
+            <a href="calculators.html#bmiCalculator">BMI Calculator</a>
+            <a href="calculators.html#tdeeCalculator">TDEE Calculator</a>
+            <a href="calculators.html#proteinCalculator">Protein Calculator</a>
+            <a href="calculators.html#macroCalculator">Macro Calculator</a>
+            <a href="calculators.html#oneRmCalculator">1RM Calculator</a>
+            <a href="index.html#weightTrackerSection">Weight Tracker</a>
+            <a href="workout-tracker.html">Workout Tracker</a>
+          </div>
+        </details>
+        <details class="nav-dropdown">
+          <summary>บทความ</summary>
+          <div class="dropdown-menu">
+            <a href="bmi-guide.html">BMI Guide</a>
+            <a href="tdee-guide.html">TDEE Guide</a>
+            <a href="protein-guide.html">Protein Guide</a>
+            <a href="gain-muscle-guide.html">Gain Muscle Guide</a>
+            <a href="lose-fat-guide.html">Lose Fat Guide</a>
+            <a href="progressive-overload-guide.html">Progressive Overload Guide</a>
+          </div>
+        </details>
+        <a href="about.html">เกี่ยวกับ</a>
+        <a href="auth.html">บัญชี</a>
+        <a href="privacy-policy.html">Privacy</a>
+      </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดมืดและสว่าง">
+        <span id="themeIcon">☾</span>
+        <span id="themeText">Dark</span>
+      </button>
+    </div>
+  </nav>
+
+  <header class="site-header insights-page-header">
+    <div>
+      <p class="eyebrow">Weekly Insights</p>
+      <h1>รายงานสุขภาพรายสัปดาห์</h1>
+      <p class="intro">สรุปน้ำหนัก โภชนาการ น้ำดื่ม Workout และเป้าหมายจากข้อมูลที่คุณบันทึกไว้</p>
+      <div class="hero-actions" aria-label="ลิงก์ที่เกี่ยวข้อง">
+        <a class="calculator-link" href="index.html">กลับหน้าแรก</a>
+        <a class="guide-link" href="summary.html">สรุปภาพรวม</a>
+        <a class="guide-link" href="workout-tracker.html#workoutTrackerSection">บันทึก Workout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="insights-page-layout" id="weeklyInsightsPage">
+    <section class="insights-top-row">
+      <article class="weekly-score-card" id="weeklyScoreCard" aria-live="polite"></article>
+      <article class="weekly-week-card">
+        <span class="app-home-kicker">This Week</span>
+        <h2 id="insightsWeekRange">สัปดาห์นี้</h2>
+        <p>คะแนนนี้เป็นตัวช่วยดูความต่อเนื่องแบบง่าย ไม่ใช่คำแนะนำทางการแพทย์</p>
+      </article>
+    </section>
+
+    <section class="weekly-overview-card">
+      <div class="summary-section-header">
+        <h2>Weekly Overview</h2>
+        <button class="secondary-button" id="copyWeeklyReportButton" type="button">คัดลอกรายงาน</button>
+      </div>
+      <div class="insights-metric-grid" id="weeklyOverviewGrid" aria-live="polite"></div>
+      <p class="workout-status" id="copyWeeklyReportStatus" aria-live="polite">พร้อมคัดลอกรายงาน</p>
+      <textarea class="weekly-report-fallback is-hidden" id="weeklyReportFallback" rows="8" readonly></textarea>
+    </section>
+
+    <section class="weekly-recommendation-card">
+      <div class="summary-section-header">
+        <h2>ข้อแนะนำ</h2>
+      </div>
+      <ul class="weekly-recommendation-list" id="weeklyRecommendationList" aria-live="polite"></ul>
+    </section>
+
+    <section class="insights-section-grid">
+      <article class="insights-section-card">
+        <h2>Weight Trend</h2>
+        <div class="insights-metric-grid compact" id="weeklyWeightTrend"></div>
+      </article>
+      <article class="insights-section-card">
+        <h2>Nutrition & Water</h2>
+        <div class="insights-metric-grid compact" id="weeklyNutritionWater"></div>
+      </article>
+      <article class="insights-section-card">
+        <h2>Workout Consistency</h2>
+        <div class="insights-metric-grid compact" id="weeklyWorkoutConsistency"></div>
+      </article>
+      <article class="insights-section-card">
+        <h2>Goals Progress</h2>
+        <div class="insights-metric-grid compact" id="weeklyGoalsProgress"></div>
+      </article>
+      <article class="insights-section-card insights-wide-card">
+        <h2>Recent Activity</h2>
+        <div id="weeklyRecentActivity"></div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <strong class="footer-brand">FitCalc Thai</strong>
+    <div class="footer-links">
+      <a href="index.html">หน้าแรก</a>
+      <a href="summary.html">สรุปภาพรวม</a>
+     <a href="insights.html">รายงาน</a>
+      <a href="calculators.html">เครื่องคำนวณ</a>
+      <a href="bmi-guide.html">บทความ</a>
+      <a href="about.html">เกี่ยวกับ</a>
+      <a href="auth.html">บัญชี</a>
+      <a href="privacy-policy.html">Privacy Policy</a>
+    </div>
+    <p>© 2026 FitCalc Thai</p>
+  </footer>
+
+  <script src="script.js?v=sprint16" defer></script>
+</body>
+</html>
