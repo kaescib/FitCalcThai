@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitCalc Thai Account | สมัครสมาชิก / เข้าสู่ระบบ</title>
+  <meta name="description" content="หน้า FitCalc Thai Account สำหรับสมัครสมาชิกและเข้าสู่ระบบแบบ demo บนอุปกรณ์นี้ โดยไม่เก็บรหัสผ่านและไม่มี backend">
+  <meta name="keywords" content="FitCalc Thai Account, สมัครสมาชิก FitCalc Thai, Login FitCalc Thai, demo account">
+  <meta name="author" content="FitCalc Thai">
+  <meta name="theme-color" content="#22c55e">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="FitCalc Thai Account | สมัครสมาชิก / เข้าสู่ระบบ">
+  <meta property="og:description" content="บัญชี demo สำหรับ FitCalc Thai บนอุปกรณ์นี้ ไม่มี backend และไม่เก็บรหัสผ่าน">
+  <meta property="og:site_name" content="FitCalc Thai">
+  <meta property="og:locale" content="th_TH">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XT6JGFNCKM"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+    gtag("config", "G-XT6JGFNCKM");
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="canonical" href="https://kaescib.github.io/FitCalcThai/auth.html">
+  <meta name="google-site-verification" content="6y9c37ViQs0DbVfomYhz56SrQqQdRK6Nkue2IoiEQuY">
+</head>
+<body>
+  <nav class="site-nav" aria-label="เมนูหลัก">
+    <div class="nav-inner">
+      <a class="nav-brand" href="index.html">FitCalc Thai</a>
+      <div class="nav-links">
+        <a href="index.html">หน้าแรก</a>
+        <a href="summary.html">สรุปภาพรวม</a>
+<details class="nav-dropdown">
+          <summary>เครื่องมือ</summary>
+          <div class="dropdown-menu">
+            <a href="calculators.html">เครื่องคำนวณ</a>
+            <a href="calculators.html#bmiCalculator">BMI Calculator</a>
+            <a href="calculators.html#tdeeCalculator">TDEE Calculator</a>
+            <a href="calculators.html#proteinCalculator">Protein Calculator</a>
+            <a href="calculators.html#macroCalculator">Macro Calculator</a>
+            <a href="calculators.html#oneRmCalculator">1RM Calculator</a>
+            <a href="index.html#weightTrackerSection">Weight Tracker</a>
+            <a href="workout-tracker.html">Workout Tracker</a>
+          </div>
+        </details>
+        <details class="nav-dropdown">
+          <summary>บทความ</summary>
+          <div class="dropdown-menu">
+            <a href="bmi-guide.html">BMI Guide</a>
+            <a href="tdee-guide.html">TDEE Guide</a>
+            <a href="protein-guide.html">Protein Guide</a>
+            <a href="gain-muscle-guide.html">Gain Muscle Guide</a>
+            <a href="lose-fat-guide.html">Lose Fat Guide</a>
+            <a href="progressive-overload-guide.html">Progressive Overload Guide</a>
+          </div>
+        </details>
+        <a href="about.html">เกี่ยวกับ</a>
+        <a href="auth.html">บัญชี</a>
+        <a href="privacy-policy.html">Privacy</a>
+      </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดมืดและสว่าง">
+        <span id="themeIcon">☾</span>
+        <span id="themeText">Dark</span>
+      </button>
+    </div>
+  </nav>
+
+  <header class="site-header auth-page-header">
+    <div>
+      <p class="eyebrow">FitCalc Thai Account</p>
+      <h1>สมัครสมาชิก / เข้าสู่ระบบ</h1>
+      <p class="intro">บัญชีนี้เป็นโหมดตัวอย่างบนอุปกรณ์นี้ ยังไม่ใช่ระบบสมาชิกออนไลน์จริง และไม่เก็บรหัสผ่าน</p>
+    </div>
+  </header>
+
+  <main class="tool-grid auth-page-grid">
+    <section class="card auth-status-card" id="authStatusPanel" aria-live="polite"></section>
+
+    <section class="card auth-note-card">
+      <h2>หมายเหตุสำคัญ</h2>
+      <p>บัญชีนี้เป็นโหมดตัวอย่างบนอุปกรณ์นี้ ยังไม่ใช่ระบบสมาชิกออนไลน์จริง ข้อมูลถูกเก็บใน Local Storage เฉพาะ display name, email และ session เท่านั้น</p>
+    </section>
+
+    <section class="card auth-form-card">
+      <div class="card-header">
+        <span class="tool-icon">USER</span>
+        <div>
+          <h2>สมัครสมาชิก</h2>
+          <p>สร้างบัญชี demo สำหรับใช้ชื่อทักทายใน Dashboard</p>
+        </div>
+      </div>
+
+      <form class="calculator-form auth-form" id="signupForm">
+        <label>
+          ชื่อที่แสดง
+          <input type="text" id="signupDisplayName" autocomplete="name" placeholder="เช่น แกะ" required>
+        </label>
+        <label>
+          Email
+          <input type="email" id="signupEmail" autocomplete="email" placeholder="you@example.com" required>
+        </label>
+        <label>
+          Password
+          <input type="password" id="signupPassword" autocomplete="new-password" placeholder="ใช้ตรวจฟอร์มเท่านั้น" required>
+        </label>
+        <label>
+          Confirm Password
+          <input type="password" id="signupConfirmPassword" autocomplete="new-password" placeholder="พิมพ์ Password อีกครั้ง" required>
+        </label>
+        <button type="submit">สมัครสมาชิก</button>
+      </form>
+    </section>
+
+    <section class="card auth-form-card">
+      <div class="card-header">
+        <span class="tool-icon">LOGIN</span>
+        <div>
+          <h2>เข้าสู่ระบบ</h2>
+          <p>เข้าสู่ระบบ demo บนอุปกรณ์นี้ โดยไม่ตรวจรหัสผ่านจริง</p>
+        </div>
+      </div>
+
+      <form class="calculator-form auth-form" id="loginForm">
+        <label>
+          Email
+          <input type="email" id="loginEmail" autocomplete="email" placeholder="you@example.com" required>
+        </label>
+        <label>
+          Password
+          <input type="password" id="loginPassword" autocomplete="current-password" placeholder="ใช้ตรวจฟอร์มเท่านั้น" required>
+        </label>
+        <button type="submit">เข้าสู่ระบบ</button>
+      </form>
+    </section>
+
+    <p class="workout-status auth-message" id="authMessage" aria-live="polite">พร้อมใช้งานบัญชี demo</p>
+  </main>
+
+  <footer class="site-footer">
+    <strong class="footer-brand">FitCalc Thai</strong>
+    <div class="footer-links">
+      <a href="index.html">หน้าแรก</a>
+      <a href="summary.html">สรุปภาพรวม</a>
+<a href="calculators.html">เครื่องคำนวณ</a>
+      <a href="bmi-guide.html">บทความ</a>
+      <a href="about.html">เกี่ยวกับ</a>
+      <a href="auth.html">บัญชี</a>
+      <a href="privacy-policy.html">Privacy Policy</a>
+    </div>
+    <p>© 2026 FitCalc Thai</p>
+  </footer>
+
+  <script src="script.js?v=polish-auth1" defer></script>
+</body>
+</html>

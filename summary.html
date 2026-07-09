@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitCalc Thai Summary | สรุปภาพรวม</title>
+  <meta name="description" content="สรุปภาพรวม FitCalc Thai สำหรับน้ำหนัก โภชนาการ Workout เป้าหมาย Templates, Achievements และ Backup จากข้อมูลในเครื่องของคุณ">
+  <meta name="keywords" content="FitCalc Thai Summary, สรุปสุขภาพ, สรุป workout, สรุปน้ำหนัก, dashboard ฟิตเนส">
+  <meta name="author" content="FitCalc Thai">
+  <meta name="theme-color" content="#22c55e">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="FitCalc Thai Summary | สรุปภาพรวม">
+  <meta property="og:description" content="ดูภาพรวมสุขภาพและการออกกำลังกายจากข้อมูล FitCalc Thai ในเครื่องของคุณ">
+  <meta property="og:site_name" content="FitCalc Thai">
+  <meta property="og:locale" content="th_TH">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XT6JGFNCKM"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+    gtag("config", "G-XT6JGFNCKM");
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="canonical" href="https://kaescib.github.io/FitCalcThai/summary.html">
+  <meta name="google-site-verification" content="6y9c37ViQs0DbVfomYhz56SrQqQdRK6Nkue2IoiEQuY">
+</head>
+<body>
+  <nav class="site-nav" aria-label="เมนูหลัก">
+    <div class="nav-inner">
+      <a class="nav-brand" href="index.html">FitCalc Thai</a>
+      <div class="nav-links">
+        <a href="index.html">หน้าแรก</a>
+       <a href="summary.html">สรุปภาพรวม</a>
+ <a href="summary.html">สรุปภาพรวม</a>
+        <details class="nav-dropdown">
+          <summary>เครื่องมือ</summary>
+          <div class="dropdown-menu">
+            <a href="calculators.html">เครื่องคำนวณ</a>
+            <a href="calculators.html#bmiCalculator">BMI Calculator</a>
+            <a href="calculators.html#tdeeCalculator">TDEE Calculator</a>
+            <a href="calculators.html#proteinCalculator">Protein Calculator</a>
+            <a href="calculators.html#macroCalculator">Macro Calculator</a>
+            <a href="calculators.html#oneRmCalculator">1RM Calculator</a>
+            <a href="index.html#weightTrackerSection">Weight Tracker</a>
+            <a href="workout-tracker.html">Workout Tracker</a>
+          </div>
+        </details>
+        <details class="nav-dropdown">
+          <summary>บทความ</summary>
+          <div class="dropdown-menu">
+            <a href="bmi-guide.html">BMI Guide</a>
+            <a href="tdee-guide.html">TDEE Guide</a>
+            <a href="protein-guide.html">Protein Guide</a>
+            <a href="gain-muscle-guide.html">Gain Muscle Guide</a>
+            <a href="lose-fat-guide.html">Lose Fat Guide</a>
+            <a href="progressive-overload-guide.html">Progressive Overload Guide</a>
+          </div>
+        </details>
+        <a href="about.html">เกี่ยวกับ</a>
+        <a href="auth.html">บัญชี</a>
+        <a href="privacy-policy.html">Privacy</a>
+      </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดมืดและสว่าง">
+        <span id="themeIcon">☾</span>
+        <span id="themeText">Dark</span>
+      </button>
+    </div>
+  </nav>
+
+  <header class="site-header summary-page-header">
+    <div>
+      <p class="eyebrow">Dashboard Summary</p>
+      <h1>สรุปภาพรวม</h1>
+      <p class="intro">ภาพรวมสุขภาพและการออกกำลังกายของคุณจากข้อมูลที่บันทึกไว้ใน FitCalc Thai</p>
+      <div class="hero-actions" aria-label="ลิงก์กลับไปใช้งาน">
+        <a class="calculator-link" href="index.html">กลับหน้าแรก</a>
+        <a class="guide-link" href="index.html#nutritionTrackingSection">บันทึกอาหาร</a>
+        <a class="guide-link" href="workout-tracker.html#workoutTrackerSection">บันทึก Workout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="summary-page-layout">
+    <section class="summary-overview-grid" id="summaryOverviewGroups" aria-live="polite"></section>
+
+    <section class="summary-section-card">
+      <div class="summary-section-header">
+        <h2>Weight Summary</h2>
+        <a href="index.html#weightTrackerSection">บันทึกน้ำหนัก</a>
+      </div>
+      <div id="dashboardWeightSummary" aria-live="polite"></div>
+    </section>
+
+    <section class="summary-section-card">
+      <div class="summary-section-header">
+        <h2>Nutrition Summary</h2>
+        <a href="index.html#nutritionTrackingSection">บันทึกอาหาร</a>
+      </div>
+      <div id="dashboardNutritionSummary" aria-live="polite"></div>
+    </section>
+
+    <section class="summary-section-card">
+      <div class="summary-section-header">
+        <h2>Workout Summary</h2>
+        <a href="workout-tracker.html#workoutTrackerSection">บันทึก Workout</a>
+      </div>
+      <div id="dashboardWorkoutSummary" aria-live="polite"></div>
+    </section>
+
+    <section class="summary-section-card">
+      <div class="summary-section-header">
+        <h2>Weekly Goal</h2>
+        <a href="workout-tracker.html#weeklyGoalSection">ตั้งเป้าหมาย</a>
+      </div>
+      <div id="dashboardWeeklyGoal" aria-live="polite"></div>
+    </section>
+
+    <section class="summary-section-card">
+      <div class="summary-section-header">
+        <h2>Templates & Exercises</h2>
+        <a href="workout-tracker.html#workoutTemplatesSection">เปิด Templates</a>
+      </div>
+      <div id="dashboardLibrarySummary" aria-live="polite"></div>
+    </section>
+
+    <section class="summary-section-card">
+      <div class="summary-section-header">
+        <h2>Achievements</h2>
+        <a href="index.html#achievementsSection">ดู Achievements</a>
+      </div>
+      <div id="dashboardAchievementSummary" aria-live="polite"></div>
+    </section>
+
+    <section class="summary-section-card">
+      <div class="summary-section-header">
+        <h2>Data Backup</h2>
+        <a href="index.html#dataBackupSection">สำรองข้อมูล</a>
+      </div>
+      <div id="dashboardBackupSummary" aria-live="polite"></div>
+    </section>
+
+    <section class="summary-section-card">
+      <div class="summary-section-header">
+        <h2>Personal</h2>
+        <a href="index.html#userProfileSection">แก้ไขโปรไฟล์</a>
+      </div>
+      <div id="dashboardProfileSummary" aria-live="polite"></div>
+    </section>
+
+    <section class="summary-section-card summary-wide-card">
+      <div class="summary-section-header">
+        <h2>Recent Activity</h2>
+      </div>
+      <div id="dashboardRecentActivity" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <strong class="footer-brand">FitCalc Thai</strong>
+    <div class="footer-links">
+      <a href="index.html">หน้าแรก</a>
+     <a href="summary.html">สรุปภาพรวม</a>
+ <a href="summary.html">สรุปภาพรวม</a>
+      <a href="calculators.html">เครื่องคำนวณ</a>
+      <a href="bmi-guide.html">บทความ</a>
+      <a href="about.html">เกี่ยวกับ</a>
+      <a href="auth.html">บัญชี</a>
+      <a href="privacy-policy.html">Privacy Policy</a>
+    </div>
+    <p>© 2026 FitCalc Thai</p>
+  </footer>
+
+  <script src="script.js?v=summary-page1" defer></script>
+</body>
+</html>

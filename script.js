@@ -17,6 +17,8 @@ const APP_SETTINGS_KEY = "fitcalc-app-settings";
 const NUTRITION_LOG_KEY = "fitcalc-nutrition-log";
 const WATER_LOG_KEY = "fitcalc-water-log";
 const NUTRITION_SETTINGS_KEY = "fitcalc-nutrition-settings";
+const AUTH_PROFILE_KEY = "fitcalc-auth-profile";
+const AUTH_SESSION_KEY = "fitcalc-auth-session";
 const WORKOUT_HISTORY_KEY = "fitcalc-workout-history";
 const WEEKLY_WORKOUT_GOAL_KEY = "fitcalc-weekly-workout-goal";
 const WORKOUT_TEMPLATE_KEY = "fitcalc-workout-templates";
@@ -36,6 +38,8 @@ const FITCALC_KNOWN_STORAGE_KEYS = [
   NUTRITION_LOG_KEY,
   WATER_LOG_KEY,
   NUTRITION_SETTINGS_KEY,
+  AUTH_PROFILE_KEY,
+  AUTH_SESSION_KEY,
 ];
 const WORKOUT_NAME_OPTIONS = [
   "Push Day",
@@ -173,6 +177,8 @@ let pendingBackupImport = null;
 
 initializeTheme();
 initializeNavbarDropdowns();
+initializeAppShellViews();
+initializeAuthPage();
 initializeSmoothAnchorScrolling();
 bindCalculatorForms();
 initializeHomeDashboard();
@@ -186,6 +192,227 @@ initializeGoalTracking();
 initializeWorkoutTracker();
 initializeDashboardCompactSections();
 
+function initializeAppShellViews() {
+  const main = document.querySelector("main.tool-grid");
+  const dashboardCard = getElement("dashboardSummaryCards")?.closest(".dashboard-v2-card");
+
+  if (!main || !dashboardCard || main.dataset.appShellReady === "true") {
+    return;
+  }
+
+  main.dataset.appShellReady = "true";
+  main.classList.add("app-shell-main");
+
+  const weightCard = getElement("weightTrackerForm")?.closest(".card");
+  if (weightCard && !weightCard.id) {
+    weightCard.id = "weightTrackerSection";
+  }
+  weightCard?.classList.add("anchor-section");
+
+  const waterPanel = getElement("waterEntryForm")?.closest(".water-panel");
+  if (waterPanel && !waterPanel.id) {
+    waterPanel.id = "waterTrackingSection";
+  }
+  waterPanel?.classList.add("anchor-section");
+
+  const homeView = createAppView("homeDashboardView", "app-home-view is-active");
+  main.insertBefore(homeView, main.firstChild);
+  homeView.appendChild(dashboardCard);
+
+  document.querySelectorAll(".summary-hub-card, .tools-hub-card").forEach((card) => {
+    homeView.appendChild(card);
+  });
+
+  createDetailViews(main).forEach((view) => main.appendChild(view));
+
+  document.querySelectorAll(".featured-workout-card, .stats-grid, #workoutTrackerCard, .article-links")
+    .forEach((element) => element.classList.add("app-shell-hidden-extra"));
+
+  document.addEventListener("click", handleAppShellClick);
+  document.body.classList.add("app-shell-ready");
+}
+
+function createAppView(id, extraClass = "") {
+  const view = document.createElement("section");
+  view.id = id;
+  view.className = `app-view ${extraClass}`.trim();
+  return view;
+}
+
+function createDetailViews(main) {
+  return getAppDetailViewConfigs()
+    .map((config) => {
+      const sections = config.selectors
+        .map((selector) => document.querySelector(selector))
+        .filter(Boolean);
+
+      if (sections.length === 0) {
+        return null;
+      }
+
+      const view = createAppView(config.id, "app-detail-view");
+      view.dataset.appView = config.id;
+      view.innerHTML = `
+        <div class="app-detail-header">
+          <button class="secondary-button app-back-button" type="button" data-app-shell-home>กลับหน้าแรก</button>
+          <div>
+            <p class="eyebrow">${escapeHtml(config.kicker)}</p>
+            <h2>${escapeHtml(config.title)}</h2>
+            <p>${escapeHtml(config.subtitle)}</p>
+          </div>
+        </div>
+      `;
+
+      const content = document.createElement("div");
+      content.className = "app-detail-content";
+      sections.forEach((section) => content.appendChild(section));
+      view.appendChild(content);
+
+      return view;
+    })
+    .filter(Boolean);
+}
+
+function getAppDetailViewConfigs() {
+  return [
+    {
+      id: "nutritionDetailView",
+      kicker: "Nutrition",
+      title: "Nutrition & Water",
+      subtitle: "บันทึกอาหาร น้ำดื่ม และเป้าหมายโภชนาการ",
+      selectors: ["#nutritionTrackingSection"],
+    },
+    {
+      id: "goalsDetailView",
+      kicker: "Goals",
+      title: "Goal Tracking",
+      subtitle: "สร้าง ติดตาม และจัดการเป้าหมายสุขภาพ",
+      selectors: ["#goalTrackingSection"],
+    },
+    {
+      id: "achievementsDetailView",
+      kicker: "Achievements",
+      title: "Achievements & Streaks",
+      subtitle: "ดูความสำเร็จและความต่อเนื่องของคุณ",
+      selectors: ["#achievementsSection"],
+    },
+    {
+      id: "profileDetailView",
+      kicker: "Profile",
+      title: "User Profile",
+      subtitle: "ตั้งค่าข้อมูลพื้นฐานเพื่อช่วยเติมค่าเริ่มต้น",
+      selectors: ["#userProfileSection"],
+    },
+    {
+      id: "settingsDetailView",
+      kicker: "Settings",
+      title: "App Settings",
+      subtitle: "จัดการโหมดแสดงผลและค่าเริ่มต้นของแอป",
+      selectors: ["#appSettingsSection"],
+    },
+    {
+      id: "backupDetailView",
+      kicker: "Backup",
+      title: "Data Backup",
+      subtitle: "สำรอง ส่งออก และนำเข้าข้อมูล FitCalc Thai",
+      selectors: ["#dataBackupSection"],
+    },
+    {
+      id: "weightBodyDetailView",
+      kicker: "Progress",
+      title: "Weight & Body",
+      subtitle: "บันทึกน้ำหนักและสัดส่วนเพื่อดูพัฒนาการ",
+      selectors: ["#weightTrackerSection", "#bodyMeasurementsSection"],
+    },
+  ];
+}
+
+function handleAppShellClick(event) {
+  const homeButton = event.target.closest("[data-app-shell-home]");
+  const scrollLink = event.target.closest("[data-app-scroll-target]");
+
+  if (scrollLink) {
+    event.preventDefault();
+    scrollToHashTarget(`#${scrollLink.dataset.appScrollTarget}`, true);
+    return;
+  }
+
+  if (homeButton) {
+    event.preventDefault();
+    showAppView("homeDashboardView", { clearHash: true, scrollToTop: true });
+  }
+}
+
+function showAppView(viewId, options = {}) {
+  const views = document.querySelectorAll(".app-view");
+  if (views.length === 0) {
+    return false;
+  }
+
+  let foundView = false;
+  views.forEach((view) => {
+    const isActive = view.id === viewId;
+    view.classList.toggle("is-active", isActive);
+    view.hidden = !isActive;
+    if (isActive) {
+      foundView = true;
+    }
+  });
+
+  if (!foundView) {
+    return false;
+  }
+
+  const isHome = viewId === "homeDashboardView";
+  document.body.classList.toggle("app-detail-active", !isHome);
+
+  if (options.clearHash && window.location.hash) {
+    history.pushState(null, "", window.location.pathname + window.location.search);
+  }
+
+  if (options.scrollToTop) {
+    scrollAppShellToTop();
+  }
+
+  if (!isHome) {
+    expandActiveDetailSections(viewId);
+  }
+
+  return true;
+}
+
+function scrollAppShellToTop() {
+  const navbarHeight = document.querySelector(".site-nav")?.offsetHeight || 0;
+  const mainTop = document.querySelector(".app-shell-main")?.getBoundingClientRect().top || 0;
+  const targetTop = Math.max(window.scrollY + mainTop - navbarHeight - 18, 0);
+  window.scrollTo({ top: targetTop, behavior: "smooth" });
+}
+
+function openAppViewForTarget(target) {
+  if (!target) {
+    return false;
+  }
+
+  const targetView = target.closest(".app-view");
+  if (!targetView) {
+    return false;
+  }
+
+  return showAppView(targetView.id, { scrollToTop: false });
+}
+
+function expandActiveDetailSections(viewId) {
+  const view = getElement(viewId);
+  if (!view) {
+    return;
+  }
+
+  view.querySelectorAll(".dashboard-collapsible-section").forEach((section) => {
+    setDashboardSectionCollapsed(section, false);
+    section.dataset.userToggled = "true";
+  });
+}
+
 function initializeHomeDashboard() {
   if (!getElement("dashboardSummaryCards")) {
     return;
@@ -196,6 +423,7 @@ function initializeHomeDashboard() {
   renderDashboardAppHeader(dashboardData);
   renderDashboardTodayFocus(dashboardData);
   renderDashboardSummaryCards(dashboardData);
+  renderSummaryOverviewGroups(dashboardData);
   renderDashboardProfileSummary(dashboardData);
   renderDashboardWeightSummary(dashboardData);
   renderDashboardNutritionSummary(dashboardData);
@@ -315,18 +543,21 @@ function renderDashboardAppHeader(data) {
   if (!header) return;
 
   const profileSummary = getProfileSummary(data.userProfile);
+  const authProfile = getAuthProfile();
+  const session = getAuthSession();
+  const greeting = session?.isLoggedIn && authProfile?.displayName
+    ? `สวัสดี, ${authProfile.displayName}`
+    : profileSummary.greeting;
   const todayDate = formatThaiDate(getTodayDateValue());
   const todayWater = calculateWaterTotal(data.waterLog.find((record) => record.date === getTodayDateValue()) || { entries: [] });
   const activeGoals = getDashboardGoalSummary(data.goals).activeGoals;
   const workoutStreak = data.achievements?.summary?.currentWorkoutStreak || 0;
-  const motivation = activeGoals > 0
-    ? "วันนี้โฟกัสให้ชัด แล้วขยับเข้าใกล้เป้าหมายอีกนิด"
-    : "เริ่มจากบันทึกเล็ก ๆ วันนี้ แล้วให้ข้อมูลช่วยนำทาง";
+  const motivation = activeGoals > 0 ? "โฟกัสเป้าหมายวันนี้" : "ภาพรวมวันนี้";
 
   header.innerHTML = `
     <div class="app-home-copy">
       <span class="app-home-kicker">FitCalc Thai</span>
-      <h2>${escapeHtml(profileSummary.greeting)}</h2>
+      <h2>${escapeHtml(greeting)}</h2>
       <p>${escapeHtml(motivation)}</p>
     </div>
     <div class="app-home-meta">
@@ -334,7 +565,7 @@ function renderDashboardAppHeader(data) {
       <div class="app-status-chips" aria-label="สถานะวันนี้">
         <span class="app-status-chip">Streak ${escapeHtml(sanitizeDashboardValue(workoutStreak))} วัน</span>
         <span class="app-status-chip">น้ำ ${escapeHtml(formatNutritionNumber(todayWater))} ml</span>
-        <span class="app-status-chip">${activeGoals > 0 ? `${activeGoals} goal active` : "ยังไม่มี goal"}</span>
+        <span class="app-status-chip">${activeGoals > 0 ? `${activeGoals} เป้าหมาย` : "ยังไม่มีเป้าหมาย"}</span>
       </div>
     </div>
   `;
@@ -353,24 +584,24 @@ function renderDashboardTodayFocus(data) {
   const calorieTarget = data.nutritionSettings?.calorieTarget || 0;
   const proteinTarget = data.nutritionSettings?.proteinTarget || 0;
   const waterTarget = data.nutritionSettings?.waterTarget || 0;
-  const activeGoalText = goalSummary.activeGoals > 0 ? goalSummary.closestGoalText : "ยังไม่มีเป้าหมายที่กำลังทำ";
+  const activeGoalText = goalSummary.activeGoals > 0 ? goalSummary.closestGoalText : "ยังไม่มีเป้าหมาย";
 
   card.innerHTML = `
     <div class="today-focus-header">
       <div>
         <span class="app-home-kicker">วันนี้</span>
-        <h3>Today Focus</h3>
+        <h3>วันนี้</h3>
       </div>
       <span class="today-focus-pill">${escapeHtml(weeklyGoal.statusText)}</span>
     </div>
     <div class="today-focus-grid">
-      ${createTodayFocusMetric("Calories", `${formatNutritionNumber(todayNutrition.calories)} kcal`, getSafePercent(todayNutrition.calories, calorieTarget))}
+      ${createTodayFocusMetric("แคล", `${formatNutritionNumber(todayNutrition.calories)} kcal`, getSafePercent(todayNutrition.calories, calorieTarget))}
       ${createTodayFocusMetric("Protein", `${formatNutritionNumber(todayNutrition.protein)} g`, getSafePercent(todayNutrition.protein, proteinTarget))}
-      ${createTodayFocusMetric("Water", `${formatNutritionNumber(todayWater)} ml`, getSafePercent(todayWater, waterTarget))}
+      ${createTodayFocusMetric("น้ำ", `${formatNutritionNumber(todayWater)} ml`, getSafePercent(todayWater, waterTarget))}
       ${createTodayFocusMetric("Workout", `${workoutSummary.thisWeek} ครั้ง`, weeklyGoal.percent)}
     </div>
     <div class="today-focus-goal">
-      <span>Active Goal</span>
+      <span>เป้าหมาย</span>
       <strong>${escapeHtml(sanitizeDashboardValue(activeGoalText))}</strong>
       <div class="dashboard-progress-bar" aria-label="ความคืบหน้าเป้าหมายรายสัปดาห์">
         <span style="width: ${Math.min(Math.max(weeklyGoal.percent, 0), 100)}%"></span>
@@ -422,30 +653,12 @@ function renderDashboardSummaryCards(data) {
   if (!summaryCards) return;
 
   summaryCards.innerHTML = [
-    createDashboardSummaryGroup("Today", [
-      ["น้ำหนักล่าสุด", weightSummary.latestText],
-      ["Calories วันนี้", `${formatNutritionNumber(todayNutrition.calories)} kcal`],
-      ["น้ำวันนี้", `${formatNutritionNumber(todayWater)} ml`],
-      ["Workout สัปดาห์นี้", `${workoutSummary.thisWeek} ครั้ง`],
-    ]),
-    createDashboardSummaryGroup("Progress", [
-      ["เป้าหมายที่ทำอยู่", `${goalSummary.activeGoals}`],
-      ["ใกล้สำเร็จ", goalSummary.closestGoalText],
-      ["เอวล่าสุด", measurementSummary.latestWaistText],
-      ["Streak", `${achievementSummary.currentWorkoutStreak} วัน`],
-    ]),
-    createDashboardSummaryGroup("Training", [
-      ["Workout ล่าสุด", workoutSummary.lastWorkoutText],
-      ["เป้าหมายสัปดาห์", weeklyGoal.progressText],
-      ["Favorite templates", `${librarySummary.favoriteTemplates}`],
-      ["Exercises", `${librarySummary.totalExercises} ท่า`],
-    ]),
-    createDashboardSummaryGroup("Personal", [
-      ["Profile", `${profileSummary.completionPercent}% complete`],
-      ["Achievements", `${achievementSummary.unlockedCount} / ${achievementSummary.totalAchievements}`],
-      ["Backup ล่าสุด", backupSummary.lastExportText],
-      ["กิจกรรมล่าสุด", `${getDashboardRecentActivities(data).length} รายการ`],
-    ]),
+    createDashboardSummaryCard("น้ำหนักล่าสุด", weightSummary.latestText, weightSummary.changeText),
+    createDashboardSummaryCard("น้ำวันนี้", `${formatNutritionNumber(todayWater)} ml`, ""),
+    createDashboardSummaryCard("แคลวันนี้", `${formatNutritionNumber(todayNutrition.calories)} kcal`, ""),
+    createDashboardSummaryCard("Workout สัปดาห์นี้", `${workoutSummary.thisWeek} ครั้ง`, weeklyGoal.progressText),
+    createDashboardSummaryCard("เป้าหมาย", `${goalSummary.activeGoals} กำลังทำ`, goalSummary.activeGoals > 0 ? goalSummary.closestGoalText : ""),
+    createDashboardSummaryCard("กิจกรรมล่าสุด", `${getDashboardRecentActivities(data).length} รายการ`, ""),
   ].join("");
   return;
 
@@ -469,11 +682,12 @@ function renderDashboardSummaryCards(data) {
 }
 
 function createDashboardSummaryCard(label, value, detail) {
+  const detailText = sanitizeDashboardValue(detail);
   return `
     <article class="dashboard-summary-card">
-      <span>${label}</span>
-      <strong>${escapeHtml(value)}</strong>
-      <p>${escapeHtml(detail)}</p>
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(sanitizeDashboardValue(value))}</strong>
+      ${detailText === "ยังไม่มีข้อมูล" ? "" : `<p>${escapeHtml(detailText)}</p>`}
     </article>
   `;
 }
@@ -486,6 +700,67 @@ function createDashboardSummaryGroup(title, items) {
         ${items.map(([label, value]) => `
           <div>
             <small>${escapeHtml(label)}</small>
+            <strong>${escapeHtml(sanitizeDashboardValue(value))}</strong>
+          </div>
+        `).join("")}
+      </div>
+    </article>
+  `;
+}
+
+function renderSummaryOverviewGroups(data) {
+  const container = getElement("summaryOverviewGroups");
+  if (!container) return;
+
+  const weightSummary = getDashboardWeightSummary(data.weightHistory);
+  const measurementSummary = getDashboardMeasurementSummary(data.bodyMeasurements);
+  const workoutSummary = getDashboardWorkoutSummary(data.workoutHistory);
+  const weeklyGoal = getDashboardWeeklyGoalSummary(data.workoutHistory, data.weeklyGoal);
+  const goalSummary = getDashboardGoalSummary(data.goals);
+  const achievementSummary = data.achievements.summary;
+  const backupSummary = data.backupSummary;
+  const profileSummary = getProfileSummary(data.userProfile);
+  const librarySummary = getDashboardLibrarySummary(data.templateStore, data.customExercises);
+  const today = getTodayDateValue();
+  const todayNutrition = calculateNutritionTotals(data.nutritionLog.filter((meal) => meal.date === today));
+  const todayWater = calculateWaterTotal(data.waterLog.find((record) => record.date === today) || { entries: [] });
+
+  container.innerHTML = [
+    createSummaryOverviewCard("Today", [
+      ["น้ำ", `${formatNutritionNumber(todayWater)} ml`],
+      ["แคล", `${formatNutritionNumber(todayNutrition.calories)} kcal`],
+      ["โปรตีน", `${formatNutritionNumber(todayNutrition.protein)} g`],
+      ["Workout", `${workoutSummary.thisWeek} ครั้ง`],
+    ]),
+    createSummaryOverviewCard("Progress", [
+      ["น้ำหนัก", weightSummary.latestText],
+      ["เอว", measurementSummary.latestWaistText],
+      ["แนวโน้ม", weightSummary.trendText],
+      ["เป้าหมาย", `${goalSummary.activeGoals} กำลังทำ`],
+    ]),
+    createSummaryOverviewCard("Training", [
+      ["ล่าสุด", workoutSummary.lastWorkoutText],
+      ["สัปดาห์นี้", `${workoutSummary.thisWeek} ครั้ง`],
+      ["เป้าหมาย", weeklyGoal.progressText],
+      ["Templates", `${librarySummary.totalTemplates}`],
+    ]),
+    createSummaryOverviewCard("Personal", [
+      ["Profile", `${profileSummary.completionPercent}%`],
+      ["Achievements", `${achievementSummary.unlockedCount}/${achievementSummary.totalAchievements}`],
+      ["Streak", `${achievementSummary.currentWorkoutStreak} วัน`],
+      ["Backup", backupSummary.lastExportText],
+    ]),
+  ].join("");
+}
+
+function createSummaryOverviewCard(title, items) {
+  return `
+    <article class="summary-overview-card">
+      <h2>${escapeHtml(title)}</h2>
+      <div class="summary-overview-metrics">
+        ${items.map(([label, value]) => `
+          <div>
+            <span>${escapeHtml(label)}</span>
             <strong>${escapeHtml(sanitizeDashboardValue(value))}</strong>
           </div>
         `).join("")}
@@ -637,7 +912,7 @@ function renderDashboardBackupSummary(data) {
 
 function renderDashboardRecentActivity(data) {
   const panel = getElement("dashboardRecentActivity");
-  const activities = getDashboardRecentActivities(data).slice(0, 5);
+  const activities = getDashboardRecentActivities(data).slice(0, 3);
 
   if (activities.length === 0) {
     panel.innerHTML = '<p class="empty-state">ยังไม่มีกิจกรรมล่าสุด</p>';
@@ -671,17 +946,21 @@ function renderDashboardQuickActions() {
   if (!grid) return;
 
   const appActions = [
-    { icon: "⚖️", label: "บันทึกน้ำหนัก", href: "#weightTrackerForm" },
+    { icon: "⚖️", label: "บันทึกน้ำหนัก", href: "#weightTrackerSection" },
+    { icon: "📏", label: "บันทึกสัดส่วน", href: "#bodyMeasurementsSection" },
     { icon: "🏋️", label: "บันทึก Workout", href: "workout-tracker.html#workoutTrackerSection" },
     { icon: "🧮", label: "เครื่องคำนวณ", href: "calculators.html" },
     { icon: "🍽️", label: "บันทึกอาหาร", href: "#nutritionTrackingSection" },
-    { icon: "💧", label: "ดื่มน้ำ", href: "#nutritionTrackingSection" },
+    { icon: "💧", label: "ดื่มน้ำ", href: "#waterTrackingSection", target: "waterTrackingSection" },
     { icon: "🎯", label: "ตั้งเป้าหมาย", href: "#goalTrackingSection" },
+    { icon: "🏆", label: "ดู Achievements", href: "#achievementsSection" },
     { icon: "💾", label: "สำรองข้อมูล", href: "#dataBackupSection" },
+    { icon: "👤", label: "แก้ไขโปรไฟล์", href: "#userProfileSection" },
+    { icon: "👤", label: "บัญชี", href: "auth.html" },
   ];
 
-  grid.innerHTML = appActions.map(({ icon, label, href }) => `
-    <a class="dashboard-command-button" href="${escapeHtml(href)}">
+  grid.innerHTML = appActions.map(({ icon, label, href, target }) => `
+    <a class="dashboard-command-button" href="${escapeHtml(href)}"${target ? ` data-app-scroll-target="${escapeHtml(target)}"` : ""}>
       <span class="dashboard-command-icon" aria-hidden="true">${escapeHtml(icon)}</span>
       <strong>${escapeHtml(label)}</strong>
     </a>
@@ -789,6 +1068,10 @@ function syncDashboardCompactMode(data) {
   const shouldCollapse = shouldUseCompactDashboardMode();
   sections.forEach(({ section, key }) => {
     updateDashboardSectionHeaderSummary(section, key, data);
+    if (document.body.classList.contains("app-shell-ready") && section.closest(".app-detail-view")) {
+      setDashboardSectionCollapsed(section, false);
+      return;
+    }
     if (section.dataset.userToggled !== "true") {
       setDashboardSectionCollapsed(section, shouldCollapse);
     }
@@ -1171,7 +1454,7 @@ function initializeSmoothAnchorScrolling() {
     }
 
     event.preventDefault();
-    scrollToHashTarget(targetUrl.hash, true);
+    scrollToHashTarget(link.dataset.appScrollTarget ? `#${link.dataset.appScrollTarget}` : targetUrl.hash, true);
   });
 
   document.querySelectorAll('a[href*="#"]').forEach((link) => {
@@ -1189,7 +1472,7 @@ function initializeSmoothAnchorScrolling() {
       }
 
       event.preventDefault();
-      scrollToHashTarget(targetUrl.hash, true);
+      scrollToHashTarget(link.dataset.appScrollTarget ? `#${link.dataset.appScrollTarget}` : targetUrl.hash, true);
     });
   });
 
@@ -1209,6 +1492,10 @@ function getScrollTarget(hash) {
   };
   const target = document.getElementById(anchorAliases[targetId] || targetId);
 
+  if (targetId === "waterTrackingSection") {
+    return target;
+  }
+
   return target?.closest(".card") || target;
 }
 
@@ -1219,16 +1506,28 @@ function scrollToHashTarget(hash, shouldUpdateHash) {
     return;
   }
 
+  const openedAppView = openAppViewForTarget(target);
   expandDashboardSectionForTarget(target);
 
-  const navbarHeight = document.querySelector(".site-nav")?.offsetHeight || 0;
-  const topOffset = navbarHeight + 34;
-  const targetTop = target.getBoundingClientRect().top + window.pageYOffset - topOffset;
+  const scrollToTarget = () => {
+    const navbarHeight = document.querySelector(".site-nav")?.offsetHeight || 0;
+    const topOffset = navbarHeight + 34;
+    const targetTop = target.getBoundingClientRect().top + window.pageYOffset - topOffset;
 
-  window.scrollTo({
-    top: Math.max(targetTop, 0),
-    behavior: "smooth",
-  });
+    window.scrollTo({
+      top: Math.max(targetTop, 0),
+      behavior: "smooth",
+    });
+  };
+
+  scrollToTarget();
+
+  if (openedAppView) {
+    window.requestAnimationFrame(scrollToTarget);
+    if (decodeURIComponent(hash.replace("#", "")) === "waterTrackingSection") {
+      window.requestAnimationFrame(() => window.requestAnimationFrame(scrollToTarget));
+    }
+  }
 
   if (shouldUpdateHash) {
     window.history.pushState(null, "", hash);
@@ -6595,6 +6894,162 @@ function createExerciseSlug(exerciseName) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+function initializeAuthPage() {
+  if (!getElement("signupForm") && !getElement("loginForm")) {
+    return;
+  }
+
+  renderAuthState();
+  getElement("signupForm")?.addEventListener("submit", handleSignupSubmit);
+  getElement("loginForm")?.addEventListener("submit", handleLoginSubmit);
+}
+
+function getAuthProfile() {
+  const profile = readDashboardValue(AUTH_PROFILE_KEY);
+
+  if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
+    return null;
+  }
+
+  const displayName = String(profile.displayName || "").trim();
+  const email = String(profile.email || "").trim().toLowerCase();
+
+  if (!displayName || !isValidEmail(email)) {
+    return null;
+  }
+
+  return {
+    displayName,
+    email,
+    createdAt: profile.createdAt || "",
+  };
+}
+
+function getAuthSession() {
+  const session = readDashboardValue(AUTH_SESSION_KEY);
+
+  if (!session || typeof session !== "object" || Array.isArray(session)) {
+    return null;
+  }
+
+  const email = String(session.email || "").trim().toLowerCase();
+
+  if (!session.isLoggedIn || !isValidEmail(email)) {
+    return null;
+  }
+
+  return {
+    isLoggedIn: true,
+    email,
+    loginAt: session.loginAt || "",
+  };
+}
+
+function handleSignupSubmit(event) {
+  event.preventDefault();
+
+  const displayName = getElement("signupDisplayName")?.value.trim() || "";
+  const email = (getElement("signupEmail")?.value || "").trim().toLowerCase();
+  const password = getElement("signupPassword")?.value || "";
+  const confirmPassword = getElement("signupConfirmPassword")?.value || "";
+
+  if (!displayName || !email || !password || !confirmPassword) {
+    updateAuthMessage("กรุณากรอกข้อมูลสมัครสมาชิกให้ครบ", "error");
+    return;
+  }
+
+  if (!isValidEmail(email)) {
+    updateAuthMessage("กรุณากรอก Email ให้ถูกต้อง", "error");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    updateAuthMessage("Password และ Confirm Password ต้องตรงกัน", "error");
+    return;
+  }
+
+  const now = new Date().toISOString();
+  localStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify({ displayName, email, createdAt: now }));
+  localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ isLoggedIn: true, email, loginAt: now }));
+
+  event.target.reset();
+  updateAuthMessage("สมัครสมาชิกและเข้าสู่ระบบ demo แล้ว", "success");
+  renderAuthState();
+}
+
+function handleLoginSubmit(event) {
+  event.preventDefault();
+
+  const email = (getElement("loginEmail")?.value || "").trim().toLowerCase();
+  const password = getElement("loginPassword")?.value || "";
+  const profile = getAuthProfile();
+
+  if (!email || !password) {
+    updateAuthMessage("กรุณากรอก Email และ Password", "error");
+    return;
+  }
+
+  if (!isValidEmail(email)) {
+    updateAuthMessage("กรุณากรอก Email ให้ถูกต้อง", "error");
+    return;
+  }
+
+  if (profile && profile.email !== email) {
+    updateAuthMessage("Email นี้ยังไม่มีข้อมูล demo ในเครื่องนี้", "error");
+    return;
+  }
+
+  localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({
+    isLoggedIn: true,
+    email,
+    loginAt: new Date().toISOString(),
+  }));
+
+  event.target.reset();
+  updateAuthMessage("เข้าสู่ระบบแล้ว", "success");
+  renderAuthState();
+}
+
+function handleLogout() {
+  localStorage.removeItem(AUTH_SESSION_KEY);
+  updateAuthMessage("ออกจากระบบแล้ว", "success");
+  renderAuthState();
+}
+
+function renderAuthState() {
+  const status = getElement("authStatusPanel");
+  if (!status) return;
+
+  const profile = getAuthProfile();
+  const session = getAuthSession();
+  const isLoggedIn = Boolean(session?.isLoggedIn);
+  const displayName = profile?.displayName || "ผู้ใช้ FitCalc Thai";
+  const email = session?.email || profile?.email || "ยังไม่มีบัญชี demo";
+
+  status.innerHTML = `
+    <div>
+      <span class="app-home-kicker">Account</span>
+      <h2>${isLoggedIn ? "เข้าสู่ระบบแล้ว" : "บัญชี Demo"}</h2>
+      <p>${isLoggedIn ? `${escapeHtml(displayName)} | ${escapeHtml(email)}` : "สมัครหรือเข้าสู่ระบบตัวอย่างบนอุปกรณ์นี้"}</p>
+    </div>
+    <button class="secondary-button ${isLoggedIn ? "" : "is-hidden"}" id="logoutButton" type="button">ออกจากระบบ</button>
+  `;
+
+  getElement("logoutButton")?.addEventListener("click", handleLogout);
+}
+
+function updateAuthMessage(message, type = "info") {
+  const messageBox = getElement("authMessage");
+  if (!messageBox) return;
+
+  messageBox.textContent = message;
+  messageBox.dataset.status = type;
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
 }
 
 function escapeHtml(value) {
